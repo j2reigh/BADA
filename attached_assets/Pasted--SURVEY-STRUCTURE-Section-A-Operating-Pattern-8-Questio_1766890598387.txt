@@ -1,0 +1,167 @@
+## SURVEY STRUCTURE
+
+### Section A: Operating Pattern (8 Questions)
+
+Goal
+
+- Multi-step survey: ONE question per page (8 steps)
+- Each question is REQUIRED
+- Next button is disabled until user selects an option
+- Back button enabled except on step 1
+- Show progress (e.g., 3/8 + progress bar)
+- On final step, Next becomes "Submit"
+
+Questions (exact)
+Section 1: Threat Response (3)
+Q1: When things get intense or chaotic, what happens first?
+A) I become more alert and focused
+B) I feel overwhelmed or emotional
+C) I try to escape the situation
+D) It depends, but usually A or B
+
+Q2: In crisis situations, people often say I am:
+A) Calm and clear-headed
+B) Emotional but expressive
+C) Quiet or frozen
+D) Not sure
+
+Q3: I feel most “alive” when:
+A) I’m pushed beyond my limits
+B) Things feel safe and predictable
+C) I’m emotionally connected
+D) I don’t know
+
+Section 2: Environment (2)
+Q4: Growing up, my environment felt:
+A) Safe and predictable
+B) Unstable or unclear
+C) Mixed
+D) I don’t remember clearly
+
+Q5: I feel most stressed when:
+A) Nothing changes
+B) I don’t know what’s coming
+C) People don’t say what they really think
+D) I feel watched or judged
+
+Section 3: Agency Orientation (3)
+Q6: When something feels wrong in my life, I usually:
+A) Try to redesign my situation
+B) Adjust myself
+C) Wait and see
+D) Talk to others first
+
+Q7: I believe that my current state is:
+A) Something I can actively shape
+B) Mostly decided by circumstances
+C) A mix of both
+D) I’m not sure
+
+Q8: If nothing changed for the next year, I would feel:
+A) Very uncomfortable
+B) Mostly okay
+C) Relieved
+D) Confused
+
+Scoring rules (must implement exactly)
+
+ThreatScore = score(Q1)+score(Q2)+score(Q3)
+
+- For Q1–Q3: A=1, B=0, C=0, D=0
+ThreatClarity = 1 if ThreatScore >= 2 else 0
+
+EnvironmentScore = score(Q4)+score(Q5)
+
+- Q4: A=0, B=1, C=0.5, D=0.5
+- Q5: A=0, B=1, C=1, D=0.5
+Environment = 0 (Unstable) if EnvironmentScore >= 1.5 else 1 (Stable)
+
+AgencyScore = score(Q6)+score(Q7)+score(Q8)
+
+- For Q6–Q8: A=1, B=0, C=0, D=0
+Agency = 1 if AgencyScore >= 2 else 0
+
+Type mapping table (must compute finalTypeName)
+(ThreatClarity, Environment, Agency)
+1,0,1 => "State Architect"
+1,0,0 => "Silent Sentinel"
+1,1,1 => "Master Builder"
+1,1,0 => "Safe Strategist"
+0,0,1 => "Fire Converter"
+0,0,0 => "Emotional Drifter"
+0,1,1 => "Conscious Maintainer"
+0,1,0 => "Passive Floater"
+
+Data model
+
+- Store raw answers as letters A/B/C/D:
+answers = { q1:"A", q2:"D", ... }
+- On submit, compute:
+threatScore, threatClarity, envScore, environment, agencyScore, agency, typeKey, finalTypeName
+- typeKey format: "T{ThreatClarity}-E{Environment}-A{Agency}" (example: "T1-E0-A1")
+
+UI requirements
+
+- Show section title at top (Threat Response / Environment / Agency)
+- Show question text and 4 selectable options (radio)
+- Next disabled until selected
+- Minimal, premium, mobile-first layout
+
+---
+
+### SCORING LOGIC (MANDATORY)
+
+---
+
+ThreatScore:
+Q1–Q3:
+A = +1
+B/C/D = 0
+
+ThreatClarity = 1 if ThreatScore >= 2 else 0
+
+---
+
+EnvironmentScore:
+Q4:
+A=0, B=1, C=0.5, D=0.5
+Q5:
+A=0, B=1, C=1, D=0.5
+
+Environment = 0 (Unstable) if score >=1.5 else 1 (Stable)
+
+---
+
+AgencyScore:
+Q6–Q8:
+A = +1
+Others = 0
+
+Agency = 1 if AgencyScore >=2 else 0
+
+---
+
+### TYPE KEY GENERATION
+
+---
+
+Create type_key as string:
+
+"T" + ThreatClarity
+
+- "-E" + Environment
+- "-A" + Agency
+
+Example:
+T1-E0-A1
+
+Map to type name:
+
+T1-E0-A1 → State Architect
+T1-E0-A0 → Silent Sentinel
+T1-E1-A1 → Master Builder
+T1-E1-A0 → Safe Strategist
+T0-E0-A1 → Fire Converter
+T0-E0-A0 → Emotional Drifter
+T0-E1-A1 → Conscious Maintainer
+T0-E1-A0 → Passive Floater
