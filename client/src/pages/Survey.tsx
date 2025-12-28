@@ -4,21 +4,76 @@ import { Button } from "@/components/Button";
 import { ProgressBar } from "@/components/ProgressBar";
 import { QUESTIONS, calculateScore } from "@/lib/scoring";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, CheckCircle2, MapPin, Calendar, Clock, Mail, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSubmitSurvey } from "@/hooks/use-survey";
 import { useToast } from "@/hooks/use-toast";
 
+interface BirthPatternData {
+  name: string;
+  birthDate: string;
+  birthTime: string;
+  birthTimeUnknown: boolean;
+  placeOfBirth: string;
+  email: string;
+  consent: boolean;
+  notificationConsent: boolean;
+}
+
+const BIRTH_PLACES = [
+  "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Argentina", "Armenia", "Australia",
+  "Austria", "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium",
+  "Belize", "Benin", "Bhutan", "Bolivia", "Bosnia", "Botswana", "Brazil", "Brunei", "Bulgaria",
+  "Burkina Faso", "Burundi", "Cambodia", "Cameroon", "Canada", "Cape Verde", "Central African Republic",
+  "Chad", "Chile", "China", "Colombia", "Comoros", "Congo", "Costa Rica", "Croatia", "Cuba", "Cyprus",
+  "Czech Republic", "Denmark", "Djibouti", "Dominica", "Dominican Republic", "East Timor", "Ecuador",
+  "Egypt", "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia", "Ethiopia", "Fiji", "Finland",
+  "France", "Gabon", "Gambia", "Georgia", "Germany", "Ghana", "Greece", "Grenada", "Guatemala",
+  "Guinea", "Guinea-Bissau", "Guyana", "Haiti", "Honduras", "Hungary", "Iceland", "India", "Indonesia",
+  "Iran", "Iraq", "Ireland", "Israel", "Italy", "Jamaica", "Japan", "Jordan", "Kazakhstan", "Kenya",
+  "Kiribati", "Korea North", "Korea South", "Kuwait", "Kyrgyzstan", "Laos", "Latvia", "Lebanon",
+  "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg", "Madagascar", "Malawi",
+  "Malaysia", "Maldives", "Mali", "Malta", "Marshall Islands", "Mauritania", "Mauritius", "Mexico",
+  "Micronesia", "Moldova", "Monaco", "Mongolia", "Montenegro", "Morocco", "Mozambique", "Myanmar",
+  "Namibia", "Nauru", "Nepal", "Netherlands", "New Zealand", "Nicaragua", "Niger", "Nigeria",
+  "North Macedonia", "Norway", "Oman", "Pakistan", "Palau", "Palestine", "Panama", "Papua New Guinea",
+  "Paraguay", "Peru", "Philippines", "Poland", "Portugal", "Qatar", "Romania", "Russia", "Rwanda",
+  "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent", "Samoa", "San Marino", "Sao Tome",
+  "Saudi Arabia", "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia",
+  "Solomon Islands", "Somalia", "South Africa", "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname",
+  "Sweden", "Switzerland", "Syria", "Taiwan", "Tajikistan", "Tanzania", "Thailand", "Togo", "Tonga",
+  "Trinidad and Tobago", "Tunisia", "Turkey", "Turkmenistan", "Tuvalu", "Uganda", "Ukraine",
+  "United Arab Emirates", "United Kingdom", "United States", "Uruguay", "Uzbekistan", "Vanuatu",
+  "Vatican City", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe"
+];
+
 export default function Survey() {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [birthData, setBirthData] = useState<BirthPatternData>({
+    name: "",
+    birthDate: "",
+    birthTime: "",
+    birthTimeUnknown: true,
+    placeOfBirth: "",
+    email: "",
+    consent: false,
+    notificationConsent: true,
+  });
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const submitMutation = useSubmitSurvey();
+  
+  const isBirthPatternStep = currentStep === QUESTIONS.length;
+  const totalSteps = QUESTIONS.length + 1;
 
-  const question = QUESTIONS[currentStep];
+  const question = !isBirthPatternStep ? QUESTIONS[currentStep] : null;
   const isLastQuestion = currentStep === QUESTIONS.length - 1;
-  const currentAnswer = answers[question.id];
+  const currentAnswer = question ? answers[question.id] : null;
+  
+  const isBirthFormValid = birthData.name.trim() && birthData.birthDate && 
+    (birthData.birthTimeUnknown || birthData.birthTime) && birthData.placeOfBirth && 
+    birthData.email.trim() && birthData.consent;
 
   const handleOptionSelect = (value: string) => {
     setAnswers((prev) => ({ ...prev, [question.id]: value }));
@@ -27,8 +82,10 @@ export default function Survey() {
   const handleNext = () => {
     if (currentStep < QUESTIONS.length - 1) {
       setCurrentStep((prev) => prev + 1);
+    } else if (currentStep === QUESTIONS.length - 1) {
+      setCurrentStep((prev) => prev + 1);
     } else {
-      handleSubmit();
+      handleBirthPatternSubmit();
     }
   };
 
@@ -38,32 +95,63 @@ export default function Survey() {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleBirthPatternChange = (field: keyof BirthPatternData, value: any) => {
+    setBirthData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleBirthPatternSubmit = async () => {
     try {
       const result = calculateScore(answers);
       
-      // Save to database
-      await submitMutation.mutateAsync({
-        answers,
-        threatScore: result.threatScore,
-        threatClarity: result.threatClarity,
-        environmentScore: result.environmentScore,
-        environmentStable: result.environmentStable,
-        agencyScore: result.agencyScore,
-        agencyActive: result.agencyActive,
-        typeKey: result.typeKey,
-        typeName: result.typeName,
-      });
+      // Console log all collected data
+      const allData = {
+        surveyAnswers: answers,
+        calculatedType: {
+          typeKey: result.typeKey,
+          typeName: result.typeName,
+          threatClarity: result.threatClarity,
+          environmentStable: result.environmentStable,
+          agencyActive: result.agencyActive,
+          threatScore: result.threatScore,
+          environmentScore: result.environmentScore,
+          agencyScore: result.agencyScore,
+        },
+        birthPatternData: {
+          name: birthData.name,
+          birthDate: birthData.birthDate,
+          birthTime: birthData.birthTimeUnknown ? "Unknown" : birthData.birthTime,
+          placeOfBirth: birthData.placeOfBirth,
+          email: birthData.email,
+          consent: birthData.consent,
+          notificationConsent: birthData.notificationConsent,
+        },
+      };
+      
+      console.log("BADA Survey Submission:", allData);
+      
+      // Save to database (optional, in background)
+      try {
+        await submitMutation.mutateAsync({
+          answers,
+          threatScore: result.threatScore,
+          threatClarity: result.threatClarity,
+          environmentScore: result.environmentScore,
+          environmentStable: result.environmentStable,
+          agencyScore: result.agencyScore,
+          agencyActive: result.agencyActive,
+          typeKey: result.typeKey,
+          typeName: result.typeName,
+        });
+      } catch (dbError) {
+        console.error("Database save failed, but continuing:", dbError);
+      }
 
-      // Pass results in state via history state or URL params isn't ideal for large objects, 
-      // but wouter doesn't support state object passing easily.
-      // We will encode the results in the URL or use local storage. 
-      // For simplicity and robustness, let's use localStorage for the transient result display.
-      localStorage.setItem("surveyResult", JSON.stringify(result));
-      setLocation("/results");
+      // Redirect to coming soon page
+      setLocation("/coming-soon");
     } catch (error) {
+      console.error("Error submitting birth pattern:", error);
       toast({
-        title: "Error submitting survey",
+        title: "Error submitting information",
         description: "Please try again.",
         variant: "destructive",
       });
@@ -77,60 +165,195 @@ export default function Survey() {
       
       <div className="w-full max-w-2xl z-10">
         <div className="mb-12">
-          <ProgressBar current={currentStep + 1} total={QUESTIONS.length} />
+          <ProgressBar current={currentStep + 1} total={totalSteps} />
         </div>
 
         <AnimatePresence mode="wait">
-          <motion.div
-            key={currentStep}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.4 }}
-            className="space-y-8"
-          >
-            <div className="space-y-4">
-              <span className="text-sm font-bold tracking-wider text-primary uppercase bg-primary/10 px-3 py-1 rounded-full">
-                {question.section}
-              </span>
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground leading-tight">
-                {question.text}
-              </h2>
-            </div>
+          {!isBirthPatternStep ? (
+            // Survey Questions
+            <motion.div
+              key={currentStep}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.4 }}
+              className="space-y-8"
+            >
+              <div className="space-y-4">
+                <span className="text-sm font-bold tracking-wider text-primary uppercase bg-primary/10 px-3 py-1 rounded-full">
+                  {question?.section}
+                </span>
+                <h2 className="text-3xl md:text-4xl font-bold text-foreground leading-tight">
+                  {question?.text}
+                </h2>
+              </div>
 
-            <div className="space-y-3">
-              {question.options.map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => handleOptionSelect(option.value)}
-                  className={cn(
-                    "w-full p-6 rounded-2xl text-left border-2 transition-all duration-200 group relative overflow-hidden",
-                    currentAnswer === option.value
-                      ? "border-primary bg-primary/5 shadow-lg shadow-primary/10"
-                      : "border-transparent bg-white hover:border-primary/30 hover:shadow-md"
-                  )}
-                >
-                  <div className="flex items-center justify-between relative z-10">
-                    <span className={cn(
-                      "text-lg font-medium transition-colors",
-                      currentAnswer === option.value ? "text-primary" : "text-foreground"
-                    )}>
-                      {option.label}
-                    </span>
-                    {currentAnswer === option.value && (
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className="bg-primary text-white rounded-full p-1"
-                      >
-                        <CheckCircle2 className="w-5 h-5" />
-                      </motion.div>
+              <div className="space-y-3">
+                {question?.options.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => handleOptionSelect(option.value)}
+                    className={cn(
+                      "w-full p-6 rounded-2xl text-left border-2 transition-all duration-200 group relative overflow-hidden",
+                      currentAnswer === option.value
+                        ? "border-primary bg-primary/5 shadow-lg shadow-primary/10"
+                        : "border-transparent bg-white hover:border-primary/30 hover:shadow-md"
                     )}
+                  >
+                    <div className="flex items-center justify-between relative z-10">
+                      <span className={cn(
+                        "text-lg font-medium transition-colors",
+                        currentAnswer === option.value ? "text-primary" : "text-foreground"
+                      )}>
+                        {option.label}
+                      </span>
+                      {currentAnswer === option.value && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="bg-primary text-white rounded-full p-1"
+                        >
+                          <CheckCircle2 className="w-5 h-5" />
+                        </motion.div>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          ) : (
+            // Birth Pattern Form
+            <motion.div
+              key="birthPattern"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.4 }}
+              className="space-y-8"
+            >
+              <div className="space-y-4">
+                <span className="text-sm font-bold tracking-wider text-primary uppercase bg-primary/10 px-3 py-1 rounded-full">
+                  Birth Information
+                </span>
+                <h2 className="text-3xl md:text-4xl font-bold text-foreground leading-tight">
+                  Complete Your Birth Pattern
+                </h2>
+              </div>
+
+              <div className="space-y-5">
+                {/* Name */}
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <User className="w-4 h-4 text-primary" />
+                    Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={birthData.name}
+                    onChange={(e) => handleBirthPatternChange("name", e.target.value)}
+                    placeholder="Enter your full name"
+                    className="w-full px-4 py-3 rounded-2xl border-2 border-transparent bg-white focus:border-primary focus:outline-none transition-colors"
+                  />
+                </div>
+
+                {/* Birth Date */}
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-primary" />
+                    Birth Date *
+                  </label>
+                  <input
+                    type="date"
+                    value={birthData.birthDate}
+                    onChange={(e) => handleBirthPatternChange("birthDate", e.target.value)}
+                    className="w-full px-4 py-3 rounded-2xl border-2 border-transparent bg-white focus:border-primary focus:outline-none transition-colors"
+                  />
+                </div>
+
+                {/* Birth Time */}
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-primary" />
+                    Birth Time
+                  </label>
+                  <div className="space-y-3">
+                    <input
+                      type="time"
+                      value={birthData.birthTime}
+                      onChange={(e) => handleBirthPatternChange("birthTime", e.target.value)}
+                      disabled={birthData.birthTimeUnknown}
+                      className="w-full px-4 py-3 rounded-2xl border-2 border-transparent bg-white focus:border-primary focus:outline-none transition-colors disabled:opacity-50 disabled:bg-gray-100"
+                    />
+                    <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={birthData.birthTimeUnknown}
+                        onChange={(e) => handleBirthPatternChange("birthTimeUnknown", e.target.checked)}
+                        className="w-4 h-4 rounded border-primary accent-primary"
+                      />
+                      I don't know my birth time
+                    </label>
                   </div>
-                </button>
-              ))}
-            </div>
-          </motion.div>
+                </div>
+
+                {/* Place of Birth */}
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-primary" />
+                    Place of Birth *
+                  </label>
+                  <select
+                    value={birthData.placeOfBirth}
+                    onChange={(e) => handleBirthPatternChange("placeOfBirth", e.target.value)}
+                    className="w-full px-4 py-3 rounded-2xl border-2 border-transparent bg-white focus:border-primary focus:outline-none transition-colors"
+                  >
+                    <option value="">Select a country or region</option>
+                    {BIRTH_PLACES.map((place) => (
+                      <option key={place} value={place}>{place}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Email */}
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-primary" />
+                    Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    value={birthData.email}
+                    onChange={(e) => handleBirthPatternChange("email", e.target.value)}
+                    placeholder="your@email.com"
+                    className="w-full px-4 py-3 rounded-2xl border-2 border-transparent bg-white focus:border-primary focus:outline-none transition-colors"
+                  />
+                </div>
+
+                {/* Consent */}
+                <div className="space-y-3 pt-4 border-t border-gray-200">
+                  <label className="flex items-start gap-3 text-sm cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={birthData.consent}
+                      onChange={(e) => handleBirthPatternChange("consent", e.target.checked)}
+                      className="w-4 h-4 rounded border-primary accent-primary mt-0.5"
+                    />
+                    <span className="text-foreground">I agree to the terms and conditions and consent to process my information *</span>
+                  </label>
+                  
+                  <label className="flex items-start gap-3 text-sm cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={birthData.notificationConsent}
+                      onChange={(e) => handleBirthPatternChange("notificationConsent", e.target.checked)}
+                      className="w-4 h-4 rounded border-primary accent-primary mt-0.5"
+                    />
+                    <span className="text-muted-foreground">I would like to receive updates and insights about my BADA type</span>
+                  </label>
+                </div>
+              </div>
+            </motion.div>
+          )}
         </AnimatePresence>
 
         <div className="flex justify-between items-center mt-12">
@@ -147,11 +370,11 @@ export default function Survey() {
           <Button
             size="lg"
             onClick={handleNext}
-            disabled={!currentAnswer || submitMutation.isPending}
+            disabled={isBirthPatternStep ? !isBirthFormValid : !currentAnswer}
             className="px-10 rounded-full"
           >
-            {submitMutation.isPending ? "Submitting..." : isLastQuestion ? "Submit Results" : "Next Question"}
-            {!isLastQuestion && <ChevronRight className="w-5 h-5 ml-2" />}
+            {submitMutation.isPending ? "Submitting..." : isBirthPatternStep ? "Complete Assessment" : isLastQuestion ? "Next Step" : "Next Question"}
+            {!isBirthPatternStep && <ChevronRight className="w-5 h-5 ml-2" />}
           </Button>
         </div>
       </div>

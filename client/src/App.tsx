@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import Landing from "@/pages/Landing";
 import Survey from "@/pages/Survey";
 import Results from "@/pages/Results";
+import ComingSoon from "@/pages/ComingSoon";
 
 function Router() {
   return (
@@ -14,6 +15,7 @@ function Router() {
       <Route path="/" component={Landing} />
       <Route path="/survey" component={Survey} />
       <Route path="/results" component={Results} />
+      <Route path="/coming-soon" component={ComingSoon} />
       <Route component={NotFound} />
     </Switch>
   );
