@@ -1,0 +1,232 @@
+**Role:** Senior Frontend/Data Engineer
+**Task:** Create the **"Saju Knowledge Base"** file to act as the interpretation layer.
+
+**Goal:**
+We need a structured data file that maps raw Saju characters (e.g., "甲", "비견") to our App's English Archetypes and Descriptions.
+
+**Requirements:**
+1.  **File:** Create `lib/saju_constants.ts`.
+2.  **Structure:** Export three large constant objects:
+    -   `DAY_MASTER_MAP`: Maps 10 Heavenly Stems (甲...癸) to the "Core Identity" object.
+    -   `EARTHLY_BRANCH_MAP`: Maps 12 Branches (子...亥) to the "Vibe" object.
+    -   `TEN_GODS_MAP`: Maps Korean Ten Gods (비견...정인) to the "English Archetype" object.
+3.  **Data Source:** Use the raw text provided below. Convert it into clean TypeScript objects.
+
+**Raw Data to Convert:**
+
+--- [PART 1: Day Master] ---
+甲 (Gap - The Pine Tree / Pioneer)
+Core: Upward growth, straightforwardness, benevolent leadership.
+Strength: Strong drive to initiate, resilience, clear vision, hates being controlled.
+Weakness: Can be rigid, lacks flexibility, breaks rather than bends.
+Psychology: "I must improve and move upward. I want to be the best or the first."
+
+乙 (Eul - The Ivy / Survivor)
+Core: Flexibility, adaptability, networking, survival instinct.
+Strength: Resilient in tough environments, pragmatic, good at utilizing resources/people.
+Weakness: Can be dependent, overly sensitive to environment, indecisive.
+Psychology: "I will find a way to survive and thrive, no matter what."
+
+丙 (Byeong - The Sun / Visionary)
+Core: Passion, public display, clarity, explosive energy.
+Strength: Optimistic, fair, energetic, hides nothing, charismatic.
+Weakness: Lack of persistence, easily bored, can be overly flashy or attention-seeking.
+Psychology: "I want to shine and reveal the truth. Boredom is my enemy."
+
+丁 (Jeong - The Candle / Mentor)
+Core: Focused warmth, sacrifice, detailed focus, transformation.
+Strength: Warm-hearted, distinct likes/dislikes, highly focused concentration, nurturing.
+Weakness: Sensitive, emotional volatility, holds grudges, burns out easily.
+Psychology: "I focus my light on what (or who) truly matters to me."
+
+戊 (Mu - The Mountain / Trust)
+Core: Reliability, stillness, neutrality, embracing.
+Strength: Trustworthy, steady, heavy presence, objective.
+Weakness: Slow to act, stubborn, inexpressive, ignores details.
+Psychology: "I stand firm. I observe and wait for the right moment."
+
+己 (Gi - The Garden / Manager)
+Core: Nurturing, cultivation, practicality, categorization.
+Strength: Detail-oriented, productive, educational, adaptable to reality.
+Weakness: Over-thinking, suspicious, narrow perspective, easily stressed.
+Psychology: "I cultivate and organize my reality to be productive."
+
+庚 (Gyeong - The Iron / Reformer)
+Core: Structure, revolution, decisiveness, loyalty.
+Strength: Strong executive power, clear distinction between right and wrong, solid.
+Weakness: Cold, argumentative, lacks empathy, authoritarian.
+Psychology: "I need to refine raw potential into something valuable and structured."
+
+辛 (Sin - The Jewel / Specialist)
+Core: Delicate, precise, aesthetic, sharp.
+Strength: Clear values, sophisticated, high standards, precise execution.
+Weakness: Hypersensitive, sharp-tongued, self-centered, fragile ego.
+Psychology: "I want to be perfect and recognized for my unique value."
+
+壬 (Im - The Ocean / Strategist)
+Core: Wisdom, flow, adaptability, scale.
+Strength: Creative, accommodating, intelligent, thinks big.
+Weakness: Over-thinking, unpredictable, manipulative, hides true intent.
+Psychology: "I flow around obstacles and eventually cover everything."
+
+癸 (Gye - The Mist / Planner)
+Core: Intimacy, pervasiveness, intelligence, intuition.
+Strength: Highly sensitive, empathetic, strategic, quiet influence.
+Weakness: Moody, anxious, easily influenced by others, lacks physical stamina.
+Psychology: "I penetrate quietly and understand the essence."
+
+--- [PART 1.5: Earthly Branches] ---
+子 (Ja - Rat / Water)
+Traits: Secretive, highly intelligent, nocturnal, sexual energy, compressed potential.
+Vibe: "A seed waiting in the dark."
+
+丑 (Chuk - Ox / Wet Earth)
+Traits: Diligent, enduring hardship, connection between past and future, slightly pessimistic.
+Vibe: "Working silently in the freezing mud."
+
+寅 (In - Tiger / Wood)
+Traits: Explosive start, pure motivation, dawn, speed, planning.
+Vibe: "A tiger springing out of the woods."
+
+卯 (Myo - Rabbit / Wood)
+Traits: Decorating, detail-oriented, separation/division, youthful energy.
+Vibe: "Grass sprouting everywhere efficiently."
+
+辰 (Jin - Dragon / Wet Earth)
+Traits: Idealistic, complex, ambitious, storing water, dramatic transformation.
+Vibe: "A dragon flying in the clouds, dreaming big."
+
+巳 (Sa - Snake / Fire)
+Traits: Strategic, shifting, duality, urban energy, professional movement.
+Vibe: "Fire spreading efficiently on the ground."
+
+午 (O - Horse / Fire)
+Traits: Public, passionate, impulsive, honest, highest peak of energy.
+Vibe: "The sun at high noon."
+
+未 (Mi - Sheep / Dry Earth)
+Traits: Endurance, result-oriented, dryness, stubbornness, closing the cycle.
+Vibe: "Hot desert sand."
+
+申 (Sin - Monkey / Metal)
+Traits: Versatile, skillful, copying execution, separating emotions from work.
+Vibe: "A heavy iron tool or machine."
+
+酉 (Yu - Rooster / Metal)
+Traits: Perfectionist, sharp, jewelry, clean-cut, critical.
+Vibe: "A precisely cut diamond."
+
+戌 (Sul - Dog / Dry Earth)
+Traits: Loyalty, guarding, storage, mental/spiritual depth, fighting spirit.
+Vibe: "A guardian protecting the treasure at sunset."
+
+亥 (Hae - Pig / Water)
+Traits: Wisdom, convergence, mental world, preparing for new birth, relaxation.
+Vibe: "Deep ocean waters."
+
+--- [PART 2: Ten Gods JSON] ---
+(Use this mapping logic for TEN_GODS_MAP)
+[
+  {
+  "korean": "비견",
+  "englishArchetype": "Self-Drive",
+  "label": "Identity Reinforcement",
+  "meaning": "Independence, self-reliance, competition with peers.",
+  "psychology": "Wants to do things their own way. Highly confident but stubborn.",
+  "risk": "Isolation, uncooperative behavior."
+  },
+  {
+  "korean": "겁재",
+  "englishArchetype": "Rivalry",
+  "label": "Driven by Competition",
+  "meaning": "Strong desire to win, ambition, rivalry, idea theft.",
+  "psychology": "Feels pressure to outperform others. Adrenaline-driven.",
+  "risk": "Impulsiveness, excessive risk-taking."
+  },
+  {
+  "korean": "식신",
+  "englishArchetype": "Creativity",
+  "label": "Pure Expression",
+  "meaning": "Natural creativity, production, flow state, enjoyment of process.",
+  "psychology": "Enjoys creating freely. Finds satisfaction in output itself.",
+  "risk": "Procrastination, lack of realism, indulgence."
+  },
+  {
+  "korean": "상관",
+  "englishArchetype": "Freedom",
+  "label": "Critical Innovation",
+  "meaning": "Breaking rules, critical expression, rebellious thinking.",
+  "psychology": "Questions authority. Wants to change outdated systems.",
+  "risk": "Interpersonal conflict, arrogance, overexposure."
+  },
+  {
+  "korean": "편재",
+  "englishArchetype": "Expansion",
+  "label": "Control & Expansion",
+  "meaning": "Goal-oriented, risk-taker, fast action, loves variety.",
+  "psychology": "Sees opportunities everywhere. Opportunistic explorer.",
+  "risk": "Scattered focus, financial instability."
+  },
+  {
+  "korean": "정재",
+  "englishArchetype": "Stability",
+  "label": "Stability & Ownership",
+  "meaning": "Practical, structured, consistent, financially grounded.",
+  "psychology": "Seeks security and steady progress. Prefers predictable systems.",
+  "risk": "Overcautious, stingy, rigid routine."
+  },
+  {
+  "korean": "편관",
+  "englishArchetype": "Pressure",
+  "label": "Pressure & Responsibility",
+  "meaning": "Crisis management, charisma, survival instinct.",
+  "psychology": "Feels constant pressure to perform. Growth through hardship.",
+  "risk": "Burnout, excessive self-criticism."
+  },
+  {
+  "korean": "정관",
+  "englishArchetype": "Authority",
+  "label": "Rules & Honor",
+  "meaning": "Law, order, integrity, discipline, social reputation.",
+  "psychology": "Asks 'What is the right thing to do?'. Upholds standards.",
+  "risk": "Overly conservative, rigid, fear of failure."
+  },
+  {
+  "korean": "편인",
+  "englishArchetype": "Intuition",
+  "label": "Intuition & Doubt",
+  "meaning": "Insightful, introspective, philosophical, unconventional.",
+  "psychology": "Seeks hidden meaning. Deep but detached thinker.",
+  "risk": "Anxiety, isolation, escapism."
+  },
+  {
+  "korean": "정인",
+  "englishArchetype": "Learning",
+  "label": "Acceptance & Validation",
+  "meaning": "Academic, nurturing, logical, supportive energy.",
+  "psychology": "Feels secure when informed and prepared.",
+  "risk": "Complacency, overdependence on theory."
+  }
+]
+
+**Expected Code Output Format (Example):**
+
+```typescript
+export const DAY_MASTER_MAP: Record<string, any> = {
+  "甲": {
+    name: "Gap (Pine Tree)",
+    archetype: "Pioneer",
+    core: "Upward growth...",
+    psychology: "I must improve..."
+  },
+  // ... others
+};
+
+export const TEN_GODS_MAP: Record<string, any> = {
+  "비견": {
+    english: "Self-Drive",
+    label: "Identity Reinforcement",
+    risk: "Isolation, uncooperative behavior."
+  },
+  // ... others
+};
