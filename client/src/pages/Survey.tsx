@@ -272,6 +272,8 @@ export default function Survey() {
                     type="date"
                     value={birthData.birthDate}
                     onChange={(e) => handleBirthPatternChange("birthDate", e.target.value)}
+                    min="1900-01-01"
+                    max="2025-12-28"
                     className="w-full px-4 py-3 rounded-2xl border-2 border-transparent bg-white focus:border-primary focus:outline-none transition-colors"
                   />
                 </div>
