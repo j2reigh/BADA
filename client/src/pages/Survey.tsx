@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/Button";
 import { ProgressBar } from "@/components/ProgressBar";
@@ -20,74 +20,110 @@ interface BirthPatternData {
   notificationConsent: boolean;
 }
 
-const BIRTH_PLACES = [
-  // Countries
-  "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Argentina", "Armenia", "Australia",
-  "Austria", "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium",
-  "Belize", "Benin", "Bhutan", "Bolivia", "Bosnia", "Botswana", "Brazil", "Brunei", "Bulgaria",
-  "Burkina Faso", "Burundi", "Cambodia", "Cameroon", "Canada", "Cape Verde", "Central African Republic",
-  "Chad", "Chile", "China", "Colombia", "Comoros", "Congo", "Costa Rica", "Croatia", "Cuba", "Cyprus",
-  "Czech Republic", "Denmark", "Djibouti", "Dominica", "Dominican Republic", "East Timor", "Ecuador",
-  "Egypt", "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia", "Ethiopia", "Fiji", "Finland",
-  "France", "Gabon", "Gambia", "Georgia", "Germany", "Ghana", "Greece", "Grenada", "Guatemala",
-  "Guinea", "Guinea-Bissau", "Guyana", "Haiti", "Honduras", "Hungary", "Iceland", "India", "Indonesia",
-  "Iran", "Iraq", "Ireland", "Israel", "Italy", "Jamaica", "Japan", "Jordan", "Kazakhstan", "Kenya",
-  "Kiribati", "Korea North", "Korea South", "Kuwait", "Kyrgyzstan", "Laos", "Latvia", "Lebanon",
-  "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg", "Madagascar", "Malawi",
-  "Malaysia", "Maldives", "Mali", "Malta", "Marshall Islands", "Mauritania", "Mauritius", "Mexico",
-  "Micronesia", "Moldova", "Monaco", "Mongolia", "Montenegro", "Morocco", "Mozambique", "Myanmar",
-  "Namibia", "Nauru", "Nepal", "Netherlands", "New Zealand", "Nicaragua", "Niger", "Nigeria",
-  "North Macedonia", "Norway", "Oman", "Pakistan", "Palau", "Palestine", "Panama", "Papua New Guinea",
-  "Paraguay", "Peru", "Philippines", "Poland", "Portugal", "Qatar", "Romania", "Russia", "Rwanda",
-  "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent", "Samoa", "San Marino", "Sao Tome",
-  "Saudi Arabia", "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia",
-  "Solomon Islands", "Somalia", "South Africa", "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname",
-  "Sweden", "Switzerland", "Syria", "Taiwan", "Tajikistan", "Tanzania", "Thailand", "Togo", "Tonga",
-  "Trinidad and Tobago", "Tunisia", "Turkey", "Turkmenistan", "Tuvalu", "Uganda", "Ukraine",
-  "United Arab Emirates", "United Kingdom", "United States", "Uruguay", "Uzbekistan", "Vanuatu",
-  "Vatican City", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe",
-  // Major Cities
-  "New York, United States", "Los Angeles, United States", "Chicago, United States", "Houston, United States",
-  "Phoenix, United States", "Philadelphia, United States", "San Antonio, United States", "San Diego, United States",
-  "Dallas, United States", "San Jose, United States", "London, United Kingdom", "Manchester, United Kingdom",
-  "Liverpool, United Kingdom", "Birmingham, United Kingdom", "Leeds, United Kingdom", "Glasgow, United Kingdom",
-  "Paris, France", "Lyon, France", "Marseille, France", "Toulouse, France", "Nice, France",
-  "Berlin, Germany", "Munich, Germany", "Cologne, Germany", "Frankfurt, Germany", "Hamburg, Germany",
-  "Madrid, Spain", "Barcelona, Spain", "Valencia, Spain", "Seville, Spain", "Zaragoza, Spain",
-  "Rome, Italy", "Milan, Italy", "Naples, Italy", "Turin, Italy", "Palermo, Italy",
-  "Amsterdam, Netherlands", "Rotterdam, Netherlands", "The Hague, Netherlands", "Utrecht, Netherlands",
-  "Brussels, Belgium", "Antwerp, Belgium", "Ghent, Belgium", "Charleroi, Belgium",
-  "Vienna, Austria", "Graz, Austria", "Linz, Austria", "Salzburg, Austria",
-  "Prague, Czech Republic", "Brno, Czech Republic", "Ostrava, Czech Republic",
-  "Warsaw, Poland", "Kraków, Poland", "Łódź, Poland", "Wrocław, Poland", "Poznań, Poland",
-  "Budapest, Hungary", "Debrecen, Hungary", "Szeged, Hungary", "Pécs, Hungary",
-  "Athens, Greece", "Thessaloniki, Greece", "Patras, Greece", "Heraklion, Greece",
-  "Lisbon, Portugal", "Porto, Portugal", "Covilhã, Portugal", "Faro, Portugal",
-  "Dublin, Ireland", "Cork, Ireland", "Limerick, Ireland", "Galway, Ireland",
-  "Bucharest, Romania", "Cluj-Napoca, Romania", "Timișoara, Romania", "Constanța, Romania",
-  "Sofia, Bulgaria", "Plovdiv, Bulgaria", "Varna, Bulgaria", "Burgas, Bulgaria",
-  "Moscow, Russia", "Saint Petersburg, Russia", "Novosibirsk, Russia", "Yekaterinburg, Russia",
-  "Tokyo, Japan", "Osaka, Japan", "Kyoto, Japan", "Yokohama, Japan", "Kobe, Japan",
-  "Bangkok, Thailand", "Chiang Mai, Thailand", "Phuket, Thailand", "Pattaya, Thailand",
-  "Bangkok, Thailand", "Hong Kong, China", "Shanghai, China", "Beijing, China", "Shenzhen, China",
-  "Mumbai, India", "Delhi, India", "Bangalore, India", "Hyderabad, India", "Chennai, India",
-  "Dubai, United Arab Emirates", "Abu Dhabi, United Arab Emirates", "Sharjah, United Arab Emirates",
-  "Sydney, Australia", "Melbourne, Australia", "Brisbane, Australia", "Perth, Australia",
-  "Toronto, Canada", "Vancouver, Canada", "Montreal, Canada", "Calgary, Canada", "Edmonton, Canada",
-  "Mexico City, Mexico", "Guadalajara, Mexico", "Monterrey, Mexico", "Cancun, Mexico",
-  "São Paulo, Brazil", "Rio de Janeiro, Brazil", "Salvador, Brazil", "Brasília, Brazil",
-  "Buenos Aires, Argentina", "Córdoba, Argentina", "Rosario, Argentina", "Mendoza, Argentina",
-  "Lima, Peru", "Arequipa, Peru", "Cusco, Peru", "Trujillo, Peru",
-  "Santiago, Chile", "Valparaíso, Chile", "Concepción, Chile", "Temuco, Chile",
-  "Bogotá, Colombia", "Medellín, Colombia", "Cali, Colombia", "Barranquilla, Colombia",
-  "Caracas, Venezuela", "Valencia, Venezuela", "Maracaibo, Venezuela",
-  "Johannesburg, South Africa", "Cape Town, South Africa", "Durban, South Africa", "Pretoria, South Africa",
-  "Cairo, Egypt", "Giza, Egypt", "Alexandria, Egypt", "Aswan, Egypt",
-  "Istanbul, Turkey", "Ankara, Turkey", "Izmir, Turkey", "Antalya, Turkey",
-  "Tel Aviv, Israel", "Jerusalem, Israel", "Haifa, Israel", "Beersheba, Israel",
-  "Tehran, Iran", "Mashhad, Iran", "Isfahan, Iran", "Tabriz, Iran",
-  "Bangkok, Thailand", "Singapore, Singapore", "Kuala Lumpur, Malaysia", "Manila, Philippines",
-  "Jakarta, Indonesia", "Surabaya, Indonesia", "Bandung, Indonesia", "Medan, Indonesia",
+// Curated list of major world cities for birth location search
+const WORLD_CITIES = [
+  { name: "New York", country: "United States" },
+  { name: "Los Angeles", country: "United States" },
+  { name: "Chicago", country: "United States" },
+  { name: "Houston", country: "United States" },
+  { name: "Phoenix", country: "United States" },
+  { name: "Philadelphia", country: "United States" },
+  { name: "San Antonio", country: "United States" },
+  { name: "San Diego", country: "United States" },
+  { name: "Dallas", country: "United States" },
+  { name: "San Jose", country: "United States" },
+  { name: "London", country: "United Kingdom" },
+  { name: "Manchester", country: "United Kingdom" },
+  { name: "Birmingham", country: "United Kingdom" },
+  { name: "Leeds", country: "United Kingdom" },
+  { name: "Glasgow", country: "United Kingdom" },
+  { name: "Paris", country: "France" },
+  { name: "Lyon", country: "France" },
+  { name: "Marseille", country: "France" },
+  { name: "Toulouse", country: "France" },
+  { name: "Nice", country: "France" },
+  { name: "Berlin", country: "Germany" },
+  { name: "Munich", country: "Germany" },
+  { name: "Cologne", country: "Germany" },
+  { name: "Frankfurt", country: "Germany" },
+  { name: "Hamburg", country: "Germany" },
+  { name: "Madrid", country: "Spain" },
+  { name: "Barcelona", country: "Spain" },
+  { name: "Valencia", country: "Spain" },
+  { name: "Seville", country: "Spain" },
+  { name: "Rome", country: "Italy" },
+  { name: "Milan", country: "Italy" },
+  { name: "Naples", country: "Italy" },
+  { name: "Turin", country: "Italy" },
+  { name: "Amsterdam", country: "Netherlands" },
+  { name: "Rotterdam", country: "Netherlands" },
+  { name: "The Hague", country: "Netherlands" },
+  { name: "Brussels", country: "Belgium" },
+  { name: "Antwerp", country: "Belgium" },
+  { name: "Vienna", country: "Austria" },
+  { name: "Graz", country: "Austria" },
+  { name: "Prague", country: "Czech Republic" },
+  { name: "Brno", country: "Czech Republic" },
+  { name: "Warsaw", country: "Poland" },
+  { name: "Kraków", country: "Poland" },
+  { name: "Budapest", country: "Hungary" },
+  { name: "Athens", country: "Greece" },
+  { name: "Lisbon", country: "Portugal" },
+  { name: "Porto", country: "Portugal" },
+  { name: "Dublin", country: "Ireland" },
+  { name: "Bucharest", country: "Romania" },
+  { name: "Sofia", country: "Bulgaria" },
+  { name: "Moscow", country: "Russia" },
+  { name: "Saint Petersburg", country: "Russia" },
+  { name: "Tokyo", country: "Japan" },
+  { name: "Osaka", country: "Japan" },
+  { name: "Kyoto", country: "Japan" },
+  { name: "Yokohama", country: "Japan" },
+  { name: "Bangkok", country: "Thailand" },
+  { name: "Hong Kong", country: "China" },
+  { name: "Shanghai", country: "China" },
+  { name: "Beijing", country: "China" },
+  { name: "Shenzhen", country: "China" },
+  { name: "Mumbai", country: "India" },
+  { name: "Delhi", country: "India" },
+  { name: "Bangalore", country: "India" },
+  { name: "Hyderabad", country: "India" },
+  { name: "Dubai", country: "United Arab Emirates" },
+  { name: "Abu Dhabi", country: "United Arab Emirates" },
+  { name: "Sydney", country: "Australia" },
+  { name: "Melbourne", country: "Australia" },
+  { name: "Brisbane", country: "Australia" },
+  { name: "Perth", country: "Australia" },
+  { name: "Toronto", country: "Canada" },
+  { name: "Vancouver", country: "Canada" },
+  { name: "Montreal", country: "Canada" },
+  { name: "Calgary", country: "Canada" },
+  { name: "Mexico City", country: "Mexico" },
+  { name: "Guadalajara", country: "Mexico" },
+  { name: "Monterrey", country: "Mexico" },
+  { name: "São Paulo", country: "Brazil" },
+  { name: "Rio de Janeiro", country: "Brazil" },
+  { name: "Salvador", country: "Brazil" },
+  { name: "Brasília", country: "Brazil" },
+  { name: "Buenos Aires", country: "Argentina" },
+  { name: "Córdoba", country: "Argentina" },
+  { name: "Lima", country: "Peru" },
+  { name: "Santiago", country: "Chile" },
+  { name: "Bogotá", country: "Colombia" },
+  { name: "Johannesburg", country: "South Africa" },
+  { name: "Cape Town", country: "South Africa" },
+  { name: "Cairo", country: "Egypt" },
+  { name: "Istanbul", country: "Turkey" },
+  { name: "Ankara", country: "Turkey" },
+  { name: "Tel Aviv", country: "Israel" },
+  { name: "Jerusalem", country: "Israel" },
+  { name: "Tehran", country: "Iran" },
+  { name: "Singapore", country: "Singapore" },
+  { name: "Kuala Lumpur", country: "Malaysia" },
+  { name: "Manila", country: "Philippines" },
+  { name: "Jakarta", country: "Indonesia" },
+  { name: "Seoul", country: "South Korea" },
+  { name: "Bangkok", country: "Thailand" },
 ];
 
 export default function Survey() {
@@ -108,11 +144,28 @@ export default function Survey() {
   const { toast } = useToast();
   const submitMutation = useSubmitSurvey();
   
-  const filteredPlaces = birthData.placeOfBirth.trim().length > 0
-    ? BIRTH_PLACES.filter(place =>
-        place.toLowerCase().includes(birthData.placeOfBirth.toLowerCase())
-      ).slice(0, 8)
-    : [];
+  // Filter cities by search term
+  const filteredCities = useMemo(() => {
+    if (birthData.placeOfBirth.trim().length < 1) return [];
+    
+    const searchTerm = birthData.placeOfBirth.toLowerCase();
+    const results: { city: string; country: string; display: string }[] = [];
+    
+    for (const cityData of WORLD_CITIES) {
+      const display = `${cityData.name}, ${cityData.country}`;
+      if (display.toLowerCase().includes(searchTerm)) {
+        results.push({
+          city: cityData.name,
+          country: cityData.country,
+          display
+        });
+      }
+      
+      if (results.length >= 10) break;
+    }
+    
+    return results;
+  }, [birthData.placeOfBirth]);
   
   const isBirthPatternStep = currentStep === QUESTIONS.length;
   const totalSteps = QUESTIONS.length + 1;
@@ -350,7 +403,7 @@ export default function Survey() {
                 <div className="space-y-2 relative">
                   <label className="text-sm font-semibold text-foreground flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-primary" />
-                    Place of Birth (City, Country) *
+                    Place of Birth (City) *
                   </label>
                   <input
                     type="text"
@@ -361,29 +414,30 @@ export default function Survey() {
                     }}
                     onFocus={() => setPlaceSearchOpen(true)}
                     onBlur={() => setTimeout(() => setPlaceSearchOpen(false), 200)}
-                    placeholder="Search city or country (e.g., New York, USA or Tokyo, Japan)"
+                    placeholder="Search for your birth city (e.g., New York, London, Tokyo)"
                     className="w-full px-4 py-3 rounded-2xl border-2 border-transparent bg-white focus:border-primary focus:outline-none transition-colors"
                   />
                   
-                  {/* Search Suggestions */}
-                  {placeSearchOpen && filteredPlaces.length > 0 && (
+                  {/* City Search Results */}
+                  {placeSearchOpen && filteredCities.length > 0 && (
                     <motion.div
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
-                      className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl border-2 border-primary/20 shadow-lg z-50"
+                      className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl border-2 border-primary/20 shadow-lg z-50 max-h-64 overflow-y-auto"
                     >
-                      {filteredPlaces.map((place) => (
+                      {filteredCities.map((result, idx) => (
                         <button
-                          key={place}
+                          key={`${result.city}-${result.country}-${idx}`}
                           type="button"
                           onClick={() => {
-                            handleBirthPatternChange("placeOfBirth", place);
+                            handleBirthPatternChange("placeOfBirth", result.display);
                             setPlaceSearchOpen(false);
                           }}
                           className="w-full text-left px-4 py-3 hover:bg-primary/5 transition-colors border-b border-gray-100 last:border-b-0 text-foreground hover:text-primary"
                         >
-                          {place}
+                          <div className="font-medium">{result.city}</div>
+                          <div className="text-xs text-muted-foreground">{result.country}</div>
                         </button>
                       ))}
                     </motion.div>
