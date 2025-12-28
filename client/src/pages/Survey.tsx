@@ -21,6 +21,7 @@ interface BirthPatternData {
 }
 
 const BIRTH_PLACES = [
+  // Countries
   "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Argentina", "Armenia", "Australia",
   "Austria", "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium",
   "Belize", "Benin", "Bhutan", "Bolivia", "Bosnia", "Botswana", "Brazil", "Brunei", "Bulgaria",
@@ -44,7 +45,49 @@ const BIRTH_PLACES = [
   "Sweden", "Switzerland", "Syria", "Taiwan", "Tajikistan", "Tanzania", "Thailand", "Togo", "Tonga",
   "Trinidad and Tobago", "Tunisia", "Turkey", "Turkmenistan", "Tuvalu", "Uganda", "Ukraine",
   "United Arab Emirates", "United Kingdom", "United States", "Uruguay", "Uzbekistan", "Vanuatu",
-  "Vatican City", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe"
+  "Vatican City", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe",
+  // Major Cities
+  "New York, United States", "Los Angeles, United States", "Chicago, United States", "Houston, United States",
+  "Phoenix, United States", "Philadelphia, United States", "San Antonio, United States", "San Diego, United States",
+  "Dallas, United States", "San Jose, United States", "London, United Kingdom", "Manchester, United Kingdom",
+  "Liverpool, United Kingdom", "Birmingham, United Kingdom", "Leeds, United Kingdom", "Glasgow, United Kingdom",
+  "Paris, France", "Lyon, France", "Marseille, France", "Toulouse, France", "Nice, France",
+  "Berlin, Germany", "Munich, Germany", "Cologne, Germany", "Frankfurt, Germany", "Hamburg, Germany",
+  "Madrid, Spain", "Barcelona, Spain", "Valencia, Spain", "Seville, Spain", "Zaragoza, Spain",
+  "Rome, Italy", "Milan, Italy", "Naples, Italy", "Turin, Italy", "Palermo, Italy",
+  "Amsterdam, Netherlands", "Rotterdam, Netherlands", "The Hague, Netherlands", "Utrecht, Netherlands",
+  "Brussels, Belgium", "Antwerp, Belgium", "Ghent, Belgium", "Charleroi, Belgium",
+  "Vienna, Austria", "Graz, Austria", "Linz, Austria", "Salzburg, Austria",
+  "Prague, Czech Republic", "Brno, Czech Republic", "Ostrava, Czech Republic",
+  "Warsaw, Poland", "Kraków, Poland", "Łódź, Poland", "Wrocław, Poland", "Poznań, Poland",
+  "Budapest, Hungary", "Debrecen, Hungary", "Szeged, Hungary", "Pécs, Hungary",
+  "Athens, Greece", "Thessaloniki, Greece", "Patras, Greece", "Heraklion, Greece",
+  "Lisbon, Portugal", "Porto, Portugal", "Covilhã, Portugal", "Faro, Portugal",
+  "Dublin, Ireland", "Cork, Ireland", "Limerick, Ireland", "Galway, Ireland",
+  "Bucharest, Romania", "Cluj-Napoca, Romania", "Timișoara, Romania", "Constanța, Romania",
+  "Sofia, Bulgaria", "Plovdiv, Bulgaria", "Varna, Bulgaria", "Burgas, Bulgaria",
+  "Moscow, Russia", "Saint Petersburg, Russia", "Novosibirsk, Russia", "Yekaterinburg, Russia",
+  "Tokyo, Japan", "Osaka, Japan", "Kyoto, Japan", "Yokohama, Japan", "Kobe, Japan",
+  "Bangkok, Thailand", "Chiang Mai, Thailand", "Phuket, Thailand", "Pattaya, Thailand",
+  "Bangkok, Thailand", "Hong Kong, China", "Shanghai, China", "Beijing, China", "Shenzhen, China",
+  "Mumbai, India", "Delhi, India", "Bangalore, India", "Hyderabad, India", "Chennai, India",
+  "Dubai, United Arab Emirates", "Abu Dhabi, United Arab Emirates", "Sharjah, United Arab Emirates",
+  "Sydney, Australia", "Melbourne, Australia", "Brisbane, Australia", "Perth, Australia",
+  "Toronto, Canada", "Vancouver, Canada", "Montreal, Canada", "Calgary, Canada", "Edmonton, Canada",
+  "Mexico City, Mexico", "Guadalajara, Mexico", "Monterrey, Mexico", "Cancun, Mexico",
+  "São Paulo, Brazil", "Rio de Janeiro, Brazil", "Salvador, Brazil", "Brasília, Brazil",
+  "Buenos Aires, Argentina", "Córdoba, Argentina", "Rosario, Argentina", "Mendoza, Argentina",
+  "Lima, Peru", "Arequipa, Peru", "Cusco, Peru", "Trujillo, Peru",
+  "Santiago, Chile", "Valparaíso, Chile", "Concepción, Chile", "Temuco, Chile",
+  "Bogotá, Colombia", "Medellín, Colombia", "Cali, Colombia", "Barranquilla, Colombia",
+  "Caracas, Venezuela", "Valencia, Venezuela", "Maracaibo, Venezuela",
+  "Johannesburg, South Africa", "Cape Town, South Africa", "Durban, South Africa", "Pretoria, South Africa",
+  "Cairo, Egypt", "Giza, Egypt", "Alexandria, Egypt", "Aswan, Egypt",
+  "Istanbul, Turkey", "Ankara, Turkey", "Izmir, Turkey", "Antalya, Turkey",
+  "Tel Aviv, Israel", "Jerusalem, Israel", "Haifa, Israel", "Beersheba, Israel",
+  "Tehran, Iran", "Mashhad, Iran", "Isfahan, Iran", "Tabriz, Iran",
+  "Bangkok, Thailand", "Singapore, Singapore", "Kuala Lumpur, Malaysia", "Manila, Philippines",
+  "Jakarta, Indonesia", "Surabaya, Indonesia", "Bandung, Indonesia", "Medan, Indonesia",
 ];
 
 export default function Survey() {
@@ -60,9 +103,16 @@ export default function Survey() {
     consent: false,
     notificationConsent: true,
   });
+  const [placeSearchOpen, setPlaceSearchOpen] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const submitMutation = useSubmitSurvey();
+  
+  const filteredPlaces = birthData.placeOfBirth.trim().length > 0
+    ? BIRTH_PLACES.filter(place =>
+        place.toLowerCase().includes(birthData.placeOfBirth.toLowerCase())
+      ).slice(0, 8)
+    : [];
   
   const isBirthPatternStep = currentStep === QUESTIONS.length;
   const totalSteps = QUESTIONS.length + 1;
@@ -245,13 +295,13 @@ export default function Survey() {
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-foreground flex items-center gap-2">
                     <User className="w-4 h-4 text-primary" />
-                    Full Name *
+                    What do you want to be called? *
                   </label>
                   <input
                     type="text"
                     value={birthData.name}
                     onChange={(e) => handleBirthPatternChange("name", e.target.value)}
-                    placeholder="Enter your full name"
+                    placeholder="Enter your name or preferred name"
                     className="w-full px-4 py-3 rounded-2xl border-2 border-transparent bg-white focus:border-primary focus:outline-none transition-colors"
                   />
                 </div>
@@ -297,21 +347,47 @@ export default function Survey() {
                 </div>
 
                 {/* Place of Birth */}
-                <div className="space-y-2">
+                <div className="space-y-2 relative">
                   <label className="text-sm font-semibold text-foreground flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-primary" />
-                    Place of Birth *
+                    Place of Birth (City, Country) *
                   </label>
-                  <select
+                  <input
+                    type="text"
                     value={birthData.placeOfBirth}
-                    onChange={(e) => handleBirthPatternChange("placeOfBirth", e.target.value)}
+                    onChange={(e) => {
+                      handleBirthPatternChange("placeOfBirth", e.target.value);
+                      setPlaceSearchOpen(true);
+                    }}
+                    onFocus={() => setPlaceSearchOpen(true)}
+                    onBlur={() => setTimeout(() => setPlaceSearchOpen(false), 200)}
+                    placeholder="Search city or country (e.g., New York, USA or Tokyo, Japan)"
                     className="w-full px-4 py-3 rounded-2xl border-2 border-transparent bg-white focus:border-primary focus:outline-none transition-colors"
-                  >
-                    <option value="">Select a country or region</option>
-                    {BIRTH_PLACES.map((place) => (
-                      <option key={place} value={place}>{place}</option>
-                    ))}
-                  </select>
+                  />
+                  
+                  {/* Search Suggestions */}
+                  {placeSearchOpen && filteredPlaces.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl border-2 border-primary/20 shadow-lg z-50"
+                    >
+                      {filteredPlaces.map((place) => (
+                        <button
+                          key={place}
+                          type="button"
+                          onClick={() => {
+                            handleBirthPatternChange("placeOfBirth", place);
+                            setPlaceSearchOpen(false);
+                          }}
+                          className="w-full text-left px-4 py-3 hover:bg-primary/5 transition-colors border-b border-gray-100 last:border-b-0 text-foreground hover:text-primary"
+                        >
+                          {place}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
                 </div>
 
                 {/* Email */}
