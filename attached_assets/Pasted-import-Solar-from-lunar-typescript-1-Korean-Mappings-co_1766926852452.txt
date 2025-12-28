@@ -1,6 +1,6 @@
 import { Solar } from "lunar-typescript";
 
-// 1. Korean Mappings (십성: 한자 -> 한글)
+// 1. Korean Mappings
 const TEN_GODS_MAP: Record<string, string> = {
   "比肩": "비견", "劫財": "겁재",
   "食神": "식신", "傷官": "상관",
@@ -9,20 +9,8 @@ const TEN_GODS_MAP: Record<string, string> = {
   "偏印": "편인", "正印": "정인"
 };
 
-// 2. Element Mappings Helper (오행: 글자 -> 영어)
-const getElement = (char: string): string => {
-  const WOOD = ["甲", "乙", "寅", "卯"];
-  const FIRE = ["丙", "丁", "巳", "午"];
-  const EARTH = ["戊", "己", "辰", "戌", "丑", "未"];
-  const METAL = ["庚", "辛", "申", "酉"];
-  const WATER = ["壬", "癸", "亥", "子"];
-
-  if (WOOD.includes(char)) return "wood";
-  if (FIRE.includes(char)) return "fire";
-  if (EARTH.includes(char)) return "earth";
-  if (METAL.includes(char)) return "metal";
-  if (WATER.includes(char)) return "water";
-  return "unknown";
+const ELEMENTS_MAP: Record<string, string> = {
+  "木": "wood", "火": "fire", "土": "earth", "金": "metal", "水": "water"
 };
 
 interface PillarData {
@@ -52,14 +40,13 @@ export const calculateSaju = (dateStr: string, timeStr: string): SajuResult => {
     const [hour, minute] = timeStr.split(":").map(Number);
 
     // 1. Create Solar & Lunar objects
-    // Assume KST input
     const solar = Solar.fromYmdHms(year, month, day, hour, minute, 0);
     const lunar = solar.getLunar();
-
+    
     // 2. Get 'EightChar' (BaZi logic handler)
     // This automatically handles Jeolgi (Solar Terms) for correct Year/Month pillars
     const eightChar = lunar.getEightChar();
-
+    
     // Set Sect to 2 (Standard Modern Saju - starts year at Ipchun, starts day at Midnight)
     eightChar.setSect(2); 
 
@@ -70,6 +57,12 @@ export const calculateSaju = (dateStr: string, timeStr: string): SajuResult => {
       ganGodChinese: string, 
       zhiGodChinese: string
     ): PillarData => {
+      // Use library's built-in WuXing (Five Element) check
+      // Note: We need to create a temporary Lunar object or look up the char, 
+      // but simpler is to use a direct element map if not available.
+      // However, lunar-typescript chars usually have .getWuXing() if wrapped.
+      // For simplicity here, we stick to the output chars which are strings.
+      
       return {
         gan,
         ganElement: getElement(gan),
@@ -80,8 +73,8 @@ export const calculateSaju = (dateStr: string, timeStr: string): SajuResult => {
       };
     };
 
-    // 3. Build Result (Initialize counts to 0)
-    const result: SajuResult = {
+    // 3. Build Result
+    const result = {
       fourPillars: {
         year: getPillarData(
           eightChar.getYearGan(), 
@@ -98,7 +91,7 @@ export const calculateSaju = (dateStr: string, timeStr: string): SajuResult => {
         day: getPillarData(
           eightChar.getDayGan(), 
           eightChar.getDayZhi(), 
-          "비견", // Day Master is always Self
+          "비견", // Day Gan is Self
           eightChar.getDayShiShenZhi()
         ),
         hour: getPillarData(
@@ -111,7 +104,7 @@ export const calculateSaju = (dateStr: string, timeStr: string): SajuResult => {
       elementCounts: { wood: 0, fire: 0, earth: 0, metal: 0, water: 0 }
     };
 
-    // 4. Calculate Element Counts (Logic that updates the zeros!)
+    // 4. Calculate Element Counts
     const allElements = [
       result.fourPillars.year.ganElement, result.fourPillars.year.zhiElement,
       result.fourPillars.month.ganElement, result.fourPillars.month.zhiElement,
@@ -120,7 +113,6 @@ export const calculateSaju = (dateStr: string, timeStr: string): SajuResult => {
     ];
 
     allElements.forEach(el => {
-      // If the element exists in our keys (wood, fire, etc.), increment the count
       if (el && result.elementCounts[el as keyof typeof result.elementCounts] !== undefined) {
         result.elementCounts[el as keyof typeof result.elementCounts]++;
       }
@@ -132,4 +124,20 @@ export const calculateSaju = (dateStr: string, timeStr: string): SajuResult => {
     console.error("Saju Calculation Error:", error);
     throw new Error("Calculation Failed");
   }
+};
+
+// Helper: Simple Element Lookup
+const getElement = (char: string): string => {
+  const WOOD = ["甲", "乙", "寅", "卯"];
+  const FIRE = ["丙", "丁", "巳", "午"];
+  const EARTH = ["戊", "己", "辰", "戌", "丑", "未"];
+  const METAL = ["庚", "辛", "申", "酉"];
+  const WATER = ["壬", "癸", "亥", "子"];
+
+  if (WOOD.includes(char)) return "wood";
+  if (FIRE.includes(char)) return "fire";
+  if (EARTH.includes(char)) return "earth";
+  if (METAL.includes(char)) return "metal";
+  if (WATER.includes(char)) return "water";
+  return "unknown";
 };
