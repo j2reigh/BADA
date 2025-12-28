@@ -12,6 +12,7 @@ import * as cityTimezones from "city-timezones";
 
 interface BirthPatternData {
   name: string;
+  gender: "Male" | "Female" | "Rather not to say" | "";
   birthDate: string;
   birthTime: string;
   birthTimeUnknown: boolean;
@@ -26,6 +27,7 @@ export default function Survey() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [birthData, setBirthData] = useState<BirthPatternData>({
     name: "",
+    gender: "",
     birthDate: "",
     birthTime: "",
     birthTimeUnknown: true,
@@ -77,7 +79,7 @@ export default function Survey() {
   const isLastQuestion = currentStep === QUESTIONS.length - 1;
   const currentAnswer = question ? answers[question.id] : null;
   
-  const isBirthFormValid = birthData.name.trim() && birthData.birthDate && 
+  const isBirthFormValid = birthData.name.trim() && birthData.gender && birthData.birthDate && 
     (birthData.birthTimeUnknown || birthData.birthTime) && birthData.placeOfBirth && 
     birthData.email.trim() && birthData.consent;
 
@@ -124,6 +126,7 @@ export default function Survey() {
         },
         birthPatternData: {
           name: birthData.name,
+          gender: birthData.gender,
           birthDate: birthData.birthDate,
           birthTime: birthData.birthTimeUnknown ? "Unknown" : birthData.birthTime,
           placeOfBirth: birthData.placeOfBirth,
@@ -260,6 +263,28 @@ export default function Survey() {
                     placeholder="Enter your name or preferred name"
                     className="w-full px-4 py-3 rounded-2xl border-2 border-transparent bg-white focus:border-primary focus:outline-none transition-colors"
                   />
+                </div>
+
+                {/* Gender */}
+                <div className="space-y-3">
+                  <label className="text-sm font-semibold text-foreground block">
+                    Gender *
+                  </label>
+                  <div className="space-y-2">
+                    {["Male", "Female", "Rather not to say"].map((option) => (
+                      <label key={option} className="flex items-center gap-3 text-sm cursor-pointer p-3 rounded-lg border-2 border-transparent hover:border-primary/20 transition-colors">
+                        <input
+                          type="radio"
+                          name="gender"
+                          value={option}
+                          checked={birthData.gender === option}
+                          onChange={(e) => handleBirthPatternChange("gender", e.target.value)}
+                          className="w-4 h-4 accent-primary"
+                        />
+                        <span className="text-foreground">{option}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Birth Date */}
