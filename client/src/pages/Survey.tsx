@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight, CheckCircle2, MapPin, Calendar, Clock, Mail,
 import { cn } from "@/lib/utils";
 import { useSubmitSurvey } from "@/hooks/use-survey";
 import { useToast } from "@/hooks/use-toast";
+import * as cityTimezones from "city-timezones";
 
 interface BirthPatternData {
   name: string;
@@ -19,112 +20,6 @@ interface BirthPatternData {
   consent: boolean;
   notificationConsent: boolean;
 }
-
-// Curated list of major world cities for birth location search
-const WORLD_CITIES = [
-  { name: "New York", country: "United States" },
-  { name: "Los Angeles", country: "United States" },
-  { name: "Chicago", country: "United States" },
-  { name: "Houston", country: "United States" },
-  { name: "Phoenix", country: "United States" },
-  { name: "Philadelphia", country: "United States" },
-  { name: "San Antonio", country: "United States" },
-  { name: "San Diego", country: "United States" },
-  { name: "Dallas", country: "United States" },
-  { name: "San Jose", country: "United States" },
-  { name: "London", country: "United Kingdom" },
-  { name: "Manchester", country: "United Kingdom" },
-  { name: "Birmingham", country: "United Kingdom" },
-  { name: "Leeds", country: "United Kingdom" },
-  { name: "Glasgow", country: "United Kingdom" },
-  { name: "Paris", country: "France" },
-  { name: "Lyon", country: "France" },
-  { name: "Marseille", country: "France" },
-  { name: "Toulouse", country: "France" },
-  { name: "Nice", country: "France" },
-  { name: "Berlin", country: "Germany" },
-  { name: "Munich", country: "Germany" },
-  { name: "Cologne", country: "Germany" },
-  { name: "Frankfurt", country: "Germany" },
-  { name: "Hamburg", country: "Germany" },
-  { name: "Madrid", country: "Spain" },
-  { name: "Barcelona", country: "Spain" },
-  { name: "Valencia", country: "Spain" },
-  { name: "Seville", country: "Spain" },
-  { name: "Rome", country: "Italy" },
-  { name: "Milan", country: "Italy" },
-  { name: "Naples", country: "Italy" },
-  { name: "Turin", country: "Italy" },
-  { name: "Amsterdam", country: "Netherlands" },
-  { name: "Rotterdam", country: "Netherlands" },
-  { name: "The Hague", country: "Netherlands" },
-  { name: "Brussels", country: "Belgium" },
-  { name: "Antwerp", country: "Belgium" },
-  { name: "Vienna", country: "Austria" },
-  { name: "Graz", country: "Austria" },
-  { name: "Prague", country: "Czech Republic" },
-  { name: "Brno", country: "Czech Republic" },
-  { name: "Warsaw", country: "Poland" },
-  { name: "Kraków", country: "Poland" },
-  { name: "Budapest", country: "Hungary" },
-  { name: "Athens", country: "Greece" },
-  { name: "Lisbon", country: "Portugal" },
-  { name: "Porto", country: "Portugal" },
-  { name: "Dublin", country: "Ireland" },
-  { name: "Bucharest", country: "Romania" },
-  { name: "Sofia", country: "Bulgaria" },
-  { name: "Moscow", country: "Russia" },
-  { name: "Saint Petersburg", country: "Russia" },
-  { name: "Tokyo", country: "Japan" },
-  { name: "Osaka", country: "Japan" },
-  { name: "Kyoto", country: "Japan" },
-  { name: "Yokohama", country: "Japan" },
-  { name: "Bangkok", country: "Thailand" },
-  { name: "Hong Kong", country: "China" },
-  { name: "Shanghai", country: "China" },
-  { name: "Beijing", country: "China" },
-  { name: "Shenzhen", country: "China" },
-  { name: "Mumbai", country: "India" },
-  { name: "Delhi", country: "India" },
-  { name: "Bangalore", country: "India" },
-  { name: "Hyderabad", country: "India" },
-  { name: "Dubai", country: "United Arab Emirates" },
-  { name: "Abu Dhabi", country: "United Arab Emirates" },
-  { name: "Sydney", country: "Australia" },
-  { name: "Melbourne", country: "Australia" },
-  { name: "Brisbane", country: "Australia" },
-  { name: "Perth", country: "Australia" },
-  { name: "Toronto", country: "Canada" },
-  { name: "Vancouver", country: "Canada" },
-  { name: "Montreal", country: "Canada" },
-  { name: "Calgary", country: "Canada" },
-  { name: "Mexico City", country: "Mexico" },
-  { name: "Guadalajara", country: "Mexico" },
-  { name: "Monterrey", country: "Mexico" },
-  { name: "São Paulo", country: "Brazil" },
-  { name: "Rio de Janeiro", country: "Brazil" },
-  { name: "Salvador", country: "Brazil" },
-  { name: "Brasília", country: "Brazil" },
-  { name: "Buenos Aires", country: "Argentina" },
-  { name: "Córdoba", country: "Argentina" },
-  { name: "Lima", country: "Peru" },
-  { name: "Santiago", country: "Chile" },
-  { name: "Bogotá", country: "Colombia" },
-  { name: "Johannesburg", country: "South Africa" },
-  { name: "Cape Town", country: "South Africa" },
-  { name: "Cairo", country: "Egypt" },
-  { name: "Istanbul", country: "Turkey" },
-  { name: "Ankara", country: "Turkey" },
-  { name: "Tel Aviv", country: "Israel" },
-  { name: "Jerusalem", country: "Israel" },
-  { name: "Tehran", country: "Iran" },
-  { name: "Singapore", country: "Singapore" },
-  { name: "Kuala Lumpur", country: "Malaysia" },
-  { name: "Manila", country: "Philippines" },
-  { name: "Jakarta", country: "Indonesia" },
-  { name: "Seoul", country: "South Korea" },
-  { name: "Bangkok", country: "Thailand" },
-];
 
 export default function Survey() {
   const [currentStep, setCurrentStep] = useState(0);
@@ -144,24 +39,32 @@ export default function Survey() {
   const { toast } = useToast();
   const submitMutation = useSubmitSurvey();
   
-  // Filter cities by search term
+  // Filter cities by search term using comprehensive city-timezones database
   const filteredCities = useMemo(() => {
     if (birthData.placeOfBirth.trim().length < 1) return [];
     
     const searchTerm = birthData.placeOfBirth.toLowerCase();
-    const results: { city: string; country: string; display: string }[] = [];
+    const results: { city: string; country: string; timezone: string; display: string }[] = [];
     
-    for (const cityData of WORLD_CITIES) {
-      const display = `${cityData.name}, ${cityData.country}`;
-      if (display.toLowerCase().includes(searchTerm)) {
-        results.push({
-          city: cityData.name,
-          country: cityData.country,
-          display
-        });
-      }
+    try {
+      // Get all cities from the comprehensive database
+      const allCities = cityTimezones.cityMapping;
       
-      if (results.length >= 10) break;
+      for (const cityData of allCities) {
+        const display = `${cityData.city}, ${cityData.country}`;
+        if (display.toLowerCase().includes(searchTerm)) {
+          results.push({
+            city: cityData.city,
+            country: cityData.country,
+            timezone: cityData.timezone,
+            display
+          });
+        }
+        
+        if (results.length >= 20) break;
+      }
+    } catch (error) {
+      console.error("Error searching cities:", error);
     }
     
     return results;
