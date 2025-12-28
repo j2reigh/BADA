@@ -5,6 +5,7 @@
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { DAY_MASTER_MAP, TEN_GODS_MAP } from "./saju_constants";
+import { FIVE_ELEMENTS_INFO, INTERACTION_PATTERNS } from "./saju_knowledge";
 import type { SajuResult } from "./saju_calculator";
 
 const API_KEY = process.env.GEMINI_API_KEY;
@@ -51,11 +52,25 @@ export async function generateSajuReport(
       })
       .join("\n");
 
-    // Find strongest element
+    // Find strongest element and its info
     const elementCounts = sajuResult.elementCounts;
     const strongestElement = Object.entries(elementCounts).sort(
       ([, a], [, b]) => b - a
     )[0];
+    const strongestElementInfo = FIVE_ELEMENTS_INFO[strongestElement[0]];
+
+    // Find relevant interaction patterns based on Ten Gods
+    const relevantPatterns = INTERACTION_PATTERNS.filter((pattern) =>
+      Array.from(tenGodsInChart).some(
+        (tenGod) =>
+          pattern.combo.includes(TEN_GODS_MAP[tenGod].english) ||
+          TEN_GODS_MAP[tenGod].english
+            .toLowerCase()
+            .includes(
+              pattern.combo.split("+")[0].trim().toLowerCase().split(" ")[0]
+            )
+      )
+    ).slice(0, 3); // Top 3 most relevant patterns
 
     // Construct dynamic System Prompt
     const systemPrompt = `You are an insightful career & life coach using Eastern metaphysics and Saju (Korean Four Pillars of Destiny) analysis. 
@@ -73,11 +88,22 @@ ${tenGodsContext}
 
 **Element Balance:**
 ${Object.entries(elementCounts)
-  .map(([element, count]) => `- ${element}: ${count}`)
+  .map(([element, count]) => {
+    const info = FIVE_ELEMENTS_INFO[element];
+    return `- **${element.toUpperCase()}** (${count}): ${info.keyword}`;
+  })
   .join("\n")}
-(Strongest: ${strongestElement[0]} with ${strongestElement[1]} instances)
 
-Write in a warm, encouraging tone. Be specific to their archetype. Avoid generic advice.`;
+**Dominant Element Analysis:**
+${strongestElement[0].toUpperCase()} (${strongestElement[1]} instances)
+- Keyword: ${strongestElementInfo.keyword}
+- When in Excess: ${strongestElementInfo.excess}
+- When Deficient: ${strongestElementInfo.deficiency}
+
+Write in a warm, encouraging tone. Be specific to their archetype. Avoid generic advice.
+
+**Relevant Archetypal Patterns (Based on Their Ten Gods Mix):**
+${relevantPatterns.map((p) => `- **${p.theme}**: ${p.desc}`).join("\n")}`;
 
     // Construct User Prompt
     const userPrompt = `Please generate a personalized Saju report for ${userName}.

@@ -1,0 +1,97 @@
+**Role:** Data Engineer
+**Task:** Create the **`lib/saju_knowledge.ts`** file containing structured Saju interpretation logic.
+
+**Goal:**
+Convert the provided raw text (Five Elements meta-data & Ten Gods Interaction patterns) into exportable TypeScript constants so we can feed them into the Gemini System Prompt.
+
+**Requirements:**
+1.  **File:** `lib/saju_knowledge.ts`
+2.  **Structure:**
+    * `FIVE_ELEMENTS_INFO`: An object mapping 'wood', 'fire', 'earth', 'metal', 'water' to their keywords, excess, and deficiency traits.
+    * `INTERACTION_PATTERNS`: An array of objects, where each object represents a combination (e.g., "Bi-gyeon + Jeong-jae") with its psychological theme.
+3.  **Content:** Use the translated data below.
+
+**Raw Data to Convert (Translate to valid TS):**
+
+```typescript
+// Part A: Five Elements
+export const FIVE_ELEMENTS_INFO = {
+  wood: {
+    keyword: "성장, 창의 (Growth, Creativity)",
+    excess: "과잉 계획, 조급함 (Over-planning, Impatience)",
+    deficiency: "의욕 저하, 방향감 상실 (Lack of Drive, Directionless)"
+  },
+  fire: {
+    keyword: "열정, 표현 (Passion, Expression)",
+    excess: "과열, 피로 (Burnout, Over-excitement)",
+    deficiency: "냉정, 동기 저하 (Coldness, Lack of Motivation)"
+  },
+  earth: {
+    keyword: "안정, 책임 (Stability, Responsibility)",
+    excess: "답답함, 고집 (Stubbornness, Stagnation)",
+    deficiency: "불안, 산만함 (Anxiety, Distraction)"
+  },
+  metal: {
+    keyword: "판단, 절제 (Judgment, Control)",
+    excess: "비판적, 냉정함 (Critical, Cold-hearted)",
+    deficiency: "결정장애, 집중력 부족 (Indecisive, Lack of Focus)"
+  },
+  water: {
+    keyword: "감성, 지식 (Emotion, Wisdom)",
+    excess: "방황, 불안 (Wandering, Anxiety)",
+    deficiency: "둔감, 통찰력 부족 (Insensitive, Lack of Insight)"
+  }
+};
+
+// Part B: Interaction Patterns
+export const INTERACTION_PATTERNS = [
+  // 1. 비견 (Self)
+  { combo: "비견 + 정재", theme: "Self-Driven Wealth", desc: "내 방식으로 수익을 만든다 (My Way)." },
+  { combo: "비견 + 편재", theme: "Networker", desc: "돈 냄새를 잘 맡고 유행을 선도한다." },
+  { combo: "비견 + 식신", theme: "Creator", desc: "내 아이디어와 기술로 승부한다." },
+  { combo: "비견 + 상관", theme: "Rebel", desc: "기존 규칙을 거부하고 시스템을 새로 만든다." },
+  { combo: "비견 + 정관", theme: "Responsible Leader", desc: "내 이름을 걸고 책임진다." },
+  { combo: "비견 + 편관", theme: "Challenger", desc: "부딪혀야 성장한다 (Growth through pressure)." },
+  { combo: "비견 + 정인", theme: "Scholar", desc: "지식이 곧 나다 (Identity = Knowledge)." },
+  { combo: "비견 + 편인", theme: "Loner Philosopher", desc: "세상과 거리를 두고 본다." },
+
+  // 2. 겁재 (Rival)
+  { combo: "겁재 + 정재", theme: "Risk Taker", desc: "경쟁하면서 수익을 쟁취한다." },
+  { combo: "겁재 + 편재", theme: "Aggressive Biz", desc: "판을 뒤집으려는 과감한 승부사." },
+  { combo: "겁재 + 정관", theme: "Power Struggle", desc: "내 방식이 맞다고 믿는 리더십 충돌." },
+  { combo: "겁재 + 편관", theme: "Survivor", desc: "위기 속에서 더 강해진다." },
+  { combo: "겁재 + 정인", theme: "Anxious Learner", desc: "불안할수록 배우려 한다." },
+  { combo: "겁재 + 편인", theme: "Unique Artist", desc: "고독 속에서 피어나는 창의성." },
+
+  // 3. 식신 (Output)
+  { combo: "식신 + 상관", theme: "Pure Creator", desc: "하고 싶은 걸 만든다." },
+  { combo: "식신 + 정재", theme: "Steady Builder", desc: "꾸준히 만들어 쌓는다 (Accumulator)." },
+  { combo: "식신 + 편재", theme: "Marketer", desc: "만들고 팔 줄 안다 (Production + Sales)." },
+  { combo: "식신 + 정관", theme: "Prudent Leader", desc: "성실하게 신뢰를 쌓아올린다." },
+  { combo: "식신 + 편관", theme: "Problem Solver", desc: "실패해도 다시 만드는 터프한 해결사." },
+  { combo: "식신 + 정인", theme: "Master Craftsman", desc: "깊이 파서 완성한다 (Expert)." },
+  { combo: "식신 + 편인", theme: "Emotional Artist", desc: "감정으로 창작한다." },
+
+  // 4. 상관 (Hurting Officer)
+  { combo: "상관 + 정재", theme: "Strategist", desc: "아이디어를 돈으로 만든다." },
+  { combo: "상관 + 편재", theme: "Startup Founder", desc: "룰을 깨야 기회가 열린다." },
+  { combo: "상관 + 정관", theme: "Revolutionary", desc: "기존 체제에 맞선다." },
+  { combo: "상관 + 편관", theme: "Crisis Innovator", desc: "위기일수록 창의적이다." },
+  { combo: "상관 + 정인", theme: "Educator/Speaker", desc: "말로 가르치며 설득한다." },
+  { combo: "상관 + 편인", theme: "Visionary", desc: "보이지 않는 것을 표현한다." },
+
+  // 5. 재성 (Wealth) & 6. 관성 (Authority) & 7. 인성 (Seal) Mixed
+  { combo: "정재 + 정관", theme: "Manager/CEO", desc: "질서 안에서 안정적으로 성장한다." },
+  { combo: "정재 + 편관", theme: "Brand Builder", desc: "체계적으로 내 브랜드를 확장한다." },
+  { combo: "편재 + 편관", theme: "Entrepreneur", desc: "위험을 감수하고 판을 키운다." },
+  { combo: "정재 + 식신", theme: "Professional", desc: "매일 조금씩 쌓아서 완성한다." },
+  { combo: "편재 + 상관", theme: "Trendsetter", desc: "새로운 시장(돈길)을 만든다." },
+  { combo: "정관 + 정인", theme: "Trusted Advisor", desc: "신뢰와 원칙의 리더십." },
+  { combo: "정관 + 편인", theme: "Insightful Guide", desc: "질서 속에서 사람을 이해한다." },
+  { combo: "편관 + 편인", theme: "Intuitive Founder", desc: "불안이 창의력의 원동력이 된다." },
+  { combo: "편관 + 정인", theme: "Growth Mindset", desc: "압박이 나를 단련시킨다." },
+  { combo: "정인 + 편인", theme: "Deep Thinker", desc: "세상을 깊이 해석한다." },
+  { combo: "정인 + 비견", theme: "Thought Leader", desc: "배운 것을 행동으로 옮긴다." },
+  { combo: "편인 + 상관", theme: "Conceptor", desc: "감정이 언어가 된다." },
+  { combo: "편인 + 재성", theme: "Realist Strategist", desc: "생각을 현실로 만든다." }
+];
