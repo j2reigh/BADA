@@ -35,6 +35,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Saju (Four Pillars) System
 - **Calculator**: `lib/saju_calculator.ts` converts birth datetime to traditional Korean astrology pillars
+- **Time Utils**: `lib/time_utils.ts` handles DST correction using Luxon for international birthplaces before converting to KST
 - **Knowledge Base**: `lib/saju_constants.ts` maps Chinese characters to English archetypes
 - **Interpretation**: `lib/saju_knowledge.ts` contains Five Elements and Ten Gods interaction patterns
 - **AI Integration**: `lib/gemini_client.ts` generates personalized reports using Google Generative AI
@@ -76,6 +77,7 @@ lib/              # Core business logic
 
 ### Astrology Calculation
 - **lunar-typescript**: Chinese calendar and BaZi (Eight Characters) calculation library for Saju pillars
+- **Luxon**: DateTime library for accurate historical DST detection and timezone conversion
 
 ### Environment Variables Required
 - `DATABASE_URL`: PostgreSQL connection string
