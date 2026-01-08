@@ -102,7 +102,9 @@ export default function Survey() {
     birthData.email.trim() && birthData.consent;
 
   const handleOptionSelect = (value: string) => {
-    setAnswers((prev) => ({ ...prev, [question.id]: value }));
+    if (question) {
+      setAnswers((prev) => ({ ...prev, [question.id]: value }));
+    }
   };
 
   const handleNext = () => {
