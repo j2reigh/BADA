@@ -1,14 +1,27 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/Button";
 import { ProgressBar } from "@/components/ProgressBar";
 import { QUESTIONS, calculateScore } from "@/lib/scoring";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, CheckCircle2, MapPin, Calendar, Clock, Mail, User } from "lucide-react";
+import { ChevronLeft, ChevronRight, CheckCircle2, MapPin, Calendar, Clock, Mail, User, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSubmitSurvey } from "@/hooks/use-survey";
 import { useToast } from "@/hooks/use-toast";
-import * as cityTimezones from "city-timezones";
+
+interface CityResult {
+  id: string;
+  name: string;
+  displayName: string;
+  city: string;
+  state?: string;
+  country: string;
+  countryCode: string;
+  lat: number;
+  lon: number;
+  timezone: string;
+  utcOffset: string;
+}
 
 interface BirthPatternData {
   name: string;
@@ -17,6 +30,7 @@ interface BirthPatternData {
   birthTime: string;
   birthTimeUnknown: boolean;
   placeOfBirth: string;
+  placeOfBirthCity: CityResult | null;
   email: string;
   consent: boolean;
   notificationConsent: boolean;
@@ -32,45 +46,49 @@ export default function Survey() {
     birthTime: "",
     birthTimeUnknown: true,
     placeOfBirth: "",
+    placeOfBirthCity: null,
     email: "",
     consent: false,
     notificationConsent: true,
   });
   const [placeSearchOpen, setPlaceSearchOpen] = useState(false);
+  const [cityResults, setCityResults] = useState<CityResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const submitMutation = useSubmitSurvey();
-  
-  // Filter cities by search term using comprehensive city-timezones database
-  const filteredCities = useMemo(() => {
-    if (birthData.placeOfBirth.trim().length < 1) return [];
-    
-    const searchTerm = birthData.placeOfBirth.toLowerCase();
-    const results: { city: string; country: string; timezone: string; display: string }[] = [];
-    
-    try {
-      // Get all cities from the comprehensive database
-      const allCities = cityTimezones.cityMapping;
-      
-      for (const cityData of allCities) {
-        const display = `${cityData.city}, ${cityData.country}`;
-        if (display.toLowerCase().includes(searchTerm)) {
-          results.push({
-            city: cityData.city,
-            country: cityData.country,
-            timezone: cityData.timezone,
-            display
-          });
-        }
-        
-        if (results.length >= 20) break;
-      }
-    } catch (error) {
-      console.error("Error searching cities:", error);
+
+  // Debounced city search using Photon API
+  const searchCities = useCallback(async (query: string) => {
+    if (query.trim().length < 2) {
+      setCityResults([]);
+      return;
     }
     
-    return results;
-  }, [birthData.placeOfBirth]);
+    setIsSearching(true);
+    try {
+      const response = await fetch(`/api/cities/search?q=${encodeURIComponent(query)}`);
+      if (response.ok) {
+        const results = await response.json();
+        setCityResults(results);
+      }
+    } catch (error) {
+      console.error("City search error:", error);
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
+
+  // Debounce effect for city search
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (birthData.placeOfBirth && !birthData.placeOfBirthCity) {
+        searchCities(birthData.placeOfBirth);
+      }
+    }, 300);
+    
+    return () => clearTimeout(timeoutId);
+  }, [birthData.placeOfBirth, birthData.placeOfBirthCity, searchCities]);
   
   const isBirthPatternStep = currentStep === QUESTIONS.length;
   const totalSteps = QUESTIONS.length + 1;
@@ -80,7 +98,7 @@ export default function Survey() {
   const currentAnswer = question ? answers[question.id] : null;
   
   const isBirthFormValid = birthData.name.trim() && birthData.gender && birthData.birthDate && 
-    (birthData.birthTimeUnknown || birthData.birthTime) && birthData.placeOfBirth && 
+    (birthData.birthTimeUnknown || birthData.birthTime) && birthData.placeOfBirthCity && 
     birthData.email.trim() && birthData.consent;
 
   const handleOptionSelect = (value: string) => {
@@ -129,7 +147,13 @@ export default function Survey() {
           gender: birthData.gender,
           birthDate: birthData.birthDate,
           birthTime: birthData.birthTimeUnknown ? "Unknown" : birthData.birthTime,
-          placeOfBirth: birthData.placeOfBirth,
+          placeOfBirth: birthData.placeOfBirthCity?.displayName || birthData.placeOfBirth,
+          city: birthData.placeOfBirthCity?.city,
+          country: birthData.placeOfBirthCity?.country,
+          lat: birthData.placeOfBirthCity?.lat,
+          lon: birthData.placeOfBirthCity?.lon,
+          timezone: birthData.placeOfBirthCity?.timezone,
+          utcOffset: birthData.placeOfBirthCity?.utcOffset,
           email: birthData.email,
           consent: birthData.consent,
           notificationConsent: birthData.notificationConsent,
@@ -335,39 +359,63 @@ export default function Survey() {
                     <MapPin className="w-4 h-4 text-primary" />
                     Place of Birth (City) *
                   </label>
-                  <input
-                    type="text"
-                    value={birthData.placeOfBirth}
-                    onChange={(e) => {
-                      handleBirthPatternChange("placeOfBirth", e.target.value);
-                      setPlaceSearchOpen(true);
-                    }}
-                    onFocus={() => setPlaceSearchOpen(true)}
-                    onBlur={() => setTimeout(() => setPlaceSearchOpen(false), 200)}
-                    placeholder="Search for your birth city (e.g., New York, London, Tokyo)"
-                    className="w-full px-4 py-3 rounded-2xl border-2 border-transparent bg-white focus:border-primary focus:outline-none transition-colors"
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={birthData.placeOfBirth}
+                      onChange={(e) => {
+                        handleBirthPatternChange("placeOfBirth", e.target.value);
+                        handleBirthPatternChange("placeOfBirthCity", null);
+                        setPlaceSearchOpen(true);
+                      }}
+                      onFocus={() => setPlaceSearchOpen(true)}
+                      onBlur={() => setTimeout(() => setPlaceSearchOpen(false), 200)}
+                      placeholder="Search for your birth city (e.g., Incheon, New York)"
+                      className="w-full px-4 py-3 rounded-2xl border-2 border-transparent bg-white focus:border-primary focus:outline-none transition-colors"
+                      data-testid="input-birth-city"
+                    />
+                    {isSearching && (
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                        <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Selected City Display */}
+                  {birthData.placeOfBirthCity && (
+                    <div className="flex items-center gap-2 text-sm text-primary bg-primary/10 px-3 py-2 rounded-lg">
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>{birthData.placeOfBirthCity.displayName}</span>
+                      <span className="text-muted-foreground">({birthData.placeOfBirthCity.utcOffset})</span>
+                    </div>
+                  )}
                   
                   {/* City Search Results */}
-                  {placeSearchOpen && filteredCities.length > 0 && (
+                  {placeSearchOpen && cityResults.length > 0 && !birthData.placeOfBirthCity && (
                     <motion.div
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
                       className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl border-2 border-primary/20 shadow-lg z-50 max-h-64 overflow-y-auto"
                     >
-                      {filteredCities.map((result, idx) => (
+                      {cityResults.map((result) => (
                         <button
-                          key={`${result.city}-${result.country}-${idx}`}
+                          key={result.id}
                           type="button"
                           onClick={() => {
-                            handleBirthPatternChange("placeOfBirth", result.display);
+                            handleBirthPatternChange("placeOfBirth", result.displayName);
+                            handleBirthPatternChange("placeOfBirthCity", result);
                             setPlaceSearchOpen(false);
+                            setCityResults([]);
                           }}
                           className="w-full text-left px-4 py-3 hover:bg-primary/5 transition-colors border-b border-gray-100 last:border-b-0 text-foreground hover:text-primary"
+                          data-testid={`city-result-${result.id}`}
                         >
                           <div className="font-medium">{result.city}</div>
-                          <div className="text-xs text-muted-foreground">{result.country}</div>
+                          <div className="text-xs text-muted-foreground flex items-center justify-between">
+                            <span>{result.state ? `${result.state}, ${result.country}` : result.country}</span>
+                            <span className="text-primary font-medium">{result.utcOffset}</span>
+                          </div>
                         </button>
                       ))}
                     </motion.div>
