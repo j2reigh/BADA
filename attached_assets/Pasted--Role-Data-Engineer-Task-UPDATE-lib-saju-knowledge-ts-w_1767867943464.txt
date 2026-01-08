@@ -1,3 +1,17 @@
+**Role:** Data Engineer
+**Task:** UPDATE `lib/saju_knowledge.ts` with the **COMPLETE** dataset.
+
+**Goal:**
+The previous version was missing some interaction patterns. We need to overwrite the file with the **full list of 40 interactions** provided below.
+
+**Requirements:**
+1.  **File:** `lib/saju_knowledge.ts`
+2.  **Action:** Replace the entire content with the code below.
+3.  **Data Integrity:** Ensure all 40 patterns (Bi-gyeon to Seal combinations) are included. The Korean keywords (e.g., 비견) have been mapped to our English Archetypes (e.g., Self-Drive) for system consistency.
+
+**Code to Write (Copy & Paste this exactly):**
+
+```typescript
 /**
  * Saju Knowledge Base - Interpretation Logic
  * Contains structured Five Elements metadata and Ten Gods interaction patterns
