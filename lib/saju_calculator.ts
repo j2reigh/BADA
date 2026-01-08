@@ -1,4 +1,5 @@
 import { Solar } from "lunar-typescript";
+import { getCorrectedKST, formatDateForSaju, formatTimeForSaju } from "./time_utils";
 
 // 1. Korean Mappings (십성: 한자 -> 한글)
 const TEN_GODS_MAP: Record<string, string> = {
@@ -46,13 +47,30 @@ interface SajuResult {
   };
 }
 
-export const calculateSaju = (dateStr: string, timeStr: string): SajuResult => {
+export const calculateSaju = (dateStr: string, timeStr: string, timezone?: string): SajuResult => {
   try {
-    const [year, month, day] = dateStr.split("-").map(Number);
-    const [hour, minute] = timeStr.split(":").map(Number);
+    let year: number, month: number, day: number, hour: number, minute: number;
 
-    // 1. Create Solar & Lunar objects
-    // Assume KST input
+    if (timezone && timezone !== 'Asia/Seoul') {
+      const corrected = getCorrectedKST(dateStr, timeStr, timezone);
+      year = corrected.year;
+      month = corrected.month;
+      day = corrected.day;
+      hour = corrected.hour;
+      minute = corrected.minute;
+      
+      console.log('DST Correction Applied:', {
+        original: { date: dateStr, time: timeStr, timezone },
+        corrected: { year, month, day, hour, minute },
+        isDstApplied: corrected.isDstApplied,
+        debugInfo: corrected.debugInfo
+      });
+    } else {
+      [year, month, day] = dateStr.split("-").map(Number);
+      [hour, minute] = timeStr.split(":").map(Number);
+    }
+
+    // 1. Create Solar & Lunar objects using KST values
     const solar = Solar.fromYmdHms(year, month, day, hour, minute, 0);
     const lunar = solar.getLunar();
 
