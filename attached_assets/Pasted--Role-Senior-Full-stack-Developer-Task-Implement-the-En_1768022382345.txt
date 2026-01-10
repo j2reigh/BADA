@@ -1,0 +1,48 @@
+**Role:** Senior Full-stack Developer
+**Task:** Implement the **End-to-End Email Verification Flow** with Marketing Consent & Error Correction.
+
+**Goal:**
+We need to gate the Saju Report behind an email verification wall to collect leads. We also need to allow users to correct their email if they made a typo, without restarting the survey.
+
+**1. Database & Environment (Supabase & Resend):**
+- **Install:** `npm install resend`
+- **Schema Update (`saju_results` table):**
+  - Add `email` (text).
+  - Add `marketing_consent` (boolean, default `true`).
+  - Add `is_verified` (boolean, default `false`).
+  - Add `verification_token` (uuid, default `gen_random_uuid()`).
+- **Setup:** Initialize Resend client in `lib/email.ts`.
+
+**2. Backend Logic:**
+- **Email Sender:** Create `sendVerificationEmail(email, token)` that sends a link to `${BASE_URL}/api/verify?token=${token}`.
+- **Verification API (`app/api/verify/route.ts`):**
+  - Validate token -> Update `is_verified` to `true` -> Redirect to `/report/[id]`.
+- **Email Update API (For Correction):**
+  - Create a server action or API to update the `email` field for a specific `id` (ONLY if `is_verified` is false).
+  - Trigger `sendVerificationEmail` immediately after update.
+
+**3. Frontend - Survey Form Update:**
+- **Step:** Final input screen.
+- **Marketing Checkbox:** - **Strategy:** "Pre-checked" (Opt-out).
+  - Default `checked={true}`.
+  - Text: "I would like to receive updates..." (Make it subtle).
+- **Submission Flow:**
+  - Save data to DB (`is_verified: false`).
+  - Trigger `sendVerificationEmail`.
+  - **Redirect to `/wait/[id]`** (Pass the UUID).
+
+**4. Frontend - Waiting Page (`app/wait/[id]/page.tsx`):**
+- **UI:** Clean, ocean-vibe design.
+- **Message:** "Report Generated! We sent a link to **{email}**."
+- **Feature A (Resend):** Button to resend the email to the same address.
+- **Feature B (Correction - Crucial):** - "Wrong Email?" button toggles an input field.
+  - User enters new email -> Clicks "Update" -> Calls Backend to update DB & Resend Email.
+  - Show success toast: "Email updated to {newEmail}. Check your inbox."
+
+**5. Frontend - Result Page Blocking:**
+- In `app/report/[id]/page.tsx`:
+  - Check the `is_verified` status of the record.
+  - **If `false`:** Redirect back to `/wait/[id]`.
+  - **If `true`:** Render the full report.
+
+**Action:** Implement this full flow. Start by updating the DB schema and installing Resend.

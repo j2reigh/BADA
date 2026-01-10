@@ -44,7 +44,7 @@ export default function Survey() {
     gender: "",
     birthDate: "",
     birthTime: "",
-    birthTimeUnknown: true,
+    birthTimeUnknown: false,
     placeOfBirth: "",
     placeOfBirthCity: null,
     email: "",
