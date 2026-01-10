@@ -131,60 +131,62 @@ export default function Survey() {
     try {
       const result = calculateScore(answers);
       
-      // Console log all collected data
-      const allData = {
-        surveyAnswers: answers,
-        calculatedType: {
-          typeKey: result.typeKey,
-          typeName: result.typeName,
-          threatClarity: result.threatClarity,
-          environmentStable: result.environmentStable,
-          agencyActive: result.agencyActive,
-          threatScore: result.threatScore,
-          environmentScore: result.environmentScore,
-          agencyScore: result.agencyScore,
-        },
-        birthPatternData: {
+      // First save survey results
+      const surveyResult = await submitMutation.mutateAsync({
+        answers,
+        threatScore: result.threatScore,
+        threatClarity: result.threatClarity,
+        environmentScore: result.environmentScore,
+        environmentStable: result.environmentStable,
+        agencyScore: result.agencyScore,
+        agencyActive: result.agencyActive,
+        typeKey: result.typeKey,
+        typeName: result.typeName,
+      });
+
+      // Then save birth pattern with KST conversion on server
+      if (birthData.placeOfBirthCity) {
+        // Map gender to API values
+        const genderMap: Record<string, "male" | "female" | "other"> = {
+          "Male": "male",
+          "Female": "female",
+          "Rather not to say": "other",
+        };
+        const birthPatternPayload = {
+          surveyResultId: surveyResult.id,
           name: birthData.name,
-          gender: birthData.gender,
-          birthDate: birthData.birthDate,
-          birthTime: birthData.birthTimeUnknown ? "Unknown" : birthData.birthTime,
-          placeOfBirth: birthData.placeOfBirthCity?.displayName || birthData.placeOfBirth,
-          city: birthData.placeOfBirthCity?.city,
-          country: birthData.placeOfBirthCity?.country,
-          lat: birthData.placeOfBirthCity?.lat,
-          lon: birthData.placeOfBirthCity?.lon,
-          timezone: birthData.placeOfBirthCity?.timezone,
-          utcOffset: birthData.placeOfBirthCity?.utcOffset,
+          gender: genderMap[birthData.gender] || "other",
           email: birthData.email,
-          consent: birthData.consent,
-          notificationConsent: birthData.notificationConsent,
-        },
-      };
-      
-      console.log("BADA Survey Submission:", allData);
-      
-      // Save to database (optional, in background)
-      try {
-        await submitMutation.mutateAsync({
-          answers,
-          threatScore: result.threatScore,
-          threatClarity: result.threatClarity,
-          environmentScore: result.environmentScore,
-          environmentStable: result.environmentStable,
-          agencyScore: result.agencyScore,
-          agencyActive: result.agencyActive,
-          typeKey: result.typeKey,
-          typeName: result.typeName,
+          birthDate: birthData.birthDate,
+          birthTime: birthData.birthTimeUnknown ? undefined : birthData.birthTime,
+          birthTimeUnknown: birthData.birthTimeUnknown,
+          birthCity: birthData.placeOfBirthCity.city,
+          birthCountry: birthData.placeOfBirthCity.country,
+          timezone: birthData.placeOfBirthCity.timezone,
+          utcOffset: birthData.placeOfBirthCity.utcOffset,
+          latitude: birthData.placeOfBirthCity.lat,
+          longitude: birthData.placeOfBirthCity.lon,
+          consentMarketing: birthData.notificationConsent,
+        };
+
+        const birthResponse = await fetch("/api/birth-pattern/submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(birthPatternPayload),
         });
-      } catch (dbError) {
-        console.error("Database save failed, but continuing:", dbError);
+
+        if (birthResponse.ok) {
+          const birthResult = await birthResponse.json();
+          console.log("Birth pattern saved with KST conversion:", birthResult);
+        } else {
+          console.error("Failed to save birth pattern:", await birthResponse.text());
+        }
       }
 
       // Redirect to coming soon page
       setLocation("/coming-soon");
     } catch (error) {
-      console.error("Error submitting birth pattern:", error);
+      console.error("Error submitting assessment:", error);
       toast({
         title: "Error submitting information",
         description: "Please try again.",
