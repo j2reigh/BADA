@@ -80,5 +80,12 @@ lib/              # Core business logic
 - **Luxon**: DateTime library for accurate historical DST detection and timezone conversion
 
 ### Environment Variables Required
-- `DATABASE_URL`: PostgreSQL connection string
+- `SUPABASE_DATABASE_URL`: Supabase PostgreSQL connection string (primary)
+- `DATABASE_URL`: Fallback PostgreSQL connection string
 - `GEMINI_API_KEY`: Google AI API key for report generation
+
+### Data Storage
+- **Supabase**: Primary database for storing survey results and birth patterns
+- Birth datetime is converted to KST with DST correction before storage
+- Original timezone preserved for reference
+- birth_patterns table linked to survey_results via foreign key
