@@ -8,13 +8,17 @@ import Landing from "@/pages/Landing";
 import Survey from "@/pages/Survey";
 import Results from "@/pages/Results";
 import ComingSoon from "@/pages/ComingSoon";
+import Wait from "@/pages/Wait";
+import VerificationFailed from "@/pages/VerificationFailed";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
       <Route path="/survey" component={Survey} />
-      <Route path="/results" component={Results} />
+      <Route path="/results/:reportId" component={Results} />
+      <Route path="/wait/:reportId" component={Wait} />
+      <Route path="/verification-failed" component={VerificationFailed} />
       <Route path="/coming-soon" component={ComingSoon} />
       <Route component={NotFound} />
     </Switch>

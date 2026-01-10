@@ -127,64 +127,65 @@ export default function Survey() {
     setBirthData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleBirthPatternSubmit = async () => {
+    if (!birthData.placeOfBirthCity) return;
+    
+    setIsSubmitting(true);
     try {
       const result = calculateScore(answers);
       
-      // First save survey results
-      const surveyResult = await submitMutation.mutateAsync({
+      // Map gender to API values
+      const genderMap: Record<string, "male" | "female" | "other"> = {
+        "Male": "male",
+        "Female": "female",
+        "Rather not to say": "other",
+      };
+      
+      // Submit everything in one API call
+      const assessmentPayload = {
         answers,
-        threatScore: result.threatScore,
-        threatClarity: result.threatClarity,
-        environmentScore: result.environmentScore,
-        environmentStable: result.environmentStable,
-        agencyScore: result.agencyScore,
-        agencyActive: result.agencyActive,
-        typeKey: result.typeKey,
-        typeName: result.typeName,
+        surveyScores: {
+          threatScore: result.threatScore,
+          threatClarity: result.threatClarity,
+          environmentScore: result.environmentScore,
+          environmentStable: result.environmentStable,
+          agencyScore: result.agencyScore,
+          agencyActive: result.agencyActive,
+          typeKey: result.typeKey,
+          typeName: result.typeName,
+        },
+        name: birthData.name,
+        gender: genderMap[birthData.gender] || "other",
+        email: birthData.email,
+        marketingConsent: birthData.notificationConsent,
+        birthDate: birthData.birthDate,
+        birthTime: birthData.birthTimeUnknown ? undefined : birthData.birthTime,
+        birthTimeUnknown: birthData.birthTimeUnknown,
+        birthCity: birthData.placeOfBirthCity.city,
+        birthCountry: birthData.placeOfBirthCity.country,
+        timezone: birthData.placeOfBirthCity.timezone,
+        utcOffset: birthData.placeOfBirthCity.utcOffset,
+        latitude: birthData.placeOfBirthCity.lat,
+        longitude: birthData.placeOfBirthCity.lon,
+      };
+
+      const response = await fetch("/api/assessment/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(assessmentPayload),
       });
 
-      // Then save birth pattern with KST conversion on server
-      if (birthData.placeOfBirthCity) {
-        // Map gender to API values
-        const genderMap: Record<string, "male" | "female" | "other"> = {
-          "Male": "male",
-          "Female": "female",
-          "Rather not to say": "other",
-        };
-        const birthPatternPayload = {
-          surveyResultId: surveyResult.id,
-          name: birthData.name,
-          gender: genderMap[birthData.gender] || "other",
-          email: birthData.email,
-          birthDate: birthData.birthDate,
-          birthTime: birthData.birthTimeUnknown ? undefined : birthData.birthTime,
-          birthTimeUnknown: birthData.birthTimeUnknown,
-          birthCity: birthData.placeOfBirthCity.city,
-          birthCountry: birthData.placeOfBirthCity.country,
-          timezone: birthData.placeOfBirthCity.timezone,
-          utcOffset: birthData.placeOfBirthCity.utcOffset,
-          latitude: birthData.placeOfBirthCity.lat,
-          longitude: birthData.placeOfBirthCity.lon,
-          consentMarketing: birthData.notificationConsent,
-        };
-
-        const birthResponse = await fetch("/api/birth-pattern/submit", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(birthPatternPayload),
-        });
-
-        if (birthResponse.ok) {
-          const birthResult = await birthResponse.json();
-          console.log("Birth pattern saved with KST conversion:", birthResult);
-        } else {
-          console.error("Failed to save birth pattern:", await birthResponse.text());
-        }
+      if (response.ok) {
+        const result = await response.json();
+        console.log("Assessment submitted:", result);
+        // Redirect to wait page
+        setLocation(`/wait/${result.reportId}`);
+      } else {
+        const error = await response.json();
+        throw new Error(error.message || "Submission failed");
       }
-
-      // Redirect to coming soon page
-      setLocation("/coming-soon");
     } catch (error) {
       console.error("Error submitting assessment:", error);
       toast({
@@ -192,6 +193,8 @@ export default function Survey() {
         description: "Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -482,10 +485,11 @@ export default function Survey() {
           <Button
             size="lg"
             onClick={handleNext}
-            disabled={isBirthPatternStep ? !isBirthFormValid : !currentAnswer}
+            disabled={isBirthPatternStep ? (!isBirthFormValid || isSubmitting) : !currentAnswer}
             className="px-10 rounded-full"
+            data-testid="button-next"
           >
-            {submitMutation.isPending ? "Submitting..." : isBirthPatternStep ? "Complete Assessment" : isLastQuestion ? "Next Step" : "Next Question"}
+            {isSubmitting ? "Submitting..." : isBirthPatternStep ? "Complete Assessment" : isLastQuestion ? "Next Step" : "Next Question"}
             {!isBirthPatternStep && <ChevronRight className="w-5 h-5 ml-2" />}
           </Button>
         </div>

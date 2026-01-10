@@ -35,7 +35,7 @@ interface PillarData {
   zhiGod: string;
 }
 
-interface SajuResult {
+export interface SajuResult {
   fourPillars: {
     year: PillarData;
     month: PillarData;

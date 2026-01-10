@@ -55,7 +55,7 @@ export async function generateSajuReport(
     // Find strongest element and its info
     const elementCounts = sajuResult.elementCounts;
     const strongestElement = Object.entries(elementCounts).sort(
-      ([, a], [, b]) => b - a
+      ([, a], [, b]) => (b as number) - (a as number)
     )[0];
     const strongestElementInfo = FIVE_ELEMENTS_INFO[strongestElement[0]];
 
