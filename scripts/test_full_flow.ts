@@ -1,6 +1,6 @@
 const BASE_URL = "http://localhost:5000";
-const TEST_EMAIL = "test-bada@example.com";
-const CORRECTED_EMAIL = "corrected-bada@example.com";
+const TEST_EMAIL = "ljyoao@gmail.com";
+const CORRECTED_EMAIL = "jeannelee.biz@gmail.com";
 
 interface TestResult {
   scenario: string;
