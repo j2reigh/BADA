@@ -1,0 +1,43 @@
+**Role:** Senior QA Automation Engineer
+**Task:** Create a Comprehensive Integration Test Script (`scripts/test_full_flow.ts`) for the Lead-Report Verification Flow.
+
+**Context:**
+We have refactored our database into two tables: `leads` (Identity & Verification) and `saju_results` (Report Data). We also use `Resend` for email delivery. We need a script to verify the entire lifecycle from first submission to final verification.
+
+**Requirements:**
+1. **File:** `scripts/test_full_flow.ts`
+2. **Environment:** Use `npx tsx` to run. Ensure `RESEND_API_KEY` and Supabase envs are accessible.
+3. **Mock Data:** Use a real test email (e.g., your-email@gmail.com) for the Resend part to verify actual delivery.
+
+**Scenarios to Implement:**
+
+- **Scenario 1: First-time User (Lead Generation & Email)**
+  - Call `saveSajuReport` with a new email.
+  - Verify: A new record exists in `leads` (is_verified: false) and a linked record in `saju_results`.
+  - Action: Trigger `sendVerificationEmail` using the lead's token. 
+  - Verify: Resend API returns a success response.
+
+- **Scenario 2: Existing User (Retention & Upsert)**
+  - Call `saveSajuReport` again with the SAME email but different birth data.
+  - Verify: No new record in `leads` (Reuse existing lead_id).
+  - Verify: A second, unique record is added to `saju_results`.
+
+- **Scenario 3: Email Correction (Typo Recovery)**
+  - Simulate the "Update Email" feature on the waiting page.
+  - Update the email for the unverified lead in the `leads` table.
+  - Action: Re-trigger `sendVerificationEmail` to the new address.
+
+- **Scenario 4: Verification Simulation (Unlocking)**
+  - Take the `verification_token` from the lead record.
+  - Execute the verification logic (Update `is_verified` to true).
+  - Verify: `is_verified` is now true in Supabase.
+
+- **Scenario 5: Blocking Logic (Security Check)**
+  - Implement a check function: If `is_verified` is false, it must return "Access Denied".
+  - Verify: Access is granted ONLY after Scenario 4 is complete.
+
+**Output Format:**
+- Use descriptive console logs with emojis for each step (e.g., "✅ Scenario A: Lead & Report linkage verified").
+- If any step fails, print the exact error from Supabase or Resend.
+
+**Action:** Write the full script logic in `scripts/test_full_flow.ts`.

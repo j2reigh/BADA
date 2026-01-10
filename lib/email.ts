@@ -133,7 +133,13 @@ export async function sendVerificationEmail(
       `,
     });
     
-    console.log('Verification email sent:', result);
+    console.log('Verification email result:', result);
+    
+    if (result.error) {
+      console.error('Resend API error:', result.error);
+      return { success: false, error: result.error.message || 'Email sending failed' };
+    }
+    
     return { success: true };
   } catch (error) {
     console.error('Failed to send verification email:', error);
