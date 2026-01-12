@@ -28,6 +28,7 @@ interface ReportData {
       typeName: string;
     };
   };
+  isPaid: boolean;
   createdAt: string;
   page1_identity: Page1Identity | null;
   page2_hardware: PageSection | null;
@@ -50,6 +51,10 @@ const COLORS = {
 };
 
 export async function generateReportPDF(data: ReportData): Promise<void> {
+  if (!data.isPaid) {
+    throw new Error("Cannot generate PDF for unpaid report");
+  }
+
   const pdf = new jsPDF({
     orientation: "portrait",
     unit: "mm",
