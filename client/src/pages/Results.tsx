@@ -4,8 +4,9 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, Lock, Unlock, Sparkles, ArrowRight, Check } from "lucide-react";
+import { Loader2, Lock, Unlock, Sparkles, ArrowRight, Check, Download } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { generateReportPDF } from "@/lib/pdfExport";
 
 interface Page1Identity {
   title: string;
@@ -73,6 +74,19 @@ export default function Results() {
   const { reportId } = useParams<{ reportId: string }>();
   const [, setLocation] = useLocation();
   const [showUnlockAnimation, setShowUnlockAnimation] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+
+  const handleDownloadPDF = async () => {
+    if (!data) return;
+    setIsGeneratingPDF(true);
+    try {
+      await generateReportPDF(data);
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
 
   const { data, isLoading, error, refetch } = useQuery<ResultsData>({
     queryKey: ["/api/results", reportId],
@@ -272,11 +286,27 @@ export default function Results() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center py-8"
+              className="text-center py-8 space-y-4"
             >
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-full">
                 <Check className="w-4 h-4" />
                 <span className="text-sm font-medium">Full Report Unlocked</span>
+              </div>
+              <div>
+                <Button
+                  variant="outline"
+                  onClick={handleDownloadPDF}
+                  disabled={isGeneratingPDF}
+                  className="gap-2"
+                  data-testid="button-download-pdf"
+                >
+                  {isGeneratingPDF ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4" />
+                  )}
+                  {isGeneratingPDF ? "Generating PDF..." : "Download PDF Report"}
+                </Button>
               </div>
             </motion.div>
           )}
