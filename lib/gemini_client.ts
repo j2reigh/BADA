@@ -1,133 +1,237 @@
 /**
  * Gemini AI Report Generator
- * Generates personalized Saju reports using Google Generative AI
+ * Generates personalized Life Blueprint Reports using Google Generative AI
  */
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { DAY_MASTER_MAP, TEN_GODS_MAP } from "./saju_constants";
-import { FIVE_ELEMENTS_INFO, INTERACTION_PATTERNS } from "./saju_knowledge";
+import { FIVE_ELEMENTS_INFO } from "./saju_knowledge";
 import type { SajuResult } from "./saju_calculator";
 
 const API_KEY = process.env.GEMINI_API_KEY;
 
 if (!API_KEY) {
   throw new Error(
-    "❌ GEMINI_API_KEY not found in environment variables. Please add it to Replit Secrets."
+    "GEMINI_API_KEY not found in environment variables. Please add it to Replit Secrets."
   );
 }
 
 const client = new GoogleGenerativeAI(API_KEY);
 
+// OS Type mappings for background selection
+const OS_TYPE_BACKGROUNDS: Record<string, string> = {
+  "State Architect": "bg_type_03",      // High Agency / Low Ambiguity / Low Threat
+  "Silent Sentinel": "bg_type_08",      // Low Agency / Low Ambiguity / High Threat
+  "Master Builder": "bg_type_02",       // High Agency / High Ambiguity / High Threat
+  "Safe Strategist": "bg_type_06",      // Low Agency / High Ambiguity / High Threat
+  "Fire Converter": "bg_type_01",       // High Agency / High Ambiguity / Low Threat
+  "Emotional Drifter": "bg_type_05",    // Low Agency / High Ambiguity / Low Threat
+  "Conscious Maintainer": "bg_type_03", // High Agency / Low Ambiguity / Low Threat
+  "Passive Floater": "bg_type_07",      // Low Agency / Low Ambiguity / Low Threat
+};
+
+// Element to overlay mapping
+const ELEMENT_OVERLAYS: Record<string, string> = {
+  wood: "overlay_wood",
+  fire: "overlay_fire",
+  earth: "overlay_earth",
+  metal: "overlay_metal",
+  water: "overlay_water",
+};
+
+// Day Master to base identity mapping
+const DAY_MASTER_IDENTITY: Record<string, { noun: string; element: string }> = {
+  "甲": { noun: "The Pioneer", element: "wood" },
+  "乙": { noun: "The Architect", element: "wood" },
+  "丙": { noun: "The Beacon", element: "fire" },
+  "丁": { noun: "The Visionary", element: "fire" },
+  "戊": { noun: "The Foundation", element: "earth" },
+  "己": { noun: "The Groundbreaker", element: "earth" },
+  "庚": { noun: "The Analyst", element: "metal" },
+  "辛": { noun: "The Essentialist", element: "metal" },
+  "壬": { noun: "The Navigator", element: "water" },
+  "癸": { noun: "The Philosopher", element: "water" },
+};
+
+// Element to adjective mapping
+const ELEMENT_ADJECTIVES: Record<string, string[]> = {
+  wood: ["Deep-rooted", "Growing", "Vertical", "Resilient"],
+  fire: ["Luminous", "Radiant", "Passionate", "Tropical"],
+  earth: ["Solid", "Steadfast", "Grounded", "Unshakable"],
+  metal: ["Refined", "Sharp", "Precise", "Polished"],
+  water: ["Fluid", "Deep", "Infinite", "Adaptive"],
+};
+
+export interface LifeBlueprintReport {
+  page1_identity: {
+    title: string;
+    sub_headline: string;
+    visual_concept: {
+      background_id: string;
+      overlay_id: string;
+    };
+  };
+  page2_hardware: {
+    section_name: string;
+    blueprint_summary: string;
+    core_insight: string[];
+  };
+  page3_os: {
+    section_name: string;
+    diagnosis_summary: string;
+    analysis_points: string[];
+  };
+  page4_mismatch: {
+    section_name: string;
+    insight_title: string;
+    conflict_explanation: string[];
+  };
+  page5_solution: {
+    section_name: string;
+    goal: string;
+    protocol_name: string;
+    steps: Array<{ step: number; action: string }>;
+    closing_message: string;
+  };
+}
+
+export interface SurveyScores {
+  threatScore: number;
+  threatClarity: number;
+  environmentScore: number;
+  environmentStable: number;
+  agencyScore: number;
+  agencyActive: number;
+  typeKey: string;
+  typeName: string;
+}
+
 /**
- * Generate a personalized Saju report using Gemini AI
- * @param sajuResult - The calculated Saju result from calculateSaju()
- * @param userName - User's name for personalization (optional)
- * @returns Promise<string> - Markdown-formatted report
+ * Generate a personalized Life Blueprint Report using Gemini AI
  */
-export async function generateSajuReport(
+export async function generateLifeBlueprintReport(
   sajuResult: SajuResult,
+  surveyScores: SurveyScores,
   userName: string = "Friend"
-): Promise<string> {
+): Promise<LifeBlueprintReport> {
   try {
-    // Extract Day Master information
     const dayMasterGan = sajuResult.fourPillars.day.gan;
     const dayMasterInfo = DAY_MASTER_MAP[dayMasterGan];
+    const identityInfo = DAY_MASTER_IDENTITY[dayMasterGan];
 
-    if (!dayMasterInfo) {
+    if (!dayMasterInfo || !identityInfo) {
       throw new Error(`Day Master "${dayMasterGan}" not found in mappings`);
     }
 
-    // Collect all Ten Gods in the chart
+    // Find dominant element
+    const elementCounts = sajuResult.elementCounts;
+    const dominantElement = Object.entries(elementCounts).sort(
+      ([, a], [, b]) => (b as number) - (a as number)
+    )[0];
+    const dominantElementName = dominantElement[0];
+
+    // Generate title using 80/20 rule
+    const adjectives = ELEMENT_ADJECTIVES[dominantElementName] || ["Balanced"];
+    const adjective = adjectives[0];
+    const synthesizedTitle = `${adjective} ${identityInfo.noun}`;
+
+    // Select visual assets
+    const backgroundId = OS_TYPE_BACKGROUNDS[surveyScores.typeName] || "bg_type_01";
+    const overlayId = ELEMENT_OVERLAYS[dominantElementName] || "overlay_water";
+
+    // Collect Ten Gods
     const tenGodsInChart = new Set<string>();
     tenGodsInChart.add(sajuResult.fourPillars.year.ganGod);
     tenGodsInChart.add(sajuResult.fourPillars.month.ganGod);
     tenGodsInChart.add(sajuResult.fourPillars.day.ganGod);
     tenGodsInChart.add(sajuResult.fourPillars.hour.ganGod);
 
-    // Build Ten Gods context (only relevant ones)
     const tenGodsContext = Array.from(tenGodsInChart)
       .map((tenGod) => {
         const info = TEN_GODS_MAP[tenGod];
-        return `- **${info.english}** (${tenGod}): ${info.meaning}`;
+        return info ? `${info.english}: ${info.meaning}` : tenGod;
       })
-      .join("\n");
+      .join("; ");
 
-    // Find strongest element and its info
-    const elementCounts = sajuResult.elementCounts;
-    const strongestElement = Object.entries(elementCounts).sort(
-      ([, a], [, b]) => (b as number) - (a as number)
-    )[0];
-    const strongestElementInfo = FIVE_ELEMENTS_INFO[strongestElement[0]];
+    // Build element balance description
+    const elementBalanceDesc = Object.entries(elementCounts)
+      .map(([element, count]) => {
+        const info = FIVE_ELEMENTS_INFO[element];
+        return `${element.toUpperCase()} (${count}): ${info?.keyword || ""}`;
+      })
+      .join(", ");
 
-    // Find relevant interaction patterns based on Ten Gods
-    const relevantPatterns = INTERACTION_PATTERNS.filter((pattern) =>
-      Array.from(tenGodsInChart).some(
-        (tenGod) =>
-          pattern.combo.includes(TEN_GODS_MAP[tenGod].english) ||
-          TEN_GODS_MAP[tenGod].english
-            .toLowerCase()
-            .includes(
-              pattern.combo.split("+")[0].trim().toLowerCase().split(" ")[0]
-            )
-      )
-    ).slice(0, 3); // Top 3 most relevant patterns
+    // Build system prompt
+    const systemPrompt = `You are the "Life Architect" for BADA. Your goal is to analyze a user's innate nature (Hardware) and their current neurological patterns (OS) to generate a personalized "Life Blueprint Report."
 
-    // Construct dynamic System Prompt
-    const systemPrompt = `You are an insightful career & life coach using Eastern metaphysics and Saju (Korean Four Pillars of Destiny) analysis. 
-    
-Your role is to provide actionable, compassionate insights that help people understand their inherent patterns and navigate life's challenges.
+# Brand Tone & Voice
+1. **Refined & Grounded:** Use B2-C1 level English. Professional, sophisticated, yet intuitive. Avoid academic jargon.
+2. **Metaphorical yet Scientific:** Blend "Nature" metaphors with "Tech/Neuro" terms (OS, Latency, Overheat, Agency).
+3. **No Mysticism:** Translate Saju terms into "Nature" metaphors. NEVER use terms like "Day Master," "Ten Gods," or "Gap-Ja" in the output.
 
-**User's Core Identity:**
-- Day Master (Ilju): ${dayMasterGan} (${dayMasterInfo.name})
-- Archetype: ${dayMasterInfo.archetype}
-- Core Nature: ${dayMasterInfo.core}
-- Psychology: "${dayMasterInfo.psychology}"
+# User's Data Context (Internal Reference Only)
+- Core Element Nature: ${dayMasterInfo.name} (${dayMasterInfo.archetype})
+- Core Traits: ${dayMasterInfo.core}
+- Strengths: ${dayMasterInfo.strength}
+- Weaknesses: ${dayMasterInfo.weakness}
+- Psychology: ${dayMasterInfo.psychology}
+- Archetypal Patterns: ${tenGodsContext}
+- Element Balance: ${elementBalanceDesc}
+- Dominant Element: ${dominantElementName.toUpperCase()} (${dominantElement[1]} instances)
 
-**Ten Gods in Their Chart:**
-${tenGodsContext}
+# User's OS Data
+- Type: ${surveyScores.typeName} (${surveyScores.typeKey})
+- Threat Clarity: ${surveyScores.threatClarity === 1 ? "High" : "Low"} (Score: ${surveyScores.threatScore}/3)
+- Environment Stability: ${surveyScores.environmentStable === 1 ? "Stable" : "Unstable"} (Score: ${surveyScores.environmentScore}/2)
+- Agency Level: ${surveyScores.agencyActive === 1 ? "High" : "Low"} (Score: ${surveyScores.agencyScore}/3)
 
-**Element Balance:**
-${Object.entries(elementCounts)
-  .map(([element, count]) => {
-    const info = FIVE_ELEMENTS_INFO[element];
-    return `- **${element.toUpperCase()}** (${count}): ${info.keyword}`;
-  })
-  .join("\n")}
+Write in a warm, encouraging tone. Be specific. Avoid generic advice.`;
 
-**Dominant Element Analysis:**
-${strongestElement[0].toUpperCase()} (${strongestElement[1]} instances)
-- Keyword: ${strongestElementInfo.keyword}
-- When in Excess: ${strongestElementInfo.excess}
-- When Deficient: ${strongestElementInfo.deficiency}
+    // Build user prompt
+    const userPrompt = `Generate a Life Blueprint Report for ${userName}.
 
-Write in a warm, encouraging tone. Be specific to their archetype. Avoid generic advice.
+Their synthesized identity title is: "${synthesizedTitle}"
 
-**Relevant Archetypal Patterns (Based on Their Ten Gods Mix):**
-${relevantPatterns.map((p) => `- **${p.theme}**: ${p.desc}`).join("\n")}`;
+Create a JSON report with these exact sections. Return ONLY valid JSON, no markdown code blocks:
 
-    // Construct User Prompt
-    const userPrompt = `Please generate a personalized Saju report for ${userName}.
+{
+  "page1_identity": {
+    "title": "${synthesizedTitle}",
+    "sub_headline": "One-sentence punchline summarizing their Hardware (innate nature) + OS (current behavioral state). Make it punchy and memorable.",
+    "visual_concept": {
+      "background_id": "${backgroundId}",
+      "overlay_id": "${overlayId}"
+    }
+  },
+  "page2_hardware": {
+    "section_name": "Your Natural Blueprint",
+    "blueprint_summary": "2-3 sentences describing their innate engine using nature metaphors (not Saju terms). What kind of natural force are they?",
+    "core_insight": ["Insight about their core drive", "Insight about their natural strength"]
+  },
+  "page3_os": {
+    "section_name": "Your Current Operating System",
+    "diagnosis_summary": "2-3 sentences analyzing their ${surveyScores.typeName} pattern. How is their current OS running?",
+    "analysis_points": ["Point about threat response", "Point about environment sensitivity", "Point about agency orientation"]
+  },
+  "page4_mismatch": {
+    "section_name": "The Core Tension",
+    "insight_title": "A catchy name for their specific friction pattern (e.g., 'The Comfort Trap', 'The Overheating Loop')",
+    "conflict_explanation": ["How their hardware and OS create friction", "What this tension looks like in daily life", "The hidden cost of this pattern"]
+  },
+  "page5_solution": {
+    "section_name": "Your Action Protocol",
+    "goal": "One sentence describing the transformation goal",
+    "protocol_name": "A memorable name for their personalized protocol",
+    "steps": [
+      {"step": 1, "action": "A specific cognitive task"},
+      {"step": 2, "action": "A specific environmental change"},
+      {"step": 3, "action": "A specific mindset shift"}
+    ],
+    "closing_message": "An empowering closing sentence that ties back to their identity title"
+  }
+}
 
-They are a **${dayMasterInfo.archetype}** (Day Master: ${dayMasterGan}).
-
-Their chart contains these Ten Gods: ${Array.from(tenGodsInChart)
-      .map((tenGod) => TEN_GODS_MAP[tenGod].english)
-      .join(", ")}.
-
-Element balance is dominated by ${strongestElement[0]}.
-
-Write a 3-section report in markdown:
-
-**1. Core Identity (Your Operating System)**
-Explain what it means to be a ${dayMasterInfo.archetype}. What's their fundamental nature? What drives them?
-
-**2. Current Friction (Where It Gets Hard)**
-Identify the natural tensions in their chart. What are the shadowy sides of their strengths? Where might they struggle?
-
-**3. Actionable Solution**
-Give 2-3 concrete, practical suggestions for how they can work WITH their nature (not against it) to move forward in their career and relationships.
-
-Format the output as clean markdown. Be warm, insightful, and actionable. Don't be generic.`;
+Make the content specific to this person's unique combination. Don't be generic. Return ONLY the JSON object.`;
 
     // Call Gemini API
     const model = client.getGenerativeModel({ model: "gemini-2.5-flash" });
@@ -136,25 +240,85 @@ Format the output as clean markdown. Be warm, insightful, and actionable. Don't 
       contents: [
         {
           role: "user",
-          parts: [
-            {
-              text: userPrompt,
-            },
-          ],
+          parts: [{ text: userPrompt }],
         },
       ],
       systemInstruction: systemPrompt,
     });
 
     const response = result.response;
-    const reportText = response.text();
+    let reportText = response.text();
 
-    return reportText;
+    // Clean up response - remove markdown code blocks if present
+    reportText = reportText.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
+
+    // Parse JSON response
+    const report: LifeBlueprintReport = JSON.parse(reportText);
+
+    // Ensure visual concept has correct values
+    report.page1_identity.visual_concept.background_id = backgroundId;
+    report.page1_identity.visual_concept.overlay_id = overlayId;
+
+    return report;
   } catch (error) {
     throw new Error(
-      `Failed to generate Saju report: ${
+      `Failed to generate Life Blueprint Report: ${
         error instanceof Error ? error.message : String(error)
       }`
     );
   }
+}
+
+/**
+ * Legacy function for backward compatibility
+ * @deprecated Use generateLifeBlueprintReport instead
+ */
+export async function generateSajuReport(
+  sajuResult: SajuResult,
+  userName: string = "Friend"
+): Promise<string> {
+  // Create default survey scores for legacy compatibility
+  const defaultScores: SurveyScores = {
+    threatScore: 1,
+    threatClarity: 0,
+    environmentScore: 1,
+    environmentStable: 1,
+    agencyScore: 1,
+    agencyActive: 0,
+    typeKey: "T0-E1-A0",
+    typeName: "Passive Floater",
+  };
+
+  const report = await generateLifeBlueprintReport(sajuResult, defaultScores, userName);
+  
+  // Convert to markdown for legacy compatibility
+  return `# ${report.page1_identity.title}
+
+${report.page1_identity.sub_headline}
+
+## ${report.page2_hardware.section_name}
+
+${report.page2_hardware.blueprint_summary}
+
+${report.page2_hardware.core_insight.map(i => `- ${i}`).join("\n")}
+
+## ${report.page3_os.section_name}
+
+${report.page3_os.diagnosis_summary}
+
+${report.page3_os.analysis_points.map(p => `- ${p}`).join("\n")}
+
+## ${report.page4_mismatch.section_name}: ${report.page4_mismatch.insight_title}
+
+${report.page4_mismatch.conflict_explanation.map(e => `- ${e}`).join("\n")}
+
+## ${report.page5_solution.section_name}: ${report.page5_solution.protocol_name}
+
+**Goal:** ${report.page5_solution.goal}
+
+${report.page5_solution.steps.map(s => `${s.step}. ${s.action}`).join("\n")}
+
+---
+
+${report.page5_solution.closing_message}`;
 }

@@ -19,7 +19,8 @@ export const sajuResults = pgTable("saju_results", {
   leadId: uuid("lead_id").notNull().references(() => leads.id),
   userInput: jsonb("user_input").notNull(), // Survey answers + birth pattern info
   sajuData: jsonb("saju_data").notNull(), // Four Pillars calculation results
-  reportData: jsonb("report_data").notNull(), // AI-generated report
+  reportData: jsonb("report_data").notNull(), // AI-generated report (5-page JSON)
+  isPaid: boolean("is_paid").notNull().default(false), // Payment gate for full report
   createdAt: timestamp("created_at").defaultNow(),
 });
 

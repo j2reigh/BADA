@@ -6,7 +6,7 @@ import { z } from "zod";
 import { searchCities } from "../lib/photon_client";
 import { getCorrectedKST } from "../lib/time_utils";
 import { calculateSaju } from "../lib/saju_calculator";
-import { generateSajuReport } from "../lib/gemini_client";
+import { generateLifeBlueprintReport, type SurveyScores } from "../lib/gemini_client";
 import { sendVerificationEmail } from "../lib/email";
 import type { InsertBirthPattern, InsertSajuResult } from "@shared/schema";
 
@@ -118,8 +118,18 @@ export async function registerRoutes(
         try {
           sajuData = calculateSaju(input.birthDate, input.birthTime, input.timezone);
           
-          // 4. Generate AI report
-          reportData = await generateSajuReport(sajuData, input.name);
+          // 4. Generate AI report (5-page Life Blueprint)
+          const surveyScoresForReport: SurveyScores = {
+            threatScore: input.surveyScores.threatScore,
+            threatClarity: input.surveyScores.threatClarity,
+            environmentScore: input.surveyScores.environmentScore,
+            environmentStable: input.surveyScores.environmentStable,
+            agencyScore: input.surveyScores.agencyScore,
+            agencyActive: input.surveyScores.agencyActive,
+            typeKey: input.surveyScores.typeKey,
+            typeName: input.surveyScores.typeName,
+          };
+          reportData = await generateLifeBlueprintReport(sajuData, surveyScoresForReport, input.name);
         } catch (err) {
           console.error("Saju calculation error:", err);
           sajuData = { error: "Calculation failed", message: String(err) };
@@ -334,7 +344,7 @@ export async function registerRoutes(
     }
   });
 
-  // Get results (only if verified)
+  // Get results (Page 1 always, Pages 2-5 only if paid)
   app.get("/api/results/:reportId", async (req, res) => {
     try {
       const { reportId } = req.params;
@@ -356,16 +366,64 @@ export async function registerRoutes(
         });
       }
       
-      res.json({
+      const reportData = sajuResult.reportData as any;
+      const isPaid = (sajuResult as any).isPaid || false;
+      
+      // Always return Page 1 (Identity) - the free hook
+      // Only return Pages 2-5 if paid
+      const responseData: any = {
         reportId: sajuResult.id,
         userInput: sajuResult.userInput,
         sajuData: sajuResult.sajuData,
-        reportData: sajuResult.reportData,
+        isPaid,
         createdAt: sajuResult.createdAt,
-      });
+        // Page 1 - always available (free hook)
+        page1_identity: reportData.page1_identity || null,
+      };
+      
+      if (isPaid) {
+        // Full report - Pages 2-5
+        responseData.page2_hardware = reportData.page2_hardware || null;
+        responseData.page3_os = reportData.page3_os || null;
+        responseData.page4_mismatch = reportData.page4_mismatch || null;
+        responseData.page5_solution = reportData.page5_solution || null;
+      } else {
+        // Locked preview - show section names only
+        responseData.page2_hardware = { section_name: "Your Natural Blueprint", locked: true };
+        responseData.page3_os = { section_name: "Your Current Operating System", locked: true };
+        responseData.page4_mismatch = { section_name: "The Core Tension", locked: true };
+        responseData.page5_solution = { section_name: "Your Action Protocol", locked: true };
+      }
+      
+      res.json(responseData);
     } catch (err) {
       console.error("Results fetch error:", err);
       res.status(500).json({ message: "Failed to get results" });
+    }
+  });
+
+  // Unlock report (test endpoint - to be replaced with Stripe webhook)
+  app.post("/api/results/:reportId/unlock", async (req, res) => {
+    try {
+      const { reportId } = req.params;
+      
+      const sajuResult = await storage.getSajuResultById(reportId);
+      if (!sajuResult) {
+        return res.status(404).json({ message: "Report not found" });
+      }
+      
+      const lead = await storage.getLeadById(sajuResult.leadId);
+      if (!lead || !lead.isVerified) {
+        return res.status(403).json({ message: "Email not verified" });
+      }
+      
+      // Update isPaid status
+      await storage.unlockReport(reportId);
+      
+      res.json({ success: true, message: "Report unlocked" });
+    } catch (err) {
+      console.error("Unlock report error:", err);
+      res.status(500).json({ message: "Failed to unlock report" });
     }
   });
 

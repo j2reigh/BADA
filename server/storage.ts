@@ -34,6 +34,7 @@ export interface IStorage {
   createSajuResult(data: InsertSajuResult): Promise<SajuResult>;
   getSajuResultById(id: string): Promise<SajuResult | undefined>;
   getSajuResultsByLeadId(leadId: string): Promise<SajuResult[]>;
+  unlockReport(id: string): Promise<SajuResult | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -182,6 +183,15 @@ export class DatabaseStorage implements IStorage {
       .from(sajuResults)
       .where(eq(sajuResults.leadId, leadId));
     return results;
+  }
+
+  async unlockReport(id: string): Promise<SajuResult | undefined> {
+    const [result] = await db
+      .update(sajuResults)
+      .set({ isPaid: true })
+      .where(eq(sajuResults.id, id))
+      .returning();
+    return result;
   }
 }
 
