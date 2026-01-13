@@ -80,14 +80,19 @@ export async function registerRoutes(
 
   app.post("/api/assessment/submit", async (req, res) => {
     try {
+      console.log("[Assessment] Starting submission...");
       const input = assessmentInputSchema.parse(req.body);
-      
+      console.log("[Assessment] Input validated");
+
       // 1. Upsert lead (create or update by email)
+      console.log("[Assessment] Upserting lead...");
       const lead = await storage.upsertLead(input.email, input.marketingConsent);
+      console.log("[Assessment] Lead created/updated:", lead.id);
       
       // 2. Convert birth time to KST with DST correction
+      console.log("[Assessment] Converting to KST...");
       let kstData: { year: number; month: number; day: number; hour: number | null; minute: number | null; isDstApplied: boolean };
-      
+
       if (input.birthTimeUnknown || !input.birthTime) {
         const [year, month, day] = input.birthDate.split('-').map(Number);
         kstData = {
@@ -111,14 +116,18 @@ export async function registerRoutes(
       }
       
       // 3. Calculate Saju (Four Pillars)
+      console.log("[Assessment] Calculating Saju...");
       let sajuData: any = null;
       let reportData: any = null;
-      
+
       if (!input.birthTimeUnknown && input.birthTime) {
         try {
+          console.log("[Assessment] Running Saju calculation...");
           sajuData = calculateSaju(input.birthDate, input.birthTime, input.timezone);
+          console.log("[Assessment] Saju calculated successfully");
           
           // 4. Generate AI report (5-page Life Blueprint)
+          console.log("[Assessment] Generating AI report...");
           const surveyScoresForReport: SurveyScores = {
             threatScore: input.surveyScores.threatScore,
             threatClarity: input.surveyScores.threatClarity,
@@ -130,8 +139,9 @@ export async function registerRoutes(
             typeName: input.surveyScores.typeName,
           };
           reportData = await generateLifeBlueprintReport(sajuData, surveyScoresForReport, input.name);
+          console.log("[Assessment] AI report generated successfully");
         } catch (err) {
-          console.error("Saju calculation error:", err);
+          console.error("[Assessment] Saju/Report calculation error:", err);
           sajuData = { error: "Calculation failed", message: String(err) };
           reportData = { error: "Report generation failed" };
         }
@@ -141,6 +151,7 @@ export async function registerRoutes(
       }
       
       // 5. Create saju result record
+      console.log("[Assessment] Creating saju result record...");
       const userInput = {
         name: input.name,
         gender: input.gender,
@@ -161,8 +172,10 @@ export async function registerRoutes(
         sajuData: sajuData || {},
         reportData: reportData || {},
       });
-      
+      console.log("[Assessment] Saju result saved:", sajuResult.id);
+
       // 6. Send verification email
+      console.log("[Assessment] Sending verification email...");
       const emailResult = await sendVerificationEmail(
         lead.email,
         lead.verificationToken,
@@ -170,9 +183,12 @@ export async function registerRoutes(
       );
       
       if (!emailResult.success) {
-        console.error("Failed to send verification email:", emailResult.error);
+        console.error("[Assessment] Failed to send verification email:", emailResult.error);
+      } else {
+        console.log("[Assessment] Verification email sent successfully");
       }
-      
+
+      console.log("[Assessment] Submission complete!");
       res.status(201).json({
         success: true,
         reportId: sajuResult.id,
@@ -187,7 +203,8 @@ export async function registerRoutes(
           field: err.errors[0].path.join('.'),
         });
       }
-      console.error("Assessment submission error:", err);
+      console.error("[Assessment] Submission error:", err);
+      console.error("[Assessment] Error stack:", err instanceof Error ? err.stack : "No stack trace");
       res.status(500).json({ message: "Failed to submit assessment" });
     }
   });
@@ -426,6 +443,61 @@ export async function registerRoutes(
       res.status(500).json({ message: "Failed to unlock report" });
     }
   });
+
+  // Gumroad Webhook Handler
+  app.post("/api/webhooks/gumroad", async (req, res) => {
+    try {
+      console.log("[Gumroad] Webhook received:", req.body);
+
+      const {
+        sale_id,
+        email,
+        report_id,
+        price,
+        currency,
+      } = req.body;
+
+      // 유효성 검증
+      if (!sale_id || !report_id) {
+        console.error("[Gumroad] Missing sale_id or report_id");
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      // 리포트 존재 확인
+      const sajuResult = await storage.getSajuResultById(report_id);
+      if (!sajuResult) {
+        console.error("[Gumroad] Report not found:", report_id);
+        return res.status(404).json({ error: "Report not found" });
+      }
+
+      // 이미 결제됨?
+      if (sajuResult.isPaid) {
+        console.log("[Gumroad] Report already paid:", report_id);
+        return res.status(200).json({ message: "Already paid" });
+      }
+
+      // 리포트 잠금 해제
+      await storage.unlockReport(report_id);
+
+      console.log(`[Gumroad] ✅ Report ${report_id} unlocked successfully`);
+      console.log(`[Gumroad] 💰 Sale ID: ${sale_id}, Price: ${price} ${currency}`);
+
+      res.status(200).json({ success: true, message: "Report unlocked" });
+    } catch (error) {
+      console.error("[Gumroad] Webhook error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Webhook 테스트용 엔드포인트 (개발 전용)
+  if (process.env.NODE_ENV === 'development') {
+    app.post("/api/webhooks/gumroad/test", async (req, res) => {
+      const { reportId } = req.body;
+      await storage.unlockReport(reportId);
+      console.log(`[Gumroad Test] Report ${reportId} unlocked`);
+      res.json({ success: true });
+    });
+  }
 
   // Legacy birth pattern submission (keep for backward compatibility)
   const birthPatternInputSchema = z.object({

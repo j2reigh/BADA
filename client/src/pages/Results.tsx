@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -75,6 +75,20 @@ export default function Results() {
   const [, setLocation] = useLocation();
   const [showUnlockAnimation, setShowUnlockAnimation] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+
+  // Load Gumroad script
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://gumroad.com/js/gumroad.js';
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
+  }, []);
 
   const handleDownloadPDF = async () => {
     if (!data) return;
@@ -254,30 +268,62 @@ export default function Results() {
             >
               <Card className="max-w-md mx-auto p-8 bg-white border-2 border-[#0800FF]/20 shadow-xl shadow-[#0800FF]/5">
                 <Sparkles className="w-12 h-12 text-[#0800FF] mx-auto mb-4" />
+
+                {/* Beta Launch Badge */}
+                <div className="mb-4">
+                  <div className="inline-block bg-red-100 text-red-600 px-3 py-1 rounded-full text-sm font-bold mb-2">
+                    🎉 BETA LAUNCH - 85% OFF
+                  </div>
+                </div>
+
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
                   Unlock Your Full Blueprint
                 </h3>
-                <p className="text-gray-600 mb-6">
-                  Get your complete Life Architecture analysis including your natural blueprint, 
+                <p className="text-gray-600 mb-4">
+                  Get your complete Life Architecture analysis including your natural blueprint,
                   OS diagnosis, core tensions, and personalized action plan.
                 </p>
-                <Button
-                  size="lg"
-                  className="w-full bg-[#0800FF] hover:bg-[#0600CC] text-white rounded-full shadow-lg shadow-[#0800FF]/30"
-                  onClick={() => unlockMutation.mutate()}
-                  disabled={unlockMutation.isPending}
-                  data-testid="button-unlock-report"
+
+                {/* Pricing */}
+                <div className="mb-6">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <span className="text-3xl font-bold text-[#0800FF]">$2.99</span>
+                    <span className="text-lg text-gray-400 line-through">$19.99</span>
+                  </div>
+                  <p className="text-xs text-gray-500">Limited time beta pricing</p>
+                </div>
+
+                {/* Gumroad Button */}
+                <a
+                  href={`https://gumroad.com/l/bada-full-report?wanted=true&report_id=${reportId}`}
+                  className="gumroad-button block w-full py-3 px-6 text-center bg-[#0800FF] hover:bg-[#0600CC] text-white rounded-full shadow-lg shadow-[#0800FF]/30 transition-colors font-semibold"
+                  data-gumroad-single-product="true"
+                  data-gumroad-overlay="true"
                 >
-                  {unlockMutation.isPending ? (
-                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                  ) : (
-                    <Unlock className="w-5 h-5 mr-2" />
-                  )}
-                  Unlock Full Report
-                </Button>
+                  🔓 Unlock Full Report - $2.99
+                </a>
+
                 <p className="text-xs text-gray-400 mt-4">
-                  Test mode: Click to unlock without payment
+                  Secure payment via Gumroad • Instant access
                 </p>
+
+                {/* Dev mode test button */}
+                {process.env.NODE_ENV === 'development' && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full mt-4"
+                    onClick={() => unlockMutation.mutate()}
+                    disabled={unlockMutation.isPending}
+                  >
+                    {unlockMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : (
+                      <Unlock className="w-4 h-4 mr-2" />
+                    )}
+                    Test Unlock (Dev Only)
+                  </Button>
+                )}
               </Card>
             </motion.div>
           )}

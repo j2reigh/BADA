@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run dev:*)",
+      "Bash(lsof:*)",
+      "Bash(netstat:*)",
+      "Bash(curl:*)",
+      "Bash(env)",
+      "Bash(python3:*)",
+      "Bash(npm run db:push:*)",
+      "Bash(kill:*)",
+      "Bash(pkill:*)",
+      "Bash(psql:*)",
+      "Bash(echo:*)",
+      "Bash(LEAD_ID=\"47908a2f-223a-473a-a3a0-aa15a7f30acc\")",
+      "Bash(TOKEN=\"e2eb4821-ad5c-485b-98c6-faca639652ef\")",
+      "Bash(REPLIT_URL=\"https://137e95b2-44f0-4b43-86e2-b6f10e35088e-00-15uh3rcrlots4.janeway.replit.dev\":*)",
+      "Bash(__NEW_LINE_90403bf438424728__ echo \"=== Verification Link ===\")"
+    ]
+  }
+}
