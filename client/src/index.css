@@ -1,47 +1,77 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;500;700&family=Outfit:wght@300;400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  /* Ocean-inspired Palette */
-  /* Primary Soft Blue: #CEF0FF -> 200 100% 90% */
-  /* Background Very Light Blue: #F0F8FF -> 208 100% 97% */
-  /* Accent Bada Blue: #0800FF -> 242 100% 50% */
+  /* New Design System */
+  /* Primary: #2492FF -> 210 100% 57% */
+  /* Accent: #E45B06 -> 24 95% 46% */
+  /* Background: #FAFAFA -> 0 0% 98% */
+  /* Text Primary: #2F3034 -> 228 7% 19% */
   
-  --background: 208 100% 97%;
-  --foreground: 222 47% 11%;
+  --background: 0 0% 98%;
+  --foreground: 228 7% 19%;
 
   --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
+  --card-foreground: 228 7% 19%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 11%;
+  --popover-foreground: 228 7% 19%;
 
-  --primary: 242 100% 50%;
-  --primary-foreground: 210 40% 98%;
+  --primary: 210 100% 57%;
+  --primary-foreground: 0 0% 100%;
 
-  --secondary: 200 100% 90%;
-  --secondary-foreground: 222 47% 11%;
+  --secondary: 210 20% 96%;
+  --secondary-foreground: 228 7% 19%;
 
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
+  --muted: 0 0% 96%;
+  --muted-foreground: 228 7% 40%;
 
-  --accent: 200 100% 90%;
-  --accent-foreground: 222.2 47.4% 11.2%;
+  --accent: 24 95% 46%;
+  --accent-foreground: 0 0% 100%;
 
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
 
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 242 100% 50%;
+  --border: 0 0% 90%;
+  --input: 0 0% 90%;
+  --ring: 210 100% 57%;
 
-  --radius: 1rem;
+  --radius: 0.25rem;
 
-  --font-sans: 'DM Sans', sans-serif;
-  --font-display: 'Outfit', sans-serif;
+  --font-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.dark {
+  --background: 228 10% 10%;
+  --foreground: 0 0% 95%;
+
+  --card: 228 10% 14%;
+  --card-foreground: 0 0% 95%;
+
+  --popover: 228 10% 14%;
+  --popover-foreground: 0 0% 95%;
+
+  --primary: 210 100% 57%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 228 10% 20%;
+  --secondary-foreground: 0 0% 95%;
+
+  --muted: 228 10% 18%;
+  --muted-foreground: 0 0% 60%;
+
+  --accent: 24 95% 50%;
+  --accent-foreground: 0 0% 100%;
+
+  --destructive: 0 70% 50%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 228 10% 20%;
+  --input: 228 10% 20%;
+  --ring: 210 100% 57%;
 }
 
 @layer base {
@@ -54,19 +84,18 @@
   }
   
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-display);
-    @apply tracking-tight;
+    font-family: var(--font-sans);
+    @apply tracking-tight font-semibold;
   }
 
-  /* Custom Scrollbar */
   ::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
   }
   ::-webkit-scrollbar-track {
     @apply bg-transparent;
   }
   ::-webkit-scrollbar-thumb {
-    @apply bg-primary/20 rounded-full hover:bg-primary/30 transition-colors;
+    @apply bg-foreground/10 rounded-full hover:bg-foreground/20 transition-colors;
   }
 }
 
@@ -76,10 +105,18 @@
   }
   
   .glass-card {
-    @apply bg-white/80 backdrop-blur-md border border-white/50 shadow-xl shadow-primary/5;
+    @apply bg-white/90 backdrop-blur-md border border-border shadow-lg;
   }
   
-  .ocean-gradient {
-    background: linear-gradient(135deg, hsl(208 100% 97%) 0%, hsl(200 100% 90%) 100%);
+  .brand-gradient {
+    background: linear-gradient(135deg, hsl(210 100% 57%) 0%, hsl(24 95% 46%) 100%);
+  }
+
+  .hover-elevate {
+    @apply transition-all duration-200 hover:shadow-md hover:-translate-y-0.5;
+  }
+
+  .active-elevate-2 {
+    @apply transition-all duration-100 active:translate-y-0 active:shadow-sm;
   }
 }

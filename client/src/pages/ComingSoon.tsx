@@ -6,68 +6,63 @@ import { motion } from "framer-motion";
 export default function ComingSoon() {
   return (
     <div className="min-h-screen bg-background relative overflow-hidden flex flex-col items-center justify-center p-6">
-      {/* Decorative background elements */}
-      <div className="absolute top-[-20%] right-[-10%] w-[500px] h-[500px] bg-secondary/30 rounded-full blur-[100px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] left-[-20%] w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-[-20%] right-[-10%] w-[400px] h-[400px] bg-primary/5 rounded-full blur-[80px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] left-[-20%] w-[500px] h-[500px] bg-accent/5 rounded-full blur-[100px] pointer-events-none" />
 
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
-        className="max-w-2xl w-full text-center space-y-8 z-10"
+        transition={{ duration: 0.6 }}
+        className="max-w-xl w-full text-center space-y-6 z-10"
       >
-        <div className="inline-flex items-center justify-center p-4 bg-white rounded-full shadow-lg mb-6">
-          <Sparkles className="w-10 h-10 text-primary" />
+        <div className="inline-flex items-center justify-center p-3 bg-card border border-border mb-4">
+          <Sparkles className="w-8 h-8 text-accent" />
         </div>
 
-        <div className="space-y-4">
-          <h1 className="text-5xl md:text-6xl font-bold tracking-tight text-foreground leading-[1.1]">
+        <div className="space-y-3">
+          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-foreground leading-tight">
             Your <span className="text-primary">Assessment</span> is Complete!
           </h1>
           
-          <p className="text-xl md:text-2xl text-muted-foreground font-light max-w-lg mx-auto leading-relaxed">
+          <p className="text-lg text-muted-foreground max-w-md mx-auto leading-relaxed">
             Thank you for completing the BADA assessment and providing your birth pattern information.
           </p>
         </div>
 
-        <div className="bg-white/60 backdrop-blur-sm rounded-3xl border border-white/50 shadow-sm p-8 space-y-4">
-          <div className="flex items-center justify-center gap-3">
-            <Zap className="w-5 h-5 text-primary" />
-            <h2 className="text-lg font-bold text-foreground">What's Next?</h2>
+        <div className="bg-card border border-border p-6 space-y-4 text-left">
+          <div className="flex items-center gap-2">
+            <Zap className="w-4 h-4 text-accent" />
+            <h2 className="text-base font-semibold text-foreground">What's Next?</h2>
           </div>
           
-          <p className="text-muted-foreground">
-            We're preparing your personalized BADA report and payment processing. This includes:
+          <p className="text-muted-foreground text-sm">
+            We're preparing your personalized BADA report. This includes:
           </p>
           
-          <ul className="text-left space-y-3 text-muted-foreground">
-            <li className="flex gap-3 items-start">
-              <span className="text-primary font-bold">•</span>
+          <ul className="space-y-2 text-muted-foreground text-sm">
+            <li className="flex gap-2 items-start">
+              <span className="text-accent font-bold">•</span>
               <span>Your detailed Operating Pattern analysis</span>
             </li>
-            <li className="flex gap-3 items-start">
-              <span className="text-primary font-bold">•</span>
+            <li className="flex gap-2 items-start">
+              <span className="text-accent font-bold">•</span>
               <span>Personalized insights based on your birth pattern</span>
             </li>
-            <li className="flex gap-3 items-start">
-              <span className="text-primary font-bold">•</span>
+            <li className="flex gap-2 items-start">
+              <span className="text-accent font-bold">•</span>
               <span>Actionable recommendations for your unique type</span>
-            </li>
-            <li className="flex gap-3 items-start">
-              <span className="text-primary font-bold">•</span>
-              <span>Secure payment portal for report access</span>
             </li>
           </ul>
         </div>
 
-        <div className="pt-8 space-y-4">
-          <p className="text-sm text-muted-foreground">
+        <div className="pt-4 space-y-3">
+          <p className="text-xs text-muted-foreground">
             Check your email for updates. You'll receive your report link shortly.
           </p>
           
           <Link href="/">
             <Button variant="ghost" className="group">
-              <ArrowLeft className="mr-2 w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+              <ArrowLeft className="mr-1 w-4 h-4 group-hover:-translate-x-1 transition-transform" />
               Return Home
             </Button>
           </Link>

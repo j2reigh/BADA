@@ -3,7 +3,7 @@ import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/Button";
 import { motion } from "framer-motion";
-import { Mail, RefreshCw, Edit2, Check, Loader2, ArrowRight } from "lucide-react";
+import { Mail, RefreshCw, Edit2, Check, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface WaitPageData {
@@ -120,8 +120,8 @@ export default function Wait() {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
         <div className="text-center space-y-4">
-          <h1 className="text-2xl font-bold text-foreground">Report not found</h1>
-          <p className="text-muted-foreground">This report may have expired or doesn't exist.</p>
+          <h1 className="text-xl font-semibold text-foreground">Report not found</h1>
+          <p className="text-muted-foreground text-sm">This report may have expired or doesn't exist.</p>
           <Button onClick={() => setLocation("/")} data-testid="button-go-home">
             Go Home
           </Button>
@@ -132,30 +132,30 @@ export default function Wait() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary/20 via-primary to-primary/20" />
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-accent to-primary" />
       
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.4 }}
         className="w-full max-w-md z-10"
       >
-        <div className="bg-white rounded-3xl p-8 shadow-lg text-center space-y-6">
-          <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-            <Mail className="w-10 h-10 text-primary" />
+        <div className="bg-card border border-border p-6 text-center space-y-5">
+          <div className="w-16 h-16 bg-primary/10 flex items-center justify-center mx-auto">
+            <Mail className="w-8 h-8 text-primary" />
           </div>
           
-          <div className="space-y-3">
-            <h1 className="text-2xl font-bold text-foreground">
+          <div className="space-y-2">
+            <h1 className="text-xl font-semibold text-foreground">
               Your Report is Ready!
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               We sent a verification link to:
             </p>
             
             {!isEditingEmail ? (
-              <div className="bg-primary/5 rounded-2xl p-4">
-                <p className="font-semibold text-primary break-all" data-testid="text-email">
+              <div className="bg-primary/5 p-3">
+                <p className="font-medium text-primary text-sm break-all" data-testid="text-email">
                   {data.email}
                 </p>
               </div>
@@ -166,7 +166,7 @@ export default function Wait() {
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
                   placeholder="Enter new email"
-                  className="w-full px-4 py-3 rounded-2xl border-2 border-primary/20 bg-white focus:border-primary focus:outline-none transition-colors"
+                  className="w-full px-3 py-2.5 border border-border bg-card focus:border-primary focus:outline-none transition-colors text-sm"
                   data-testid="input-new-email"
                 />
                 <div className="flex gap-2">
@@ -191,7 +191,7 @@ export default function Wait() {
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       <>
-                        <Check className="w-4 h-4 mr-2" />
+                        <Check className="w-4 h-4 mr-1" />
                         Update
                       </>
                     )}
@@ -201,11 +201,11 @@ export default function Wait() {
             )}
           </div>
           
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Click the link in the email to view your personalized BADA report with Saju insights.
           </p>
           
-          <div className="space-y-3 pt-4 border-t border-gray-100">
+          <div className="space-y-2 pt-4 border-t border-border">
             {!isEditingEmail && (
               <>
                 <Button
@@ -228,7 +228,7 @@ export default function Wait() {
                 
                 <button
                   onClick={() => setIsEditingEmail(true)}
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center justify-center gap-1 w-full py-2"
+                  className="text-xs text-muted-foreground hover:text-accent transition-colors flex items-center justify-center gap-1 w-full py-2"
                   data-testid="button-wrong-email"
                 >
                   <Edit2 className="w-3 h-3" />
@@ -242,8 +242,8 @@ export default function Wait() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.5, duration: 0.5 }}
-          className="text-center mt-6"
+          transition={{ delay: 0.4 }}
+          className="text-center mt-4"
         >
           <p className="text-xs text-muted-foreground">
             Didn't receive the email? Check your spam folder.

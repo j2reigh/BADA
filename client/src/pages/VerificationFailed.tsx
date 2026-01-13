@@ -35,32 +35,32 @@ export default function VerificationFailed() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
-      <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary/20 via-primary to-primary/20" />
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-accent to-primary" />
       
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.4 }}
         className="w-full max-w-md"
       >
-        <div className="bg-white rounded-3xl p-8 shadow-lg text-center space-y-6">
-          <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto">
-            <AlertCircle className="w-10 h-10 text-red-500" />
+        <div className="bg-card border border-border p-6 text-center space-y-5">
+          <div className="w-14 h-14 bg-destructive/10 flex items-center justify-center mx-auto">
+            <AlertCircle className="w-7 h-7 text-destructive" />
           </div>
           
-          <div className="space-y-3">
-            <h1 className="text-2xl font-bold text-foreground">
+          <div className="space-y-2">
+            <h1 className="text-xl font-semibold text-foreground">
               {message.title}
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               {message.description}
             </p>
           </div>
           
-          <div className="pt-4">
+          <div className="pt-2">
             <Button
               onClick={() => setLocation("/")}
-              className="w-full rounded-full"
+              className="w-full"
               data-testid="button-go-home"
             >
               <Home className="w-4 h-4 mr-2" />

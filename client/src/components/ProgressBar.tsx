@@ -10,16 +10,16 @@ export function ProgressBar({ current, total }: ProgressBarProps) {
 
   return (
     <div className="w-full space-y-2">
-      <div className="flex justify-between text-xs font-medium uppercase tracking-widest text-muted-foreground">
+      <div className="flex justify-between text-xs font-medium text-muted-foreground">
         <span>Question {current} of {total}</span>
         <span>{Math.round(progress)}%</span>
       </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-secondary/50">
+      <div className="h-1 w-full overflow-hidden bg-muted">
         <motion.div
           className="h-full bg-primary"
           initial={{ width: 0 }}
           animate={{ width: `${progress}%` }}
-          transition={{ duration: 0.5, ease: "easeInOut" }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
         />
       </div>
     </div>

@@ -52,22 +52,22 @@ interface ResultsData {
 }
 
 const BACKGROUND_GRADIENTS: Record<string, string> = {
-  bg_type_01: "from-cyan-400 via-blue-500 to-indigo-600",
-  bg_type_02: "from-orange-400 via-red-500 to-purple-600",
-  bg_type_03: "from-emerald-400 via-teal-500 to-cyan-600",
-  bg_type_04: "from-rose-400 via-pink-500 to-purple-600",
-  bg_type_05: "from-slate-400 via-gray-500 to-zinc-600",
-  bg_type_06: "from-violet-400 via-purple-500 to-indigo-600",
-  bg_type_07: "from-stone-400 via-neutral-500 to-gray-600",
-  bg_type_08: "from-amber-400 via-orange-500 to-red-600",
+  bg_type_01: "from-[#2492FF] via-[#1a7ae0] to-[#0d5dba]",
+  bg_type_02: "from-[#E45B06] via-[#c44f05] to-[#9a3d04]",
+  bg_type_03: "from-[#2492FF] via-[#5ba8ff] to-[#8dc4ff]",
+  bg_type_04: "from-[#E45B06] via-[#ff7d3d] to-[#ffa070]",
+  bg_type_05: "from-[#2F3034] via-[#4a4b50] to-[#6b6d73]",
+  bg_type_06: "from-[#2492FF] to-[#E45B06]",
+  bg_type_07: "from-[#2F3034] via-[#2492FF] to-[#2F3034]",
+  bg_type_08: "from-[#E45B06] via-[#2492FF] to-[#E45B06]",
 };
 
 const ELEMENT_COLORS: Record<string, string> = {
-  overlay_wood: "text-green-400",
-  overlay_fire: "text-orange-400",
-  overlay_earth: "text-amber-400",
-  overlay_metal: "text-slate-300",
-  overlay_water: "text-blue-400",
+  overlay_wood: "text-green-300",
+  overlay_fire: "text-orange-300",
+  overlay_earth: "text-amber-300",
+  overlay_metal: "text-slate-200",
+  overlay_water: "text-blue-300",
 };
 
 export default function Results() {
@@ -76,7 +76,6 @@ export default function Results() {
   const [showUnlockAnimation, setShowUnlockAnimation] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
-  // Load Gumroad script
   useEffect(() => {
     const script = document.createElement('script');
     script.src = 'https://gumroad.com/js/gumroad.js';
@@ -123,10 +122,10 @@ export default function Results() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#F0F8FF] flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-4">
-          <Loader2 className="w-12 h-12 animate-spin text-[#0800FF] mx-auto" />
-          <p className="text-gray-600">Loading your Life Blueprint...</p>
+          <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto" />
+          <p className="text-muted-foreground text-sm">Loading your Life Blueprint...</p>
         </div>
       </div>
     );
@@ -134,10 +133,10 @@ export default function Results() {
 
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-[#F0F8FF] flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
         <div className="text-center space-y-4">
-          <h1 className="text-2xl font-bold text-gray-900">Unable to load results</h1>
-          <p className="text-gray-600">Please verify your email to access your report.</p>
+          <h1 className="text-xl font-semibold text-foreground">Unable to load results</h1>
+          <p className="text-muted-foreground text-sm">Please verify your email to access your report.</p>
           <Button onClick={() => setLocation("/")} data-testid="button-go-home">
             Go Home
           </Button>
@@ -151,14 +150,14 @@ export default function Results() {
   const elementColor = ELEMENT_COLORS[page1_identity?.visual_concept?.overlay_id || "overlay_water"];
 
   return (
-    <div className="min-h-screen bg-[#F0F8FF]">
+    <div className="min-h-screen bg-background">
       <AnimatePresence>
         {showUnlockAnimation && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center"
+            className="fixed inset-0 z-50 bg-foreground/90 flex items-center justify-center"
           >
             <motion.div
               initial={{ scale: 0.5, opacity: 0 }}
@@ -170,9 +169,9 @@ export default function Results() {
                 animate={{ rotate: 360 }}
                 transition={{ duration: 1, ease: "easeInOut" }}
               >
-                <Unlock className="w-24 h-24 text-[#0800FF] mx-auto mb-4" />
+                <Unlock className="w-20 h-20 text-primary mx-auto mb-4" />
               </motion.div>
-              <h2 className="text-3xl font-bold text-white">Unlocking Your Blueprint...</h2>
+              <h2 className="text-2xl font-semibold text-background">Unlocking Your Blueprint...</h2>
             </motion.div>
           </motion.div>
         )}
@@ -181,33 +180,29 @@ export default function Results() {
       <motion.section
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className={`relative min-h-[70vh] bg-gradient-to-br ${bgGradient} flex items-center justify-center overflow-hidden`}
+        className={`relative min-h-[60vh] bg-gradient-to-br ${bgGradient} flex items-center justify-center overflow-hidden`}
       >
-        <div className="absolute inset-0 bg-black/30" />
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-20 left-20 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-20 right-20 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
-        </div>
+        <div className="absolute inset-0 bg-black/20" />
         
         <motion.div
-          initial={{ y: 30, opacity: 0 }}
+          initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.6 }}
-          className="relative z-10 text-center px-6 max-w-3xl"
+          transition={{ delay: 0.2, duration: 0.5 }}
+          className="relative z-10 text-center px-6 max-w-2xl"
         >
-          <p className="text-white/80 text-lg mb-2">Hello, {userInput.name}</p>
+          <p className="text-white/70 text-sm mb-2">Hello, {userInput.name}</p>
           <h1 
-            className={`text-5xl md:text-7xl font-bold text-white mb-6 drop-shadow-lg ${elementColor}`}
+            className={`text-4xl md:text-5xl font-semibold text-white mb-4 ${elementColor}`}
             data-testid="text-identity-title"
           >
             {page1_identity?.title || "Your Life Blueprint"}
           </h1>
-          <p className="text-xl md:text-2xl text-white/90 font-light leading-relaxed" data-testid="text-sub-headline">
+          <p className="text-lg text-white/80 leading-relaxed" data-testid="text-sub-headline">
             {page1_identity?.sub_headline || "Discover your unique operating pattern"}
           </p>
           
-          <div className="mt-8 inline-flex items-center px-6 py-3 rounded-full bg-white/20 backdrop-blur-sm border border-white/30">
-            <span className="text-white font-mono text-sm">
+          <div className="mt-6 inline-flex items-center px-4 py-2 bg-white/15 backdrop-blur-sm border border-white/20 text-sm">
+            <span className="text-white font-mono">
               Pattern: {userInput.surveyScores?.typeName || "Unknown"}
             </span>
           </div>
@@ -216,98 +211,90 @@ export default function Results() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2"
+          transition={{ delay: 0.6 }}
+          className="absolute bottom-6 left-1/2 -translate-x-1/2"
         >
           <div className="animate-bounce">
-            <ArrowRight className="w-6 h-6 text-white/60 rotate-90" />
+            <ArrowRight className="w-5 h-5 text-white/50 rotate-90" />
           </div>
         </motion.div>
       </motion.section>
 
-      <section className="py-16 px-6">
-        <div className="max-w-4xl mx-auto space-y-8">
+      <section className="py-12 px-6">
+        <div className="max-w-3xl mx-auto space-y-6">
           <LockedSection
             page={page2_hardware}
             pageNumber={2}
             isPaid={isPaid}
-            icon="leaf"
-            color="green"
+            color="primary"
           />
           
           <LockedSection
             page={page3_os}
             pageNumber={3}
             isPaid={isPaid}
-            icon="cpu"
-            color="blue"
+            color="accent"
           />
           
           <LockedSection
             page={page4_mismatch}
             pageNumber={4}
             isPaid={isPaid}
-            icon="zap"
-            color="amber"
+            color="primary"
           />
           
           <LockedSection
             page={page5_solution}
             pageNumber={5}
             isPaid={isPaid}
-            icon="target"
-            color="violet"
+            color="accent"
           />
 
           {!isPaid && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              className="text-center py-12"
+              transition={{ delay: 0.4 }}
+              className="text-center py-10"
             >
-              <Card className="max-w-md mx-auto p-8 bg-white border-2 border-[#0800FF]/20 shadow-xl shadow-[#0800FF]/5">
-                <Sparkles className="w-12 h-12 text-[#0800FF] mx-auto mb-4" />
+              <Card className="max-w-sm mx-auto p-6 bg-card border border-border">
+                <Sparkles className="w-10 h-10 text-accent mx-auto mb-4" />
 
-                {/* Beta Launch Badge */}
                 <div className="mb-4">
-                  <div className="inline-block bg-red-100 text-red-600 px-3 py-1 rounded-full text-sm font-bold mb-2">
-                    🎉 BETA LAUNCH - 85% OFF
+                  <div className="inline-block bg-accent/10 text-accent px-3 py-1 text-xs font-semibold mb-2">
+                    BETA LAUNCH - 85% OFF
                   </div>
                 </div>
 
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                <h3 className="text-xl font-semibold text-foreground mb-2">
                   Unlock Your Full Blueprint
                 </h3>
-                <p className="text-gray-600 mb-4">
+                <p className="text-muted-foreground text-sm mb-4">
                   Get your complete Life Architecture analysis including your natural blueprint,
                   OS diagnosis, core tensions, and personalized action plan.
                 </p>
 
-                {/* Pricing */}
-                <div className="mb-6">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <span className="text-3xl font-bold text-[#0800FF]">$2.99</span>
-                    <span className="text-lg text-gray-400 line-through">$19.99</span>
+                <div className="mb-5">
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <span className="text-2xl font-semibold text-primary">$2.99</span>
+                    <span className="text-muted-foreground line-through text-sm">$19.99</span>
                   </div>
-                  <p className="text-xs text-gray-500">Limited time beta pricing</p>
+                  <p className="text-xs text-muted-foreground">Limited time beta pricing</p>
                 </div>
 
-                {/* Gumroad Button */}
                 <a
                   href={`https://gumroad.com/l/bada-full-report?wanted=true&report_id=${reportId}`}
-                  className="gumroad-button block w-full py-3 px-6 text-center bg-[#0800FF] hover:bg-[#0600CC] text-white rounded-full shadow-lg shadow-[#0800FF]/30 transition-colors font-semibold"
+                  className="block w-full py-3 px-6 text-center bg-primary hover:bg-primary/90 text-white font-medium transition-colors"
                   data-gumroad-single-product="true"
                   data-gumroad-overlay="true"
                 >
-                  🔓 Unlock Full Report - $2.99
+                  Unlock Full Report - $2.99
                 </a>
 
-                <p className="text-xs text-gray-400 mt-4">
-                  Secure payment via Gumroad • Instant access
+                <p className="text-xs text-muted-foreground mt-4">
+                  Secure payment via Gumroad
                 </p>
 
-                {/* Dev mode test button */}
                 {process.env.NODE_ENV === 'development' && (
                   <Button
                     size="sm"
@@ -332,11 +319,11 @@ export default function Results() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center py-8 space-y-4"
+              className="text-center py-6 space-y-3"
             >
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-full">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-100 text-green-700 text-sm">
                 <Check className="w-4 h-4" />
-                <span className="text-sm font-medium">Full Report Unlocked</span>
+                <span className="font-medium">Full Report Unlocked</span>
               </div>
               <div>
                 <Button
@@ -359,7 +346,7 @@ export default function Results() {
         </div>
       </section>
 
-      <footer className="py-8 text-center text-sm text-gray-500">
+      <footer className="py-6 text-center text-xs text-muted-foreground">
         <p>Report generated on {new Date(data.createdAt).toLocaleDateString()}</p>
       </footer>
     </div>
@@ -370,21 +357,18 @@ interface LockedSectionProps {
   page: PageSection | null;
   pageNumber: number;
   isPaid: boolean;
-  icon: string;
   color: string;
 }
 
-function LockedSection({ page, pageNumber, isPaid, color }: LockedSectionProps) {
+function LockedSection({ page, pageNumber, color }: LockedSectionProps) {
   if (!page) return null;
 
   const colorClasses: Record<string, { bg: string; border: string; text: string; accent: string }> = {
-    green: { bg: "bg-green-50", border: "border-green-200", text: "text-green-700", accent: "bg-green-500" },
-    blue: { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-700", accent: "bg-blue-500" },
-    amber: { bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-700", accent: "bg-amber-500" },
-    violet: { bg: "bg-violet-50", border: "border-violet-200", text: "text-violet-700", accent: "bg-violet-500" },
+    primary: { bg: "bg-primary/5", border: "border-primary/20", text: "text-primary", accent: "bg-primary" },
+    accent: { bg: "bg-accent/5", border: "border-accent/20", text: "text-accent", accent: "bg-accent" },
   };
 
-  const colors = colorClasses[color] || colorClasses.blue;
+  const colors = colorClasses[color] || colorClasses.primary;
   const isLocked = page.locked === true;
 
   return (
@@ -394,49 +378,49 @@ function LockedSection({ page, pageNumber, isPaid, color }: LockedSectionProps) 
       viewport={{ once: true }}
       transition={{ delay: pageNumber * 0.1 }}
     >
-      <Card className={`relative overflow-hidden border-2 ${isLocked ? 'border-gray-200' : colors.border}`}>
+      <Card className={`relative overflow-hidden border ${isLocked ? 'border-border' : colors.border}`}>
         <div className={`absolute top-0 left-0 w-1 h-full ${colors.accent}`} />
         
-        <div className={`p-6 md:p-8 ${isLocked ? 'relative' : ''}`}>
+        <div className={`p-5 md:p-6 ${isLocked ? 'relative' : ''}`}>
           {isLocked && (
             <>
-              <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center">
+              <div className="absolute inset-0 bg-card/90 backdrop-blur-sm z-10 flex items-center justify-center">
                 <div className="text-center">
-                  <Lock className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-500 font-medium">Unlock to view</p>
+                  <Lock className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-muted-foreground text-sm font-medium">Unlock to view</p>
                 </div>
               </div>
               <div className="blur-sm select-none">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className={`text-sm font-bold ${colors.text} uppercase tracking-wider`}>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className={`text-xs font-semibold ${colors.text} uppercase tracking-wider`}>
                     Page {pageNumber}
                   </span>
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                <h3 className="text-lg font-semibold text-foreground mb-3">
                   {page.section_name}
                 </h3>
                 <div className="space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-full" />
-                  <div className="h-4 bg-gray-200 rounded w-5/6" />
-                  <div className="h-4 bg-gray-200 rounded w-4/6" />
+                  <div className="h-3 bg-muted rounded w-full" />
+                  <div className="h-3 bg-muted rounded w-5/6" />
+                  <div className="h-3 bg-muted rounded w-4/6" />
                 </div>
               </div>
             </>
           )}
 
           {!isLocked && (
-            <div className={colors.bg + " -m-6 md:-m-8 p-6 md:p-8"}>
-              <div className="flex items-center gap-3 mb-4">
-                <span className={`text-sm font-bold ${colors.text} uppercase tracking-wider`}>
+            <div className={colors.bg + " -m-5 md:-m-6 p-5 md:p-6"}>
+              <div className="flex items-center gap-2 mb-3">
+                <span className={`text-xs font-semibold ${colors.text} uppercase tracking-wider`}>
                   Page {pageNumber}
                 </span>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+              <h3 className="text-lg font-semibold text-foreground mb-3">
                 {page.section_name}
               </h3>
 
               {page.blueprint_summary && (
-                <p className="text-gray-700 text-lg leading-relaxed mb-4">
+                <p className="text-foreground leading-relaxed mb-3">
                   {page.blueprint_summary}
                 </p>
               )}
@@ -445,15 +429,15 @@ function LockedSection({ page, pageNumber, isPaid, color }: LockedSectionProps) 
                 <ul className="space-y-2">
                   {page.core_insight.map((insight, i) => (
                     <li key={i} className="flex items-start gap-2">
-                      <Check className={`w-5 h-5 ${colors.text} mt-0.5 shrink-0`} />
-                      <span className="text-gray-700">{insight}</span>
+                      <Check className={`w-4 h-4 ${colors.text} mt-0.5 shrink-0`} />
+                      <span className="text-foreground text-sm">{insight}</span>
                     </li>
                   ))}
                 </ul>
               )}
 
               {page.diagnosis_summary && (
-                <p className="text-gray-700 text-lg leading-relaxed mb-4">
+                <p className="text-foreground leading-relaxed mb-3">
                   {page.diagnosis_summary}
                 </p>
               )}
@@ -462,24 +446,24 @@ function LockedSection({ page, pageNumber, isPaid, color }: LockedSectionProps) 
                 <ul className="space-y-2">
                   {page.analysis_points.map((point, i) => (
                     <li key={i} className="flex items-start gap-2">
-                      <Check className={`w-5 h-5 ${colors.text} mt-0.5 shrink-0`} />
-                      <span className="text-gray-700">{point}</span>
+                      <Check className={`w-4 h-4 ${colors.text} mt-0.5 shrink-0`} />
+                      <span className="text-foreground text-sm">{point}</span>
                     </li>
                   ))}
                 </ul>
               )}
 
               {page.insight_title && (
-                <div className="mb-4">
-                  <h4 className={`text-xl font-bold ${colors.text} mb-3`}>
+                <div className="mb-3 mt-4">
+                  <h4 className={`text-base font-semibold ${colors.text} mb-2`}>
                     {page.insight_title}
                   </h4>
                   {page.conflict_explanation && page.conflict_explanation.length > 0 && (
                     <ul className="space-y-2">
                       {page.conflict_explanation.map((exp, i) => (
                         <li key={i} className="flex items-start gap-2">
-                          <span className={`${colors.text} font-bold`}>{i + 1}.</span>
-                          <span className="text-gray-700">{exp}</span>
+                          <span className={`${colors.text} font-semibold text-sm`}>{i + 1}.</span>
+                          <span className="text-foreground text-sm">{exp}</span>
                         </li>
                       ))}
                     </ul>
@@ -488,32 +472,32 @@ function LockedSection({ page, pageNumber, isPaid, color }: LockedSectionProps) 
               )}
 
               {page.protocol_name && (
-                <div>
-                  <div className="mb-4">
-                    <h4 className={`text-xl font-bold ${colors.text}`}>
+                <div className="mt-4">
+                  <div className="mb-3">
+                    <h4 className={`text-base font-semibold ${colors.text}`}>
                       {page.protocol_name}
                     </h4>
                     {page.goal && (
-                      <p className="text-gray-600 mt-1">{page.goal}</p>
+                      <p className="text-muted-foreground text-sm mt-1">{page.goal}</p>
                     )}
                   </div>
                   
                   {page.steps && page.steps.length > 0 && (
-                    <div className="space-y-3 mb-6">
+                    <div className="space-y-2 mb-4">
                       {page.steps.map((step) => (
-                        <div key={step.step} className="flex items-start gap-3 p-4 bg-white rounded-lg border border-gray-100">
-                          <span className={`w-8 h-8 rounded-full ${colors.accent} text-white flex items-center justify-center font-bold text-sm shrink-0`}>
+                        <div key={step.step} className="flex items-start gap-3 p-3 bg-card border border-border">
+                          <span className={`w-6 h-6 ${colors.accent} text-white flex items-center justify-center font-semibold text-xs shrink-0`}>
                             {step.step}
                           </span>
-                          <p className="text-gray-700 pt-1">{step.action}</p>
+                          <p className="text-foreground text-sm pt-0.5">{step.action}</p>
                         </div>
                       ))}
                     </div>
                   )}
 
                   {page.closing_message && (
-                    <div className={`p-4 rounded-lg ${colors.bg} border ${colors.border}`}>
-                      <p className={`${colors.text} font-medium italic`}>
+                    <div className={`p-3 ${colors.bg} border ${colors.border}`}>
+                      <p className={`${colors.text} text-sm italic`}>
                         "{page.closing_message}"
                       </p>
                     </div>

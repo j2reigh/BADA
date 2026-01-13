@@ -38,15 +38,14 @@ interface ReportData {
 }
 
 const COLORS = {
-  primary: "#0800FF",
-  text: "#1a1a1a",
-  secondary: "#666666",
-  light: "#f0f8ff",
-  accent: {
-    green: "#22c55e",
-    blue: "#3b82f6",
-    amber: "#f59e0b",
-    violet: "#8b5cf6",
+  primary: "#2492FF",
+  accent: "#E45B06",
+  text: "#2F3034",
+  secondary: "#6b7280",
+  light: "#FAFAFA",
+  section: {
+    primary: "#2492FF",
+    accent: "#E45B06",
   },
 };
 
@@ -82,36 +81,37 @@ export async function generateReportPDF(data: ReportData): Promise<void> {
   };
 
   pdf.setFillColor(COLORS.primary);
-  pdf.rect(0, 0, pageWidth, 80, "F");
+  pdf.rect(0, 0, pageWidth, 70, "F");
 
   pdf.setTextColor("#ffffff");
-  pdf.setFontSize(12);
-  pdf.text("BADA Life Blueprint Report", margin, 25);
+  pdf.setFontSize(11);
+  pdf.setFont("helvetica", "normal");
+  pdf.text("BADA Life Blueprint Report", margin, 22);
 
-  pdf.setFontSize(10);
-  pdf.text(`Prepared for: ${data.userInput.name}`, margin, 35);
-  pdf.text(`Generated: ${new Date(data.createdAt).toLocaleDateString()}`, margin, 42);
+  pdf.setFontSize(9);
+  pdf.text(`Prepared for: ${data.userInput.name}`, margin, 32);
+  pdf.text(`Generated: ${new Date(data.createdAt).toLocaleDateString()}`, margin, 40);
 
   if (data.page1_identity) {
-    pdf.setFontSize(28);
+    pdf.setFontSize(24);
     pdf.setFont("helvetica", "bold");
-    const titleLines = wrapText(data.page1_identity.title, contentWidth, 28);
-    pdf.text(titleLines, margin, 58);
+    const titleLines = wrapText(data.page1_identity.title, contentWidth, 24);
+    pdf.text(titleLines, margin, 54);
 
-    pdf.setFontSize(12);
+    pdf.setFontSize(11);
     pdf.setFont("helvetica", "normal");
-    const subLines = wrapText(data.page1_identity.sub_headline, contentWidth, 12);
-    pdf.text(subLines, margin, 70);
+    const subLines = wrapText(data.page1_identity.sub_headline, contentWidth, 11);
+    pdf.text(subLines, margin, 64);
   }
 
-  yPos = 95;
+  yPos = 85;
   pdf.setTextColor(COLORS.text);
 
   if (data.userInput.surveyScores) {
-    pdf.setFontSize(10);
+    pdf.setFontSize(9);
     pdf.setTextColor(COLORS.secondary);
     pdf.text(`Operating Pattern: ${data.userInput.surveyScores.typeName}`, margin, yPos);
-    yPos += 15;
+    yPos += 12;
   }
 
   const addSection = (
@@ -121,147 +121,147 @@ export async function generateReportPDF(data: ReportData): Promise<void> {
   ) => {
     if (!page || page.locked) return;
 
-    addNewPageIfNeeded(60);
+    addNewPageIfNeeded(50);
 
     pdf.setFillColor(accentColor);
-    pdf.rect(margin, yPos, 3, 20, "F");
+    pdf.rect(margin, yPos, 2, 16, "F");
 
     pdf.setTextColor(accentColor);
-    pdf.setFontSize(10);
+    pdf.setFontSize(9);
     pdf.setFont("helvetica", "bold");
-    pdf.text(`PAGE ${pageNum}`, margin + 8, yPos + 5);
+    pdf.text(`PAGE ${pageNum}`, margin + 6, yPos + 5);
 
     pdf.setTextColor(COLORS.text);
-    pdf.setFontSize(16);
-    pdf.text(page.section_name, margin + 8, yPos + 14);
+    pdf.setFontSize(14);
+    pdf.text(page.section_name, margin + 6, yPos + 12);
 
-    yPos += 25;
+    yPos += 20;
 
     pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(11);
+    pdf.setFontSize(10);
     pdf.setTextColor(COLORS.text);
 
     if (page.blueprint_summary) {
-      const lines = wrapText(page.blueprint_summary, contentWidth - 10, 11);
-      addNewPageIfNeeded(lines.length * 5 + 10);
-      pdf.text(lines, margin + 8, yPos);
-      yPos += lines.length * 5 + 8;
+      const lines = wrapText(page.blueprint_summary, contentWidth - 8, 10);
+      addNewPageIfNeeded(lines.length * 5 + 8);
+      pdf.text(lines, margin + 6, yPos);
+      yPos += lines.length * 5 + 6;
     }
 
     if (page.core_insight && page.core_insight.length > 0) {
       page.core_insight.forEach((insight) => {
-        const lines = wrapText(`• ${insight}`, contentWidth - 15, 10);
-        addNewPageIfNeeded(lines.length * 4 + 5);
-        pdf.setFontSize(10);
-        pdf.text(lines, margin + 12, yPos);
-        yPos += lines.length * 4 + 3;
+        const lines = wrapText(`• ${insight}`, contentWidth - 12, 9);
+        addNewPageIfNeeded(lines.length * 4 + 4);
+        pdf.setFontSize(9);
+        pdf.text(lines, margin + 10, yPos);
+        yPos += lines.length * 4 + 2;
       });
-      yPos += 5;
+      yPos += 4;
     }
 
     if (page.diagnosis_summary) {
-      const lines = wrapText(page.diagnosis_summary, contentWidth - 10, 11);
-      addNewPageIfNeeded(lines.length * 5 + 10);
-      pdf.text(lines, margin + 8, yPos);
-      yPos += lines.length * 5 + 8;
+      const lines = wrapText(page.diagnosis_summary, contentWidth - 8, 10);
+      addNewPageIfNeeded(lines.length * 5 + 8);
+      pdf.text(lines, margin + 6, yPos);
+      yPos += lines.length * 5 + 6;
     }
 
     if (page.analysis_points && page.analysis_points.length > 0) {
       page.analysis_points.forEach((point) => {
-        const lines = wrapText(`• ${point}`, contentWidth - 15, 10);
-        addNewPageIfNeeded(lines.length * 4 + 5);
-        pdf.setFontSize(10);
-        pdf.text(lines, margin + 12, yPos);
-        yPos += lines.length * 4 + 3;
+        const lines = wrapText(`• ${point}`, contentWidth - 12, 9);
+        addNewPageIfNeeded(lines.length * 4 + 4);
+        pdf.setFontSize(9);
+        pdf.text(lines, margin + 10, yPos);
+        yPos += lines.length * 4 + 2;
       });
-      yPos += 5;
+      yPos += 4;
     }
 
     if (page.insight_title) {
-      addNewPageIfNeeded(25);
-      pdf.setFontSize(13);
+      addNewPageIfNeeded(20);
+      pdf.setFontSize(11);
       pdf.setFont("helvetica", "bold");
       pdf.setTextColor(accentColor);
-      pdf.text(page.insight_title, margin + 8, yPos);
-      yPos += 8;
+      pdf.text(page.insight_title, margin + 6, yPos);
+      yPos += 6;
       pdf.setFont("helvetica", "normal");
       pdf.setTextColor(COLORS.text);
     }
 
     if (page.conflict_explanation && page.conflict_explanation.length > 0) {
       page.conflict_explanation.forEach((exp, i) => {
-        const lines = wrapText(`${i + 1}. ${exp}`, contentWidth - 15, 10);
-        addNewPageIfNeeded(lines.length * 4 + 5);
-        pdf.setFontSize(10);
-        pdf.text(lines, margin + 12, yPos);
-        yPos += lines.length * 4 + 3;
+        const lines = wrapText(`${i + 1}. ${exp}`, contentWidth - 12, 9);
+        addNewPageIfNeeded(lines.length * 4 + 4);
+        pdf.setFontSize(9);
+        pdf.text(lines, margin + 10, yPos);
+        yPos += lines.length * 4 + 2;
       });
-      yPos += 5;
+      yPos += 4;
     }
 
     if (page.protocol_name) {
-      addNewPageIfNeeded(30);
-      pdf.setFontSize(14);
+      addNewPageIfNeeded(25);
+      pdf.setFontSize(12);
       pdf.setFont("helvetica", "bold");
       pdf.setTextColor(accentColor);
-      pdf.text(page.protocol_name, margin + 8, yPos);
-      yPos += 7;
+      pdf.text(page.protocol_name, margin + 6, yPos);
+      yPos += 6;
 
       if (page.goal) {
-        pdf.setFontSize(10);
+        pdf.setFontSize(9);
         pdf.setFont("helvetica", "normal");
         pdf.setTextColor(COLORS.secondary);
-        const goalLines = wrapText(page.goal, contentWidth - 10, 10);
-        pdf.text(goalLines, margin + 8, yPos);
-        yPos += goalLines.length * 4 + 5;
+        const goalLines = wrapText(page.goal, contentWidth - 8, 9);
+        pdf.text(goalLines, margin + 6, yPos);
+        yPos += goalLines.length * 4 + 4;
       }
     }
 
     if (page.steps && page.steps.length > 0) {
       pdf.setTextColor(COLORS.text);
       page.steps.forEach((step) => {
-        addNewPageIfNeeded(15);
+        addNewPageIfNeeded(12);
         pdf.setFillColor(accentColor);
-        pdf.circle(margin + 12, yPos - 1, 3, "F");
+        pdf.rect(margin + 6, yPos - 3, 5, 5, "F");
         pdf.setTextColor("#ffffff");
         pdf.setFontSize(8);
-        pdf.text(String(step.step), margin + 10.5, yPos + 1);
+        pdf.text(String(step.step), margin + 7.5, yPos);
 
         pdf.setTextColor(COLORS.text);
-        pdf.setFontSize(10);
-        const actionLines = wrapText(step.action, contentWidth - 25, 10);
-        pdf.text(actionLines, margin + 20, yPos);
-        yPos += actionLines.length * 4 + 5;
+        pdf.setFontSize(9);
+        const actionLines = wrapText(step.action, contentWidth - 20, 9);
+        pdf.text(actionLines, margin + 14, yPos);
+        yPos += actionLines.length * 4 + 4;
       });
-      yPos += 5;
+      yPos += 4;
     }
 
     if (page.closing_message) {
-      addNewPageIfNeeded(20);
-      pdf.setFontSize(10);
+      addNewPageIfNeeded(16);
+      pdf.setFontSize(9);
       pdf.setFont("helvetica", "italic");
       pdf.setTextColor(accentColor);
-      const msgLines = wrapText(`"${page.closing_message}"`, contentWidth - 10, 10);
-      pdf.text(msgLines, margin + 8, yPos);
-      yPos += msgLines.length * 4 + 10;
+      const msgLines = wrapText(`"${page.closing_message}"`, contentWidth - 8, 9);
+      pdf.text(msgLines, margin + 6, yPos);
+      yPos += msgLines.length * 4 + 8;
     }
 
-    yPos += 10;
+    yPos += 8;
   };
 
-  addSection(data.page2_hardware, 2, COLORS.accent.green);
-  addSection(data.page3_os, 3, COLORS.accent.blue);
-  addSection(data.page4_mismatch, 4, COLORS.accent.amber);
-  addSection(data.page5_solution, 5, COLORS.accent.violet);
+  addSection(data.page2_hardware, 2, COLORS.primary);
+  addSection(data.page3_os, 3, COLORS.accent);
+  addSection(data.page4_mismatch, 4, COLORS.primary);
+  addSection(data.page5_solution, 5, COLORS.accent);
 
-  addNewPageIfNeeded(30);
+  addNewPageIfNeeded(25);
   pdf.setFillColor(COLORS.light);
-  pdf.rect(margin, yPos, contentWidth, 25, "F");
+  pdf.rect(margin, yPos, contentWidth, 20, "F");
   pdf.setTextColor(COLORS.secondary);
-  pdf.setFontSize(9);
+  pdf.setFontSize(8);
   pdf.setFont("helvetica", "normal");
-  pdf.text("Generated by BADA - Your Life Blueprint Platform", margin + 5, yPos + 10);
-  pdf.text("www.bada.one", margin + 5, yPos + 17);
+  pdf.text("Generated by BADA - Your Life Blueprint Platform", margin + 4, yPos + 8);
+  pdf.text("www.bada.one", margin + 4, yPos + 14);
 
   const filename = `BADA_Blueprint_${data.userInput.name.replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`;
   pdf.save(filename);
