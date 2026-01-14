@@ -45,6 +45,12 @@ export interface SajuResult {
   elementCounts: {
     wood: number; fire: number; earth: number; metal: number; water: number;
   };
+  dayMasterStrength: number; // 0-100 점수
+  dayMasterCategory: 'strong' | 'weak' | 'balanced';
+  tenGodsAnalysis: {
+    dominant: string;
+    distribution: Record<string, number>;
+  };
   stats: {
     operatingRate: number;
   };
@@ -133,6 +139,12 @@ export const calculateSaju = (dateStr: string, timeStr: string, timezone?: strin
         ),
       },
       elementCounts: { wood: 0, fire: 0, earth: 0, metal: 0, water: 0 },
+      dayMasterStrength: 0,
+      dayMasterCategory: 'balanced' as const,
+      tenGodsAnalysis: {
+        dominant: '',
+        distribution: {}
+      },
       stats: { operatingRate: 0 }
     };
 
@@ -151,15 +163,51 @@ export const calculateSaju = (dateStr: string, timeStr: string, timezone?: strin
       }
     });
 
-    // 5. Calculate Operating Rate (Simple heuristic: 100 - imbalance penalty)
-    // Ideal balance: ~1.6 per element. High deviation = lower rate.
+    // 5. Calculate Ten Gods Analysis
+    const tenGodsCount: Record<string, number> = {};
+    [result.fourPillars.year.ganGod, result.fourPillars.month.ganGod, 
+     result.fourPillars.day.ganGod, result.fourPillars.hour.ganGod].forEach(god => {
+      if (god) {
+        tenGodsCount[god] = (tenGodsCount[god] || 0) + 1;
+      }
+    });
+    
+    const dominantTenGod = Object.entries(tenGodsCount).sort(([,a], [,b]) => b - a)[0]?.[0] || '';
+    result.tenGodsAnalysis = {
+      dominant: dominantTenGod,
+      distribution: tenGodsCount
+    };
+
+    // 6. Calculate Day Master Strength
+    const dayMasterElement = result.fourPillars.day.ganElement;
+    const supportingElements = Object.entries(result.elementCounts)
+      .filter(([element]) => element === dayMasterElement || 
+        (dayMasterElement === 'wood' && element === 'water') ||
+        (dayMasterElement === 'fire' && element === 'wood') ||
+        (dayMasterElement === 'earth' && element === 'fire') ||
+        (dayMasterElement === 'metal' && element === 'earth') ||
+        (dayMasterElement === 'water' && element === 'metal'))
+      .reduce((sum, [, count]) => sum + count, 0);
+    
+    const totalElements = Object.values(result.elementCounts).reduce((sum, count) => sum + count, 0);
+    const strengthRatio = supportingElements / totalElements;
+    
+    result.dayMasterStrength = Math.round(strengthRatio * 100);
+    result.dayMasterCategory = 
+      result.dayMasterStrength >= 60 ? 'strong' :
+      result.dayMasterStrength <= 40 ? 'weak' : 'balanced';
+
+    // 7. Calculate Operating Rate (Enhanced with Day Master consideration)
     const counts = Object.values(result.elementCounts);
     const maxCount = Math.max(...counts);
     const zeroCount = counts.filter(c => c === 0).length;
     
     // Penalize for excessive dominance and missing elements
-    const penalty = (maxCount > 3 ? (maxCount - 3) * 10 : 0) + (zeroCount * 5);
-    result.stats.operatingRate = Math.max(40, 100 - penalty); // Min score 40
+    const imbalancePenalty = (maxCount > 3 ? (maxCount - 3) * 10 : 0) + (zeroCount * 5);
+    // Bonus for balanced Day Master
+    const balanceBonus = result.dayMasterCategory === 'balanced' ? 5 : 0;
+    
+    result.stats.operatingRate = Math.max(40, 100 - imbalancePenalty + balanceBonus);
 
     return result;
 
