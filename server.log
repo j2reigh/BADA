@@ -4,3 +4,75 @@ GEMINI_API_KEY not found in environment variables. Using mock data for reports.
 5:43:35 AM [vite] (client) hmr update /src/pages/Results.tsx, /src/index.css
 6:05:25 AM [vite] (client) hmr update /src/pages/Landing.tsx, /src/index.css
 6:06:17 AM [vite] (client) hmr update /src/pages/Landing.tsx, /src/index.css
+6:12:07 AM [vite] (client) hmr update /src/pages/Survey.tsx, /src/index.css
+6:12:18 AM [vite] (client) hmr update /src/pages/Survey.tsx, /src/index.css
+6:12:27 AM [vite] (client) hmr update /src/pages/Survey.tsx, /src/index.css
+6:13:23 AM [express] GET /api/cities/search 200 in 1582ms :: [{"id":"R-6362934","name":"Jakarta","displayName":"Jakarta, Java, Indonesia","city":"Jakarta","state":"Java","country":"Indonesia","countryCode":"ID","lat":-6.1754049,"lon":106.827168,"timezone":"Asia/Jakarta","utcOffset":"UTC+7"},{"id":"R-5802441","name":"East Jakarta","displayName":"East Jakarta, Java, Indonesia","city":"East Jakarta","state":"Java","country":"Indonesia","countryCode":"ID","lat":-6.26289085,"lon":106.88222894692834,"timezone":"Asia/Jakarta","utcOffset":"UTC+7"},{"id":"R-7625977","name":"Central Jakarta","displayName":"Central Jakarta, Java, Indonesia","city":"Central Jakarta","state":"Java","country":"Indonesia","countryCode":"ID","lat":-6.18233995,"lon":106.84287153600738,"timezone":"Asia/Jakarta","utcOffset":"UTC+7"},{"id":"R-5802438","name":"South Jakarta","displayName":"South Jakarta, Java, Indonesia","city":"South Jakarta","state":"Java","country":"Indonesia","countryCode":"ID","lat":-6.2838694,"lon":106.80482973654732,"timezone":"Asia/Jakarta","utcOffset":"UTC+7"},{"id":"R-7626001","name":"West Jakarta","displayName":"West Jakarta, Java, Indonesia","city":"West Jakarta","state":"Java","country":"Indonesia","countryCode":"ID","lat":-6.161569,"lon":106.74389053715214,"timezone":"Asia/Jakarta","utcOffset":"UTC+7"},{"id":"R-7626002","name":"North Jakarta","displayName":"North Jakarta, Java, Indonesia","city":"North Jakarta","state":"Java","country":"Indonesia","countryCode":"ID","lat":-6.136197,"lon":106.90069022428446,"timezone":"Asia/Jakarta","utcOffset":"UTC+7"},{"id":"N-8366345102","name":"Jagastai","displayName":"Jagastai, Inner Mongolia, China","city":"Jagastai","state":"Inner Mongolia","country":"China","countryCode":"CN","lat":43.9258417,"lon":120.516408,"timezone":"Asia/Shanghai","utcOffset":"UTC+8"}]
+[Assessment] Starting submission...
+[Assessment] Input validated
+[Assessment] Upserting lead...
+[Assessment] Lead created/updated: p-snCCC4mwkAqZiLy9Bf7
+[Assessment] Converting to KST...
+[Assessment] Calculating Saju...
+[Assessment] Running Saju calculation...
+DST Correction Applied: {
+  original: { date: '1989-08-07', time: '12:03', timezone: 'Asia/Jakarta' },
+  corrected: { year: 1989, month: 8, day: 7, hour: 14, minute: 3 },
+  isDstApplied: false,
+  debugInfo: {
+    localTime: '1989-08-07T12:03:00.000+07:00',
+    dstCorrectedTime: '1989-08-07T12:03:00.000+07:00',
+    kstTime: '1989-08-07T14:03:00.000+09:00'
+  }
+}
+[Assessment] Saju calculated successfully
+[Assessment] Generating AI report...
+[Assessment] AI report generated successfully
+[Assessment] Creating saju result record...
+[Assessment] Saju result saved: uVC0o3chY_CEGmzQ5PGZ5
+[Assessment] Sending verification email...
+Failed to send verification email: Error: X_REPLIT_TOKEN not found for repl/depl
+    at getCredentials (/Users/jeanne/BADA-Report/lib/email.ts:15:11)
+    at getUncachableResendClient (/Users/jeanne/BADA-Report/lib/email.ts:37:29)
+    at sendVerificationEmail (/Users/jeanne/BADA-Report/lib/email.ts:65:41)
+    at <anonymous> (/Users/jeanne/BADA-Report/server/routes.ts:179:33)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[Assessment] Failed to send verification email: Error: X_REPLIT_TOKEN not found for repl/depl
+[Assessment] Submission complete!
+6:13:36 AM [express] POST /api/assessment/submit 201 in 26ms :: {"success":true,"reportId":"uVC0o3chY_CEGmzQ5PGZ5","leadId":"p-snCCC4mwkAqZiLy9Bf7","email":"jeannelee.biz@gmail.com","emailSent":false}
+6:13:36 AM [express] GET /api/wait/uVC0o3chY_CEGmzQ5PGZ5 200 in 1ms :: {"reportId":"uVC0o3chY_CEGmzQ5PGZ5","leadId":"p-snCCC4mwkAqZiLy9Bf7","email":"jeannelee.biz@gmail.com","isVerified":false}
+6:13:41 AM [express] GET /api/wait/uVC0o3chY_CEGmzQ5PGZ5 304 in 2ms :: {"reportId":"uVC0o3chY_CEGmzQ5PGZ5","leadId":"p-snCCC4mwkAqZiLy9Bf7","email":"jeannelee.biz@gmail.com","isVerified":false}
+6:13:46 AM [express] GET /api/wait/uVC0o3chY_CEGmzQ5PGZ5 304 in 2ms :: {"reportId":"uVC0o3chY_CEGmzQ5PGZ5","leadId":"p-snCCC4mwkAqZiLy9Bf7","email":"jeannelee.biz@gmail.com","isVerified":false}
+6:14:11 AM [express] GET /api/wait/uVC0o3chY_CEGmzQ5PGZ5 304 in 2ms :: {"reportId":"uVC0o3chY_CEGmzQ5PGZ5","leadId":"p-snCCC4mwkAqZiLy9Bf7","email":"jeannelee.biz@gmail.com","isVerified":false}
+6:15:28 AM [vite] (client) hmr update /src/pages/Wait.tsx, /src/index.css
+6:15:42 AM [vite] (client) hmr update /src/pages/Wait.tsx, /src/index.css
+6:15:55 AM [vite] (client) hmr update /src/pages/Wait.tsx, /src/index.css
+6:16:11 AM [express] GET /api/wait/uVC0o3chY_CEGmzQ5PGZ5 304 in 2ms :: {"reportId":"uVC0o3chY_CEGmzQ5PGZ5","leadId":"p-snCCC4mwkAqZiLy9Bf7","email":"jeannelee.biz@gmail.com","isVerified":false}
+6:16:12 AM [vite] (client) hmr update /src/pages/Wait.tsx, /src/index.css
+6:16:17 AM [express] GET /api/wait/uVC0o3chY_CEGmzQ5PGZ5 304 in 1ms :: {"reportId":"uVC0o3chY_CEGmzQ5PGZ5","leadId":"p-snCCC4mwkAqZiLy9Bf7","email":"jeannelee.biz@gmail.com","isVerified":false}
+6:16:22 AM [express] GET /api/wait/uVC0o3chY_CEGmzQ5PGZ5 304 in 0ms :: {"reportId":"uVC0o3chY_CEGmzQ5PGZ5","leadId":"p-snCCC4mwkAqZiLy9Bf7","email":"jeannelee.biz@gmail.com","isVerified":false}
+Failed to send verification email: Error: X_REPLIT_TOKEN not found for repl/depl
+    at getCredentials (/Users/jeanne/BADA-Report/lib/email.ts:15:11)
+    at getUncachableResendClient (/Users/jeanne/BADA-Report/lib/email.ts:37:29)
+    at sendVerificationEmail (/Users/jeanne/BADA-Report/lib/email.ts:65:41)
+    at <anonymous> (/Users/jeanne/BADA-Report/server/routes.ts:276:33)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+6:16:23 AM [express] POST /api/verification/resend 200 in 15ms :: {"success":false,"email":"jeannelee.biz@gmail.com"}
+6:16:27 AM [express] GET /api/wait/uVC0o3chY_CEGmzQ5PGZ5 304 in 2ms :: {"reportId":"uVC0o3chY_CEGmzQ5PGZ5","leadId":"p-snCCC4mwkAqZiLy9Bf7","email":"jeannelee.biz@gmail.com","isVerified":false}
+6:16:32 AM [express] GET /api/wait/uVC0o3chY_CEGmzQ5PGZ5 304 in 3ms :: {"reportId":"uVC0o3chY_CEGmzQ5PGZ5","leadId":"p-snCCC4mwkAqZiLy9Bf7","email":"jeannelee.biz@gmail.com","isVerified":false}
+6:16:37 AM [express] GET /api/wait/uVC0o3chY_CEGmzQ5PGZ5 304 in 2ms :: {"reportId":"uVC0o3chY_CEGmzQ5PGZ5","leadId":"p-snCCC4mwkAqZiLy9Bf7","email":"jeannelee.biz@gmail.com","isVerified":false}
+6:16:42 AM [express] GET /api/wait/uVC0o3chY_CEGmzQ5PGZ5 304 in 1ms :: {"reportId":"uVC0o3chY_CEGmzQ5PGZ5","leadId":"p-snCCC4mwkAqZiLy9Bf7","email":"jeannelee.biz@gmail.com","isVerified":false}
+6:16:47 AM [express] GET /api/wait/uVC0o3chY_CEGmzQ5PGZ5 304 in 3ms :: {"reportId":"uVC0o3chY_CEGmzQ5PGZ5","leadId":"p-snCCC4mwkAqZiLy9Bf7","email":"jeannelee.biz@gmail.com","isVerified":false}
+6:16:52 AM [express] GET /api/wait/uVC0o3chY_CEGmzQ5PGZ5 304 in 2ms :: {"reportId":"uVC0o3chY_CEGmzQ5PGZ5","leadId":"p-snCCC4mwkAqZiLy9Bf7","email":"jeannelee.biz@gmail.com","isVerified":false}
+6:16:57 AM [express] GET /api/wait/uVC0o3chY_CEGmzQ5PGZ5 304 in 4ms :: {"reportId":"uVC0o3chY_CEGmzQ5PGZ5","leadId":"p-snCCC4mwkAqZiLy9Bf7","email":"jeannelee.biz@gmail.com","isVerified":false}
+6:17:02 AM [express] GET /api/wait/uVC0o3chY_CEGmzQ5PGZ5 304 in 5ms :: {"reportId":"uVC0o3chY_CEGmzQ5PGZ5","leadId":"p-snCCC4mwkAqZiLy9Bf7","email":"jeannelee.biz@gmail.com","isVerified":false}
+6:17:07 AM [express] GET /api/wait/uVC0o3chY_CEGmzQ5PGZ5 304 in 6ms :: {"reportId":"uVC0o3chY_CEGmzQ5PGZ5","leadId":"p-snCCC4mwkAqZiLy9Bf7","email":"jeannelee.biz@gmail.com","isVerified":false}
+6:17:12 AM [express] GET /api/wait/uVC0o3chY_CEGmzQ5PGZ5 304 in 2ms :: {"reportId":"uVC0o3chY_CEGmzQ5PGZ5","leadId":"p-snCCC4mwkAqZiLy9Bf7","email":"jeannelee.biz@gmail.com","isVerified":false}
+6:19:27 AM [vite] (client) hmr update /src/pages/Landing.tsx, /src/index.css
+6:19:36 AM [vite] (client) hmr update /src/pages/Landing.tsx, /src/index.css
+6:19:44 AM [vite] (client) hmr update /src/pages/Landing.tsx, /src/index.css
+6:19:51 AM [vite] (client) hmr update /src/pages/Landing.tsx, /src/index.css
+6:19:58 AM [vite] (client) hmr update /src/pages/Landing.tsx, /src/index.css
+6:20:05 AM [vite] (client) hmr update /src/pages/Landing.tsx, /src/index.css
+6:20:12 AM [vite] (client) hmr update /src/pages/Landing.tsx, /src/index.css
+6:20:20 AM [vite] (client) hmr update /src/pages/Landing.tsx, /src/index.css

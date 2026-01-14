@@ -110,125 +110,155 @@ export default function Wait() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="min-h-screen depth-gradient-bg flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-8 h-8 animate-spin text-white" />
+          <p className="text-white/60 text-sm">Loading your report...</p>
+        </div>
       </div>
     );
   }
 
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
-        <div className="text-center space-y-4">
-          <h1 className="text-xl font-semibold text-foreground">Report not found</h1>
-          <p className="text-muted-foreground text-sm">This report may have expired or doesn't exist.</p>
-          <Button onClick={() => setLocation("/")} data-testid="button-go-home">
+      <div className="min-h-screen depth-gradient-bg flex flex-col items-center justify-center p-6">
+        <div className="text-center space-y-6 bg-white/10 backdrop-blur-md border border-white/20 p-8 rounded-2xl">
+          <h1 className="text-xl font-semibold text-white">Report not found</h1>
+          <p className="text-white/60 text-sm">This report may have expired or doesn't exist.</p>
+          <button 
+            onClick={() => setLocation("/")} 
+            className="px-6 py-3 bg-white text-black rounded-full font-semibold hover:scale-105 transition-transform"
+            data-testid="button-go-home"
+          >
             Go Home
-          </Button>
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-accent to-primary" />
+    <div className="min-h-screen depth-gradient-bg flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      {/* Dynamic Background Noise/Texture */}
+      <div 
+        className="fixed inset-0 pointer-events-none opacity-10 mix-blend-overlay" 
+        style={{
+           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
+        }}
+      />
+
+      {/* Decorative Compass/Grid Lines */}
+      <div className="fixed inset-0 pointer-events-none z-0 opacity-10">
+         <div className="absolute top-1/2 left-0 w-full h-px bg-white" />
+         <div className="absolute top-0 left-1/2 h-full w-px bg-white" />
+         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vh] h-[80vh] border border-white rounded-full" />
+      </div>
+
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 p-6 flex justify-center items-center z-50">
+        <a href="/" className="text-xl font-semibold tracking-tight mix-blend-difference text-white">
+          BADA
+        </a>
+      </header>
       
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="w-full max-w-md z-10"
+        transition={{ duration: 0.6 }}
+        className="w-full max-w-md z-10 pt-20"
       >
-        <div className="bg-card border border-border p-6 text-center space-y-5">
-          <div className="w-16 h-16 bg-primary/10 flex items-center justify-center mx-auto">
-            <Mail className="w-8 h-8 text-primary" />
-          </div>
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 p-8 text-center space-y-6 rounded-2xl">
+          <motion.div 
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.3, type: "spring" }}
+            className="w-20 h-20 bg-white/20 backdrop-blur-sm flex items-center justify-center mx-auto rounded-full"
+          >
+            <Mail className="w-10 h-10 text-white" />
+          </motion.div>
           
-          <div className="space-y-2">
-            <h1 className="text-xl font-semibold text-foreground">
+          <div className="space-y-4">
+            <h1 className="text-2xl font-semibold text-white">
               Your Report is Ready!
             </h1>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-white/70 text-sm">
               We sent a verification link to:
             </p>
             
             {!isEditingEmail ? (
-              <div className="bg-primary/5 p-3">
-                <p className="font-medium text-primary text-sm break-all" data-testid="text-email">
+              <div className="bg-white/20 backdrop-blur-sm p-4 rounded-lg border border-white/10">
+                <p className="font-medium text-white text-sm break-all" data-testid="text-email">
                   {data.email}
                 </p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <input
                   type="email"
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
                   placeholder="Enter new email"
-                  className="w-full px-3 py-2.5 border border-border bg-card focus:border-primary focus:outline-none transition-colors text-sm"
+                  className="w-full px-4 py-3 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg text-white placeholder:text-white/50 focus:border-white focus:outline-none transition-colors text-sm"
                   data-testid="input-new-email"
                 />
-                <div className="flex gap-2">
-                  <Button
-                    variant="ghost"
+                <div className="flex gap-3">
+                  <button
                     onClick={() => {
                       setIsEditingEmail(false);
                       setNewEmail("");
                     }}
-                    className="flex-1"
+                    className="flex-1 px-4 py-3 bg-white/10 border border-white/20 text-white/80 rounded-lg hover:bg-white/20 transition-colors text-sm"
                     data-testid="button-cancel-edit"
                   >
                     Cancel
-                  </Button>
-                  <Button
+                  </button>
+                  <button
                     onClick={handleUpdateEmail}
                     disabled={updateEmailMutation.isPending}
-                    className="flex-1"
+                    className="flex-1 px-4 py-3 bg-white text-black rounded-lg font-semibold hover:scale-105 transition-transform text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     data-testid="button-update-email"
                   >
                     {updateEmailMutation.isPending ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       <>
-                        <Check className="w-4 h-4 mr-1" />
+                        <Check className="w-4 h-4" />
                         Update
                       </>
                     )}
-                  </Button>
+                  </button>
                 </div>
               </div>
             )}
           </div>
           
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-white/60">
             Click the link in the email to view your personalized BADA report with Saju insights.
           </p>
           
-          <div className="space-y-2 pt-4 border-t border-border">
+          <div className="space-y-3 pt-4 border-t border-white/20">
             {!isEditingEmail && (
               <>
-                <Button
-                  variant="outline"
+                <button
                   onClick={() => resendMutation.mutate()}
                   disabled={resendMutation.isPending || resendCooldown > 0}
-                  className="w-full"
+                  className="w-full px-6 py-3 bg-white/10 border border-white/20 text-white/90 rounded-lg hover:bg-white/20 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   data-testid="button-resend"
                 >
                   {resendMutation.isPending ? (
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    <RefreshCw className="w-4 h-4 mr-2" />
+                    <RefreshCw className="w-4 h-4" />
                   )}
                   {resendCooldown > 0 
                     ? `Resend in ${resendCooldown}s` 
                     : "Resend Verification Email"
                   }
-                </Button>
+                </button>
                 
                 <button
                   onClick={() => setIsEditingEmail(true)}
-                  className="text-xs text-muted-foreground hover:text-accent transition-colors flex items-center justify-center gap-1 w-full py-2"
+                  className="text-xs text-white/50 hover:text-white/80 transition-colors flex items-center justify-center gap-1 w-full py-2"
                   data-testid="button-wrong-email"
                 >
                   <Edit2 className="w-3 h-3" />
@@ -242,10 +272,10 @@ export default function Wait() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="text-center mt-4"
+          transition={{ delay: 0.6 }}
+          className="text-center mt-6"
         >
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-white/40">
             Didn't receive the email? Check your spam folder.
           </p>
         </motion.div>

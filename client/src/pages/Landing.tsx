@@ -97,23 +97,23 @@ function HeroSection() {
   const opacity = useTransform(scrollY, [0, 300], [1, 0]);
 
   return (
-    <section className="relative min-h-screen flex flex-col justify-center px-6 pt-20">
+    <section className="relative h-screen flex flex-col justify-center px-6">
       <motion.div 
         className="max-w-[1400px] mx-auto w-full"
         style={{ y: y1, opacity }}
       >
-        <p className="text-sm font-mono mb-6 text-slate-600">BADA NAVIGATION SYSTEM</p>
-        <h1 className="text-6xl md:text-8xl font-display font-medium leading-[1.1] mb-8 text-slate-900">
+        <p className="text-sm font-mono mb-6 text-white/60">BADA NAVIGATION SYSTEM</p>
+        <h1 className="text-6xl md:text-8xl font-display font-medium leading-[1.1] mb-8 text-white">
           The Surface is<br />
           <span className="italic">Just the Beginning</span>
         </h1>
-        <p className="text-xl md:text-2xl text-slate-600 max-w-2xl leading-relaxed">
+        <p className="text-xl md:text-2xl text-white/70 max-w-2xl leading-relaxed">
           Most navigation happens on the surface. We take you deeper to find the currents that actually drive you.
         </p>
       </motion.div>
 
       <motion.div
-        className="absolute bottom-12 left-1/2 -translate-x-1/2 text-slate-400"
+        className="absolute bottom-12 left-1/2 -translate-x-1/2 text-white/40"
         style={{ opacity }}
         animate={{ y: [0, 10, 0] }}
         transition={{ duration: 2, repeat: Infinity }}
@@ -129,7 +129,7 @@ function AnalysisSection() {
   return (
     <div className="relative z-10">
       {/* Zone 1: The Transition */}
-      <section className="min-h-screen flex items-center px-6 py-24">
+      <section className="h-screen flex items-center px-6">
         <div className="max-w-[1400px] mx-auto w-full grid lg:grid-cols-2 gap-20 items-center">
           <FocusSection>
              <h2 className="text-4xl md:text-6xl font-display font-medium mb-6 text-white/90">
@@ -157,7 +157,7 @@ function AnalysisSection() {
       </section>
 
       {/* Zone 2: The Data */}
-      <section id="system" className="min-h-screen flex items-center px-6 py-24">
+      <section id="system" className="h-screen flex items-center px-6">
         <div className="max-w-[1400px] mx-auto w-full">
            <FocusSection className="mb-20">
              <span className="inline-block py-1 px-3 rounded-full border border-white/30 text-white/80 text-xs font-mono mb-6">
@@ -185,7 +185,7 @@ function AnalysisSection() {
       </section>
 
       {/* Zone 3: The Blueprint */}
-      <section id="analysis" className="min-h-screen flex items-center px-6 py-24">
+      <section id="analysis" className="h-screen flex items-center px-6">
          <div className="max-w-4xl mx-auto w-full text-center">
            <FocusSection>
              <h2 className="text-5xl md:text-7xl font-display font-medium text-white mb-12">
@@ -214,28 +214,33 @@ function AnalysisSection() {
 
 function FinalCTA() {
   return (
-    <section id="method" className="min-h-[80vh] flex items-center justify-center px-6 py-24 relative overflow-hidden">
+    <section id="method" className="h-screen flex items-center justify-center px-6 relative overflow-hidden">
       {/* Abyssal Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-orange-500/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-orange-500/20 rounded-full blur-[120px] pointer-events-none" />
+      
+      {/* Background overlay for better text contrast */}
+      <div className="absolute inset-0 bg-black/30 pointer-events-none" />
 
       <div className="relative z-10 max-w-3xl text-center">
         <FocusSection>
-          <p className="font-mono text-xs text-orange-500 mb-6 tracking-[0.2em] uppercase">
-            Initialize Sequence
-          </p>
-          
-          <h2 className="text-5xl md:text-7xl font-display font-medium text-white mb-10">
-            Ready to<br />Dive?
-          </h2>
+          <div className="bg-black/40 backdrop-blur-sm border border-white/10 rounded-3xl p-12">
+            <p className="font-mono text-xs text-orange-400 mb-6 tracking-[0.2em] uppercase">
+              Initialize Sequence
+            </p>
+            
+            <h2 className="text-5xl md:text-7xl font-display font-medium text-white mb-10 drop-shadow-lg">
+              Ready to<br />Dive?
+            </h2>
 
-          <p className="text-white/60 mb-12 text-lg">
-            The descent takes 5 minutes. The clarity lasts forever.
-          </p>
+            <p className="text-white/90 mb-12 text-lg">
+              The descent takes 5 minutes. The clarity lasts forever.
+            </p>
 
-          <Link href="/survey" className="group relative inline-flex items-center gap-4 px-12 py-6 bg-white text-black rounded-full font-bold text-lg hover:scale-105 transition-transform">
-            Start Analysis
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-          </Link>
+            <Link href="/survey" className="group relative inline-flex items-center gap-4 px-12 py-6 bg-white text-black rounded-full font-bold text-lg hover:scale-105 transition-transform">
+              Start Analysis
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </div>
         </FocusSection>
       </div>
     </section>

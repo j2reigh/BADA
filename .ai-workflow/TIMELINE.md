@@ -19,6 +19,20 @@
 
 ---
 
+## 2026-01-14 21:15
+**Agent:** Gemini
+**Task:** 프리뷰 환경 정상화 & 서버 실행 오류 수정
+**Status:** ✅ Completed
+**Plan:** 포트 변경, 외부 접속 허용, 예외 처리 강화
+**Changes:**
+  - `server/index.ts`: 포트 5000 -> 5001 변경, Host 0.0.0.0 설정, reusePort 제거 (macOS 호환성)
+  - `lib/gemini_client.ts`: API Key 부재 시 Mock Data 반환 로직 추가
+  - `server/db.ts`: DB 연결 실패 시 In-memory 모드로 전환
+  - `client/src/lib/simple-i18n.ts`: TypeScript 타입 에러 수정
+**Review:** Human 검토 필요
+
+---
+
 ## 2026-01-14 [현재 시각 + 20분]
 **Agent:** Claude
 **Task:** 워크플로우 자동화 - 간편 시작 기능 추가

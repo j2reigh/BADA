@@ -193,18 +193,18 @@ export default function Survey() {
     }
   };
 
-  // Background darkness increases with depth
-  // 0 -> Sky/Surface
+  // Background darkness increases with depth - start darker for better contrast
+  // 0 -> Ocean Surface (not sky)
   // QUESTIONS.length -> Abyss  
-  const darkness = Math.min((currentStep / QUESTIONS.length) * 100, 95);
+  const darkness = Math.min((currentStep / QUESTIONS.length) * 70, 85);
   
   return (
     <div className="min-h-screen w-full relative overflow-hidden flex flex-col items-center justify-center transition-colors duration-1000"
-         style={{ backgroundColor: `hsl(220, 30%, ${Math.max(100 - darkness, 5)}%)` }}>
+         style={{ backgroundColor: `hsl(215, 40%, ${Math.max(60 - darkness, 8)}%)` }}>
       
       {/* Dynamic Background Noise/Texture */}
       <div 
-        className="fixed inset-0 pointer-events-none opacity-20 mix-blend-overlay" 
+        className="fixed inset-0 pointer-events-none opacity-10 mix-blend-overlay" 
         style={{
            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
         }}
@@ -214,18 +214,23 @@ export default function Survey() {
       <div 
         className="fixed inset-0 pointer-events-none transition-opacity duration-1000"
         style={{
-          background: `radial-gradient(circle at 50% 50%, transparent 0%, rgba(0,0,0, ${currentStep * 0.1}) 100%)`
+          background: `radial-gradient(circle at 50% 50%, transparent 0%, rgba(0,0,0, ${currentStep * 0.05}) 100%)`
         }}
       />
 
-      <header className="fixed top-0 left-0 right-0 p-6 flex justify-between items-center z-50">
+      <header className="fixed top-0 left-0 right-0 p-6 flex justify-center items-center z-50">
         <a href="/" className="text-xl font-semibold tracking-tight mix-blend-difference text-white">
           BADA
         </a>
-        <button onClick={() => setLocation("/")} className="text-sm mix-blend-difference text-white opacity-60 hover:opacity-100">
-          Exit
-        </button>
       </header>
+
+      {/* Exit button moved to bottom left */}
+      <button 
+        onClick={() => setLocation("/")} 
+        className="fixed bottom-6 left-6 text-sm text-white/60 hover:text-white/100 transition-colors z-50 px-4 py-2 rounded-full bg-black/20 backdrop-blur-sm border border-white/10 hover:bg-black/30"
+      >
+        Exit
+      </button>
 
       {/* Depth Indicator */}
       <div className="fixed top-8 right-8 z-50 text-right mix-blend-difference text-white">
