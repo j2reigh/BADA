@@ -14,6 +14,7 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
+import { nanoid } from "nanoid";
 
 export interface IStorage {
   // Legacy methods (for backward compatibility)
@@ -40,6 +41,7 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   // Legacy methods
   async createSurveyResult(insertResult: InsertSurveyResult): Promise<SurveyResult> {
+    if (!db) throw new Error("Database not initialized");
     const [result] = await db
       .insert(surveyResults)
       .values(insertResult)
@@ -48,6 +50,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSurveyResult(id: number): Promise<SurveyResult | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const [result] = await db
       .select()
       .from(surveyResults)
@@ -56,6 +59,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createBirthPattern(insertPattern: InsertBirthPattern): Promise<BirthPattern> {
+    if (!db) throw new Error("Database not initialized");
     const [result] = await db
       .insert(birthPatterns)
       .values(insertPattern)
@@ -64,6 +68,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getBirthPatternBySurveyId(surveyResultId: number): Promise<BirthPattern | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const [result] = await db
       .select()
       .from(birthPatterns)
@@ -73,6 +78,7 @@ export class DatabaseStorage implements IStorage {
 
   // Lead management methods
   async upsertLead(email: string, marketingConsent: boolean): Promise<Lead> {
+    if (!db) throw new Error("Database not initialized");
     const existing = await this.getLeadByEmail(email);
     
     if (existing) {
@@ -101,6 +107,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getLeadById(id: string): Promise<Lead | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const [result] = await db
       .select()
       .from(leads)
@@ -109,6 +116,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getLeadByToken(token: string): Promise<Lead | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const [result] = await db
       .select()
       .from(leads)
@@ -117,6 +125,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getLeadByEmail(email: string): Promise<Lead | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const [result] = await db
       .select()
       .from(leads)
@@ -125,6 +134,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async verifyLead(id: string): Promise<Lead | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const [result] = await db
       .update(leads)
       .set({ isVerified: true })
@@ -134,6 +144,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateLeadEmail(id: string, newEmail: string): Promise<Lead | undefined> {
+    if (!db) throw new Error("Database not initialized");
     // Only update if not yet verified
     const lead = await this.getLeadById(id);
     if (!lead || lead.isVerified) {
@@ -152,6 +163,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async regenerateVerificationToken(id: string): Promise<Lead | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const [result] = await db
       .update(leads)
       .set({ verificationToken: sql`gen_random_uuid()` })
@@ -162,6 +174,7 @@ export class DatabaseStorage implements IStorage {
 
   // Saju Results methods
   async createSajuResult(data: InsertSajuResult): Promise<SajuResult> {
+    if (!db) throw new Error("Database not initialized");
     const [result] = await db
       .insert(sajuResults)
       .values(data)
@@ -170,6 +183,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSajuResultById(id: string): Promise<SajuResult | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const [result] = await db
       .select()
       .from(sajuResults)
@@ -178,6 +192,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSajuResultsByLeadId(leadId: string): Promise<SajuResult[]> {
+    if (!db) throw new Error("Database not initialized");
     const results = await db
       .select()
       .from(sajuResults)
@@ -186,6 +201,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async unlockReport(id: string): Promise<SajuResult | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const [result] = await db
       .update(sajuResults)
       .set({ isPaid: true })
@@ -195,4 +211,125 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-export const storage = new DatabaseStorage();
+export class MemStorage implements IStorage {
+  private surveyResults: Map<number, SurveyResult> = new Map();
+  private birthPatterns: Map<number, BirthPattern> = new Map();
+  private leads: Map<string, Lead> = new Map();
+  private sajuResults: Map<string, SajuResult> = new Map();
+  
+  private surveyIdCounter = 1;
+  private birthPatternIdCounter = 1;
+
+  async createSurveyResult(insertResult: InsertSurveyResult): Promise<SurveyResult> {
+    const id = this.surveyIdCounter++;
+    const result: SurveyResult = { ...insertResult, id, createdAt: new Date() };
+    this.surveyResults.set(id, result);
+    return result;
+  }
+
+  async getSurveyResult(id: number): Promise<SurveyResult | undefined> {
+    return this.surveyResults.get(id);
+  }
+
+  async createBirthPattern(insertPattern: InsertBirthPattern): Promise<BirthPattern> {
+    const id = this.birthPatternIdCounter++;
+    const result: BirthPattern = { ...insertPattern, id, createdAt: new Date() };
+    this.birthPatterns.set(id, result);
+    return result;
+  }
+
+  async getBirthPatternBySurveyId(surveyResultId: number): Promise<BirthPattern | undefined> {
+    return Array.from(this.birthPatterns.values()).find(p => p.surveyResultId === surveyResultId);
+  }
+
+  async upsertLead(email: string, marketingConsent: boolean): Promise<Lead> {
+    let lead = await this.getLeadByEmail(email);
+    if (lead) {
+       if (lead.isVerified) return lead;
+       lead.marketingConsent = marketingConsent;
+       lead.verificationToken = nanoid(); // regenerate
+       return lead;
+    }
+    const id = nanoid();
+    const newLead: Lead = {
+      id,
+      email,
+      marketingConsent,
+      verificationToken: nanoid(),
+      isVerified: false,
+      createdAt: new Date()
+    };
+    this.leads.set(id, newLead);
+    return newLead;
+  }
+
+  async getLeadById(id: string): Promise<Lead | undefined> {
+    return this.leads.get(id);
+  }
+
+  async getLeadByToken(token: string): Promise<Lead | undefined> {
+    return Array.from(this.leads.values()).find(l => l.verificationToken === token);
+  }
+
+  async getLeadByEmail(email: string): Promise<Lead | undefined> {
+    return Array.from(this.leads.values()).find(l => l.email === email);
+  }
+
+  async verifyLead(id: string): Promise<Lead | undefined> {
+    const lead = this.leads.get(id);
+    if (lead) {
+      lead.isVerified = true;
+      this.leads.set(id, lead);
+    }
+    return lead;
+  }
+
+  async updateLeadEmail(id: string, newEmail: string): Promise<Lead | undefined> {
+    const lead = this.leads.get(id);
+    if (!lead || lead.isVerified) return undefined;
+    lead.email = newEmail;
+    lead.verificationToken = nanoid();
+    this.leads.set(id, lead);
+    return lead;
+  }
+
+  async regenerateVerificationToken(id: string): Promise<Lead | undefined> {
+    const lead = this.leads.get(id);
+    if (lead) {
+      lead.verificationToken = nanoid();
+      this.leads.set(id, lead);
+    }
+    return lead;
+  }
+
+  async createSajuResult(data: InsertSajuResult): Promise<SajuResult> {
+    const id = nanoid();
+    const result: SajuResult = { 
+        ...data, 
+        id, 
+        isPaid: false, 
+        createdAt: new Date() 
+    };
+    this.sajuResults.set(id, result);
+    return result;
+  }
+
+  async getSajuResultById(id: string): Promise<SajuResult | undefined> {
+    return this.sajuResults.get(id);
+  }
+
+  async getSajuResultsByLeadId(leadId: string): Promise<SajuResult[]> {
+    return Array.from(this.sajuResults.values()).filter(r => r.leadId === leadId);
+  }
+
+  async unlockReport(id: string): Promise<SajuResult | undefined> {
+    const result = this.sajuResults.get(id);
+    if (result) {
+      result.isPaid = true;
+      this.sajuResults.set(id, result);
+    }
+    return result;
+  }
+}
+
+export const storage = db ? new DatabaseStorage() : new MemStorage();

@@ -11,12 +11,12 @@ import type { SajuResult } from "./saju_calculator";
 const API_KEY = process.env.GEMINI_API_KEY;
 
 if (!API_KEY) {
-  throw new Error(
-    "GEMINI_API_KEY not found in environment variables. Please add it to Replit Secrets."
+  console.warn(
+    "GEMINI_API_KEY not found in environment variables. Using mock data for reports."
   );
 }
 
-const client = new GoogleGenerativeAI(API_KEY);
+const client = API_KEY ? new GoogleGenerativeAI(API_KEY) : null;
 
 // OS Type mappings for background selection
 const OS_TYPE_BACKGROUNDS: Record<string, string> = {
@@ -114,6 +114,41 @@ export async function generateLifeBlueprintReport(
   surveyScores: SurveyScores,
   userName: string = "Friend"
 ): Promise<LifeBlueprintReport> {
+  if (!client) {
+    return {
+      page1_identity: {
+        title: "The Pioneer (Preview)",
+        sub_headline: "This is a preview report (Gemini API key missing).",
+        visual_concept: {
+          background_id: "bg_type_01",
+          overlay_id: "overlay_water"
+        }
+      },
+      page2_hardware: {
+        section_name: "Your Natural Blueprint",
+        blueprint_summary: "You are a powerful engine of nature. (Mock Data: Add GEMINI_API_KEY to see real insights)",
+        core_insight: ["Deep-rooted resilience", "Natural leadership capability"]
+      },
+      page3_os: {
+        section_name: "Your Current Operating System",
+        diagnosis_summary: "Your OS is currently running in preview mode.",
+        analysis_points: ["High Agency detected", "Environment stability needs attention", "Threat perception is elevated"]
+      },
+      page4_mismatch: {
+        section_name: "The Core Tension",
+        insight_title: "Preview Tension Pattern",
+        conflict_explanation: ["Your natural drive conflicts with current constraints", "Energy leakage detected in decision making"]
+      },
+      page5_solution: {
+        section_name: "Your Action Protocol",
+        goal: "Unlock full potential by setting up the API key",
+        protocol_name: "The Preview Protocol",
+        steps: [{ step: 1, action: "Add GEMINI_API_KEY to environment variables" }, { step: 2, action: "Restart the server" }],
+        closing_message: "Your blueprint awaits."
+      }
+    };
+  }
+
   try {
     const dayMasterGan = sajuResult.fourPillars.day.gan;
     const dayMasterInfo = DAY_MASTER_MAP[dayMasterGan];

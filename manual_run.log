@@ -1,0 +1,3 @@
+SUPABASE_DATABASE_URL or DATABASE_URL not set. Falling back to in-memory storage.
+GEMINI_API_KEY not found in environment variables. Using mock data for reports.
+9:06:56 PM [express] serving on port 5001

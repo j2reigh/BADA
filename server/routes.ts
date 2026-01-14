@@ -390,6 +390,7 @@ export async function registerRoutes(
       // Only return Pages 2-5 if paid
       const responseData: any = {
         reportId: sajuResult.id,
+        email: lead.email,
         userInput: sajuResult.userInput,
         sajuData: sajuResult.sajuData,
         isPaid,
@@ -452,34 +453,53 @@ export async function registerRoutes(
       const {
         sale_id,
         email,
-        report_id,
         price,
         currency,
       } = req.body;
 
-      // 유효성 검증
-      if (!sale_id || !report_id) {
-        console.error("[Gumroad] Missing sale_id or report_id");
-        return res.status(400).json({ error: "Missing required fields" });
+      // Try to find report_id from custom fields (if set up) or fallback to email lookup
+      let targetReportId = req.body.report_id || 
+                           (req.body.custom_fields && req.body.custom_fields.report_id);
+
+      if (!targetReportId) {
+        console.log(`[Gumroad] No report_id in webhook, trying email lookup for: ${email}`);
+        if (email) {
+          const lead = await storage.getLeadByEmail(email);
+          if (lead) {
+            const reports = await storage.getSajuResultsByLeadId(lead.id);
+            if (reports.length > 0) {
+              // Sort by createdAt descending (newest first)
+              reports.sort((a, b) => new Date(b.createdAt as any).getTime() - new Date(a.createdAt as any).getTime());
+              targetReportId = reports[0].id;
+              console.log(`[Gumroad] Found most recent report ${targetReportId} for email ${email}`);
+            }
+          }
+        }
       }
 
-      // 리포트 존재 확인
-      const sajuResult = await storage.getSajuResultById(report_id);
+      // Validation
+      if (!sale_id || !targetReportId) {
+        console.error("[Gumroad] Missing sale_id or could not resolve report_id");
+        return res.status(400).json({ error: "Missing required fields or cannot link payment to report" });
+      }
+
+      // Check report existence
+      const sajuResult = await storage.getSajuResultById(targetReportId);
       if (!sajuResult) {
-        console.error("[Gumroad] Report not found:", report_id);
+        console.error("[Gumroad] Report not found:", targetReportId);
         return res.status(404).json({ error: "Report not found" });
       }
 
-      // 이미 결제됨?
+      // Already paid?
       if (sajuResult.isPaid) {
-        console.log("[Gumroad] Report already paid:", report_id);
+        console.log("[Gumroad] Report already paid:", targetReportId);
         return res.status(200).json({ message: "Already paid" });
       }
 
-      // 리포트 잠금 해제
-      await storage.unlockReport(report_id);
+      // Unlock report
+      await storage.unlockReport(targetReportId);
 
-      console.log(`[Gumroad] ✅ Report ${report_id} unlocked successfully`);
+      console.log(`[Gumroad] ✅ Report ${targetReportId} unlocked successfully`);
       console.log(`[Gumroad] 💰 Sale ID: ${sale_id}, Price: ${price} ${currency}`);
 
       res.status(200).json({ success: true, message: "Report unlocked" });

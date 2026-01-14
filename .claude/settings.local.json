@@ -15,7 +15,28 @@
       "Bash(LEAD_ID=\"47908a2f-223a-473a-a3a0-aa15a7f30acc\")",
       "Bash(TOKEN=\"e2eb4821-ad5c-485b-98c6-faca639652ef\")",
       "Bash(REPLIT_URL=\"https://137e95b2-44f0-4b43-86e2-b6f10e35088e-00-15uh3rcrlots4.janeway.replit.dev\":*)",
-      "Bash(__NEW_LINE_90403bf438424728__ echo \"=== Verification Link ===\")"
+      "Bash(__NEW_LINE_90403bf438424728__ echo \"=== Verification Link ===\")",
+      "Bash(find:*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "Bash(node:*)",
+      "Bash(npm install)",
+      "Bash(tree:*)",
+      "Bash(npx tsx:*)",
+      "Bash(npm run check:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Read(//Users/jeanne/BADA-Report-DesignGuide/**)",
+      "WebFetch(domain:realfood.gov)",
+      "Bash(npm run:*)",
+      "Bash(DATABASE_URL=\"postgresql://temp:temp@localhost:5432/temp\" npm run dev)",
+      "Bash(GEMINI_API_KEY=\"dummy\" DATABASE_URL=\"postgresql://temp:temp@localhost:5432/temp\" npm run dev)",
+      "Bash(PORT=3000 GEMINI_API_KEY=\"dummy\" DATABASE_URL=\"postgresql://temp:temp@localhost:5432/temp\" npm run dev)",
+      "Bash(git remote add:*)",
+      "Bash(git push:*)",
+      "Bash(git remote remove:*)",
+      "Bash(gh repo create:*)",
+      "Read(//Users/jeanne/**)"
     ]
   }
 }

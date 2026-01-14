@@ -113,7 +113,9 @@ export function detectLanguage(): Language {
 
 // Simple translation function
 export function t(key: string, lang: Language = 'en', params?: Record<string, any>): string {
-  let text = translations[lang]?.[key] || translations.en[key] || key;
+  const langTrans = translations[lang] as Record<string, string>;
+  const enTrans = translations.en as Record<string, string>;
+  let text = langTrans?.[key] || enTrans?.[key] || key;
 
   // Simple template replacement {{variable}}
   if (params) {

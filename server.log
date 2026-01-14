@@ -1,0 +1,6 @@
+SUPABASE_DATABASE_URL or DATABASE_URL not set. Falling back to in-memory storage.
+GEMINI_API_KEY not found in environment variables. Using mock data for reports.
+5:40:59 AM [express] serving on port 5001
+5:43:35 AM [vite] (client) hmr update /src/pages/Results.tsx, /src/index.css
+6:05:25 AM [vite] (client) hmr update /src/pages/Landing.tsx, /src/index.css
+6:06:17 AM [vite] (client) hmr update /src/pages/Landing.tsx, /src/index.css

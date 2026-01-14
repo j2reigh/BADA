@@ -49,7 +49,10 @@ function getBaseUrl(): string {
   if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
     return `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`;
   }
-  return 'http://localhost:5000';
+    if (process.env.NODE_ENV === 'development') {
+        return 'http://localhost:5001';
+    }
+    return 'http://localhost:5001';
 }
 
 // Send verification email

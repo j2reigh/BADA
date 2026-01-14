@@ -34,6 +34,7 @@ interface PageSection {
 
 interface ResultsData {
   reportId: string;
+  email: string;
   userInput: {
     name: string;
     surveyScores: {
@@ -150,7 +151,7 @@ export default function Results() {
   const elementColor = ELEMENT_COLORS[page1_identity?.visual_concept?.overlay_id || "overlay_water"];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen depth-gradient-bg">
       <AnimatePresence>
         {showUnlockAnimation && (
           <motion.div
@@ -283,7 +284,7 @@ export default function Results() {
                 </div>
 
                 <a
-                  href={`https://gumroad.com/l/bada-full-report?wanted=true&report_id=${reportId}`}
+                  href={`https://gumroad.com/l/bada-full-report?wanted=true&report_id=${reportId}&email=${encodeURIComponent(data.email || "")}`}
                   className="block w-full py-3 px-6 text-center bg-primary hover:bg-primary/90 text-white font-medium transition-colors"
                   data-gumroad-single-product="true"
                   data-gumroad-overlay="true"
