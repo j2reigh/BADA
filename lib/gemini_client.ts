@@ -133,7 +133,8 @@ export async function generateLifeBlueprintReport(
     // Generate title using 80/20 rule
     const adjectives = ELEMENT_ADJECTIVES[dominantElementName] || ["Balanced"];
     const adjective = adjectives[0];
-    const synthesizedTitle = `${adjective} ${identityInfo.noun}`;
+    const noun = identityInfo.noun.replace(/^The\s+/, "");
+    const synthesizedTitle = `${adjective} ${noun}`;
 
     // Select visual assets
     const backgroundId = OS_TYPE_BACKGROUNDS[surveyScores.typeName] || "bg_type_01";
@@ -190,14 +191,37 @@ Write in a warm, encouraging tone. Be specific. Avoid generic advice.`;
     // Build user prompt
     const userPrompt = `Generate a Life Blueprint Report for ${userName}.
 
-Their synthesized identity title is: "${synthesizedTitle}"
+The report's first page (page1_identity) is the most important. It must act as a powerful teaser to make the user curious and want to purchase the full report. It should diagnose a problem and hint at a solution, without giving the solution away.
+
+Follow this structure for page1 EXACTLY. Use the specified labels in English.
+
+- **Title**: Use the exact title: "${synthesizedTitle}"
+- **Sub-Headline**: Create a short, intriguing subtitle (5-7 words) that summarizes their unique potential.
+- **Birth Pattern (Your Nature)**:
+    - The Definition: Create a short, powerful metaphor for their core nature that implies a conflict or a challenge (e.g., "Powerful Engine & Sensitive Antenna").
+    - The Reason: Briefly explain why, based on their Saju data (e.g., strong Day Master but many conflicting elements).
+- **Neurological Context (Your Brain Today)**:
+    - The Definition: Describe their current likely mental state with a compelling, modern phrase (e.g., "Action Trapped in Thoughts").
+    - The Reason: Explain this state using brain/psychology metaphors (e.g., "overthinking," "fake scary stories," "safety filter") connected to their Saju element imbalance.
+- **Operating Rate (Your Efficiency)**:
+    - The Diagnosis: Present the calculated efficiency score: "${sajuResult.stats.operatingRate.toFixed(1)}% (Energy Leakage)".
+    - The Fact: Provide a powerful metaphor explaining this low rate (e.g., "You are a supercar stuck in 1st gear because you are afraid of a ghost on the road.").
 
 Create a JSON report with these exact sections. Return ONLY valid JSON, no markdown code blocks:
 
 {
   "page1_identity": {
     "title": "${synthesizedTitle}",
-    "sub_headline": "One-sentence punchline summarizing their Hardware (innate nature) + OS (current behavioral state). Make it punchy and memorable.",
+    "sub_headline": "Short intriguing subtitle",
+    "birth_pattern_title": "Birth Pattern (Your Nature)",
+    "birth_pattern_definition": "The short, powerful metaphor for their core nature.",
+    "birth_pattern_reason": "The brief explanation based on Saju data.",
+    "neuro_context_title": "Neurological Context (Your Brain Today)",
+    "neuro_context_definition": "The compelling phrase for their current mental state.",
+    "neuro_context_reason": "The explanation using brain/psychology metaphors.",
+    "operating_rate_title": "Operating Rate (Your Efficiency)",
+    "operating_rate_diagnosis": "${sajuResult.stats.operatingRate.toFixed(1)}% (Energy Leakage)",
+    "operating_rate_fact": "The powerful metaphor explaining the low efficiency rate.",
     "visual_concept": {
       "background_id": "${backgroundId}",
       "overlay_id": "${overlayId}"

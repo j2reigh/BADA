@@ -1,5 +1,7 @@
-import { useMutation } from "@tanstack/react-query";
-import { api, type InsertSurveyResult } from "@shared/routes";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { api } from "@shared/routes";
+import { type InsertSurveyResult } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
 
 export function useSubmitSurvey() {
   return useMutation({

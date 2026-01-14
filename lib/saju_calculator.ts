@@ -45,6 +45,9 @@ export interface SajuResult {
   elementCounts: {
     wood: number; fire: number; earth: number; metal: number; water: number;
   };
+  stats: {
+    operatingRate: number;
+  };
 }
 
 export const calculateSaju = (dateStr: string, timeStr: string, timezone?: string): SajuResult => {
@@ -86,15 +89,18 @@ export const calculateSaju = (dateStr: string, timeStr: string, timezone?: strin
       gan: string, 
       zhi: string, 
       ganGodChinese: string, 
-      zhiGodChinese: string
+      zhiGodChinese: string[]
     ): PillarData => {
+      // zhiGodChinese is an array of hidden stems' gods. We take the first one (Main Qi usually depends on library, but taking first for now)
+      const mainZhiGod = zhiGodChinese.length > 0 ? zhiGodChinese[0] : "";
+      
       return {
         gan,
         ganElement: getElement(gan),
         ganGod: TEN_GODS_MAP[ganGodChinese] || ganGodChinese,
         zhi,
         zhiElement: getElement(zhi),
-        zhiGod: TEN_GODS_MAP[zhiGodChinese] || zhiGodChinese
+        zhiGod: TEN_GODS_MAP[mainZhiGod] || mainZhiGod
       };
     };
 
@@ -126,7 +132,8 @@ export const calculateSaju = (dateStr: string, timeStr: string, timezone?: strin
           eightChar.getTimeShiShenZhi()
         ),
       },
-      elementCounts: { wood: 0, fire: 0, earth: 0, metal: 0, water: 0 }
+      elementCounts: { wood: 0, fire: 0, earth: 0, metal: 0, water: 0 },
+      stats: { operatingRate: 0 }
     };
 
     // 4. Calculate Element Counts (Logic that updates the zeros!)
@@ -143,6 +150,16 @@ export const calculateSaju = (dateStr: string, timeStr: string, timezone?: strin
         result.elementCounts[el as keyof typeof result.elementCounts]++;
       }
     });
+
+    // 5. Calculate Operating Rate (Simple heuristic: 100 - imbalance penalty)
+    // Ideal balance: ~1.6 per element. High deviation = lower rate.
+    const counts = Object.values(result.elementCounts);
+    const maxCount = Math.max(...counts);
+    const zeroCount = counts.filter(c => c === 0).length;
+    
+    // Penalize for excessive dominance and missing elements
+    const penalty = (maxCount > 3 ? (maxCount - 3) * 10 : 0) + (zeroCount * 5);
+    result.stats.operatingRate = Math.max(40, 100 - penalty); // Min score 40
 
     return result;
 
