@@ -151,7 +151,9 @@ export default function Results() {
   const elementColor = ELEMENT_COLORS[page1_identity?.visual_concept?.overlay_id || "overlay_water"];
 
   return (
-    <div className="min-h-screen depth-gradient-bg">
+    <>
+      <div className="depth-gradient-bg" />
+      <div className="min-h-screen relative z-10">
       <AnimatePresence>
         {showUnlockAnimation && (
           <motion.div
@@ -350,7 +352,8 @@ export default function Results() {
       <footer className="py-6 text-center text-xs text-muted-foreground">
         <p>Report generated on {new Date(data.createdAt).toLocaleDateString()}</p>
       </footer>
-    </div>
+      </div>
+    </>
   );
 }
 

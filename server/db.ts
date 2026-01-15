@@ -12,5 +12,8 @@ if (!connectionString) {
   );
 }
 
-export const pool = connectionString ? new Pool({ connectionString }) : null;
+export const pool = connectionString ? new Pool({
+  connectionString,
+  ssl: { rejectUnauthorized: false }
+}) : null;
 export const db = connectionString ? drizzle(pool!, { schema }) : null;

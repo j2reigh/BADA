@@ -37,7 +37,8 @@
       "Bash(git remote remove:*)",
       "Bash(gh repo create:*)",
       "Read(//Users/jeanne/**)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(nslookup:*)"
     ]
   }
 }
