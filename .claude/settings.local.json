@@ -38,7 +38,10 @@
       "Bash(gh repo create:*)",
       "Read(//Users/jeanne/**)",
       "Bash(npm install:*)",
-      "Bash(nslookup:*)"
+      "Bash(nslookup:*)",
+      "Bash(git status:*)",
+      "Bash(chmod:*)",
+      "Bash(git config:*)"
     ]
   }
 }

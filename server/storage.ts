@@ -233,7 +233,21 @@ export class MemStorage implements IStorage {
 
   async createBirthPattern(insertPattern: InsertBirthPattern): Promise<BirthPattern> {
     const id = this.birthPatternIdCounter++;
-    const result: BirthPattern = { ...insertPattern, id, createdAt: new Date() };
+    const result: BirthPattern = { 
+        ...insertPattern, 
+        id, 
+        createdAt: new Date(),
+        birthTimeUnknown: insertPattern.birthTimeUnknown ?? false,
+        email: insertPattern.email ?? null, // Added email default handling
+        birthHour: insertPattern.birthHour ?? null, // Added birthHour default handling
+        birthMinute: insertPattern.birthMinute ?? null, // Added birthMinute default handling
+        birthCountry: insertPattern.birthCountry ?? null, // Added birthCountry default handling
+        originalUtcOffset: insertPattern.originalUtcOffset ?? null, // Added originalUtcOffset default handling
+        latitude: insertPattern.latitude ?? null, // Added latitude default handling
+        longitude: insertPattern.longitude ?? null, // Added longitude default handling
+        dstCorrectionApplied: insertPattern.dstCorrectionApplied ?? false, // Added dstCorrectionApplied default handling
+        consentMarketing: insertPattern.consentMarketing ?? false, // Added consentMarketing default handling
+    };
     this.birthPatterns.set(id, result);
     return result;
   }

@@ -24,6 +24,14 @@ export const sajuResults = pgTable("saju_results", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Used Codes table - tracks one-time unlock codes that have been redeemed
+export const usedCodes = pgTable("used_codes", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: text("code").notNull().unique(),
+  usedByReportId: uuid("used_by_report_id").notNull().references(() => sajuResults.id),
+  usedAt: timestamp("used_at").defaultNow(),
+});
+
 // Relations
 export const leadsRelations = relations(leads, ({ many }) => ({
   sajuResults: many(sajuResults),
@@ -53,6 +61,7 @@ export type Lead = typeof leads.$inferSelect;
 export type InsertLead = z.infer<typeof insertLeadSchema>;
 export type SajuResult = typeof sajuResults.$inferSelect;
 export type InsertSajuResult = z.infer<typeof insertSajuResultSchema>;
+export type UsedCode = typeof usedCodes.$inferSelect;
 
 // Legacy types for backward compatibility (to be removed after migration)
 export const surveyResults = pgTable("survey_results", {

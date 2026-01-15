@@ -1,0 +1,18 @@
+#!/bin/sh
+
+echo "🔍 Pre-commit: MD 파일 구조 검사를 실행합니다..."
+
+# MD 파일 구조 체크
+if ! npm run check:docs --silent; then
+    echo ""
+    echo "❌ MD 파일 구조에 문제가 있습니다!"
+    echo "   다음 명령어로 문제를 확인하고 수정하세요:"
+    echo "   npm run check:docs"
+    echo ""
+    echo "   또는 docs/MD_FILE_MANAGEMENT_STRATEGY.md를 참조하세요."
+    echo ""
+    exit 1
+fi
+
+echo "✅ MD 파일 구조 검사 통과!"
+echo ""

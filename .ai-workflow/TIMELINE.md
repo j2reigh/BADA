@@ -19,6 +19,26 @@
 
 ---
 
+## 2026-01-15 12:00
+**Agent:** Gemini
+**Task:** 랜딩페이지 정렬 및 인터랙션 수정 기획
+**Status:** ⏳ Plan Review Pending
+**Plan:** [plans/2026-01-15-1200-landingpage-alignment-interaction.md](plans/2026-01-15-1200-landingpage-alignment-interaction.md)
+**QA:** 
+**Review:** 
+
+---
+
+## 2026-01-15 09:00
+**Agent:** Gemini
+**Task:** 랜딩페이지 콘텐츠 리뉴얼 기획 및 구현
+**Status:** ✅ Completed
+**Plan:** [plans/2026-01-15-0900-landingpage-content-renewal.md](plans/2026-01-15-0900-landingpage-content-renewal.md)
+**QA:** 
+**Review:** 
+
+---
+
 ## 2026-01-14 21:15
 **Agent:** Gemini
 **Task:** 프리뷰 환경 정상화 & 서버 실행 오류 수정

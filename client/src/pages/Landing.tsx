@@ -16,9 +16,9 @@ function Header() {
         </a>
 
         <nav className="hidden md:flex items-center gap-8 mix-blend-difference text-white">
-          <a href="#system" className="text-sm hover:opacity-70 transition-opacity">System</a>
-          <a href="#analysis" className="text-sm hover:opacity-70 transition-opacity">Analysis</a>
-          <a href="#method" className="text-sm hover:opacity-70 transition-opacity">Method</a>
+          <a href="#system" className="text-sm hover:opacity-70 transition-opacity">Why Lost?</a>
+          <a href="#analysis" className="text-sm hover:opacity-70 transition-opacity">The How</a>
+          <a href="#report-preview" className="text-sm hover:opacity-70 transition-opacity">Preview</a>
         </nav>
 
         <div className="flex items-center gap-4">
@@ -54,7 +54,7 @@ function StickyBottomNav() {
       <div className="max-w-md mx-auto pointer-events-auto">
         <div className="bg-white/10 backdrop-blur-md border border-white/20 p-2 rounded-full shadow-2xl flex items-center justify-between pl-6 pr-2">
           <span className="text-sm font-medium text-white mix-blend-difference hidden sm:block">
-            Start your deep dive
+            Start your self-alignment
           </span>
           <span className="text-sm font-medium text-white mix-blend-difference sm:hidden">
             Begin Analysis
@@ -63,7 +63,7 @@ function StickyBottomNav() {
             href="/survey"
             className="bg-white text-black px-6 py-3 rounded-full text-sm font-bold hover:scale-105 transition-transform flex items-center gap-2"
           >
-            Start Test <ArrowRight className="w-4 h-4" />
+            Start Analysis <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </div>
@@ -81,9 +81,9 @@ function FocusSection({ children, className = "", threshold = 0.5 }: { children:
       ref={ref}
       className={`transition-opacity duration-700 ${className}`}
       style={{
-        opacity: isInView ? 1 : 0.3,
-        filter: isInView ? "blur(0px)" : "blur(2px)",
-        transform: isInView ? "scale(1)" : "scale(0.98)",
+        opacity: isInView ? 1 : 0.2,
+        filter: isInView ? "blur(0px)" : "blur(4px)",
+        transform: isInView ? "scale(1)" : "scale(0.97)",
       }}
     >
       {children}
@@ -102,13 +102,13 @@ function HeroSection() {
         className="max-w-[1400px] mx-auto w-full"
         style={{ y: y1, opacity }}
       >
-        <p className="text-sm font-mono mb-6 text-white/60">BADA NAVIGATION SYSTEM</p>
+        <p className="text-sm font-mono mb-6 text-white/60">BADA SELF-ALIGNMENT SYSTEM</p>
         <h1 className="text-6xl md:text-8xl font-display font-medium leading-[1.1] mb-8 text-white">
-          The Surface is<br />
-          <span className="italic">Just the Beginning</span>
+          Working hard,<br />
+          <span className="italic">but feeling empty?</span>
         </h1>
         <p className="text-xl md:text-2xl text-white/70 max-w-2xl leading-relaxed">
-          Most navigation happens on the surface. We take you deeper to find the currents that actually drive you.
+          It's not you, it's a system mismatch. In a world of uncertainty, just being busy is not the answer.
         </p>
       </motion.div>
 
@@ -118,7 +118,7 @@ function HeroSection() {
         animate={{ y: [0, 10, 0] }}
         transition={{ duration: 2, repeat: Infinity }}
       >
-        <span className="text-xs font-mono tracking-widest uppercase mb-2 block text-center">Dive Deeper</span>
+        <span className="text-xs font-mono tracking-widest uppercase mb-2 block text-center">Discover Why</span>
         <ArrowDown className="w-5 h-5 mx-auto" />
       </motion.div>
     </section>
@@ -128,51 +128,50 @@ function HeroSection() {
 function AnalysisSection() {
   return (
     <div className="relative z-10">
-      {/* Zone 1: The Transition */}
+      {/* Zone 1: The Solution */}
       <section className="h-screen flex items-center px-6">
         <div className="max-w-[1400px] mx-auto w-full grid lg:grid-cols-2 gap-20 items-center">
           <FocusSection>
              <h2 className="text-4xl md:text-6xl font-display font-medium mb-6 text-white/90">
-              Turbulence<br />
-              <span className="italic text-white/60">vs. Alignment</span>
+              The Secret to a Happy Life<br />
+              <span className="italic text-white/60">Isn't Just Achievement.</span>
              </h2>
           </FocusSection>
           
           <div className="space-y-32">
              <FocusSection>
                <p className="text-xl md:text-2xl text-white/80 leading-relaxed font-light">
-                 Surface waves are chaotic. But deep currents are steady. 
-                 When you align with your deep currents, resistance disappears.
+                 A landmark 85-year Harvard study found a clear answer: a life aligned with *who you are* is the key to lasting happiness.
                </p>
              </FocusSection>
              
              <FocusSection>
                <div className="border-l-2 border-white/20 pl-8">
-                 <p className="text-lg text-white/60 mb-4">Current Status</p>
-                 <div className="text-3xl text-white font-medium">High Friction</div>
+                 <p className="text-lg text-white/60 mb-4">We call this</p>
+                 <div className="text-3xl text-white font-medium">Self-Alignment</div>
                </div>
              </FocusSection>
           </div>
         </div>
       </section>
 
-      {/* Zone 2: The Data */}
+      {/* Zone 2: The Pain */}
       <section id="system" className="h-screen flex items-center px-6">
         <div className="max-w-[1400px] mx-auto w-full">
            <FocusSection className="mb-20">
              <span className="inline-block py-1 px-3 rounded-full border border-white/30 text-white/80 text-xs font-mono mb-6">
-               SONAR DATA
+               WHY WE FEEL LOST
              </span>
              <h2 className="text-4xl md:text-6xl font-display font-medium text-white">
-               What lies beneath?
+               Why does the "right path" feel wrong?
              </h2>
            </FocusSection>
 
            <div className="grid md:grid-cols-3 gap-8">
              {[
-               { title: "Threat", val: "High", desc: "Hidden fears driving decisions" },
-               { title: "Environment", val: "Stable", desc: "External conditions" },
-               { title: "Agency", val: "Low", desc: "Internal locus of control" }
+               { title: "Uncertainty", val: "The Future", desc: `The world is changing fast. Is my career future-proof?` },
+               { title: "Burnout", val: "The Routine", desc: `Following self-help gurus and 'proven' routines leaves me tired, not inspired.` },
+               { title: "Mismatch", val: "The System", desc: `Am I lazy, or just running on the wrong operating system?` }
              ].map((item, i) => (
                <FocusSection key={i} className="bg-white/5 backdrop-blur-sm border border-white/10 p-8 rounded-2xl">
                  <h3 className="text-sm font-mono text-white/50 uppercase tracking-widest mb-4">{item.title}</h3>
@@ -184,25 +183,42 @@ function AnalysisSection() {
         </div>
       </section>
 
-      {/* Zone 3: The Blueprint */}
+      {/* Zone 3: The How */}
       <section id="analysis" className="h-screen flex items-center px-6">
-         <div className="max-w-4xl mx-auto w-full text-center">
+         <div className="max-w-4xl mx-auto w-full">
            <FocusSection>
              <h2 className="text-5xl md:text-7xl font-display font-medium text-white mb-12">
-               Your Navigation<br />Chart
+               Your Personal<br />Instruction Manual
              </h2>
              <p className="text-xl text-white/70 mb-12 leading-relaxed">
-               We don't just show you the map. We give you the compass calibrated to your specific magnetic north.
+              BADA offers a new kind of analysis. We blend timeless wisdom about natural energy (your **Birth Pattern**) with modern concepts from systems thinking. The result is a detailed map of your internal **Operating System (OS)** — revealing how you're wired to think, act, and connect.
+             </p>
+             <p className="text-xl text-white/70 leading-relaxed">
+              We don't give you a simple label. We show you how your system works: your core drives (Hardware), your current mindset (Software), and the conflicts between them that cause "energy leaks."
+             </p>
+           </FocusSection>
+         </div>
+      </section>
+
+      {/* Zone 4: The Report Preview (NEW) */}
+      <section id="report-preview" className="h-screen flex items-center px-6">
+         <div className="max-w-4xl mx-auto w-full">
+           <FocusSection>
+             <h2 className="text-5xl md:text-7xl font-display font-medium text-white mb-12">
+               See What's Inside<br />Your Report
+             </h2>
+             <p className="text-xl text-white/70 mb-12 leading-relaxed">
+               Get a glimpse of the insights waiting for you. Your report is a comprehensive guide to your inner world.
              </p>
              
-             <div className="aspect-[4/3] bg-gradient-to-br from-white/10 to-transparent border border-white/10 rounded-xl p-8 max-w-lg mx-auto transform rotate-3 hover:rotate-0 transition-transform duration-500">
-                <div className="h-full border border-white/5 rounded-lg flex items-center justify-center">
-                   <div className="text-center">
-                     <div className="w-16 h-16 rounded-full border-2 border-white/20 mx-auto mb-6 flex items-center justify-center">
-                       <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                     </div>
-                     <p className="font-mono text-xs text-white/40">CALIBRATING...</p>
-                   </div>
+             <div className="aspect-[4/3] bg-gradient-to-br from-white/10 to-transparent border border-white/10 rounded-xl p-8 max-w-lg mx-auto transform hover:scale-105 transition-transform duration-500">
+                <div className="h-full border border-dashed border-white/10 rounded-lg flex flex-col items-center justify-center text-left p-6 space-y-2">
+                    <p className="font-mono text-xs text-white/40 w-full">Page 1: Your Life Blueprint</p>
+                    <p className="font-mono text-xs text-white/40 w-full">Page 2: Your Natural Blueprint</p>
+                    <p className="font-mono text-xs text-white/40 w-full">Page 3: Your Current Operating System</p>
+                    <p className="font-mono text-xs text-white/40 w-full">Page 4: The Core Tension</p>
+                    <p className="font-mono text-xs text-white/40 w-full">Page 5: Your Action Protocol</p>
+                    <p className="text-center text-sm text-white/60 mt-4">(Report Mockup)</p>
                 </div>
              </div>
            </FocusSection>
@@ -221,23 +237,23 @@ function FinalCTA() {
       {/* Background overlay for better text contrast */}
       <div className="absolute inset-0 bg-black/30 pointer-events-none" />
 
-      <div className="relative z-10 max-w-3xl text-center">
+      <div className="relative z-10 max-w-3xl w-full">
         <FocusSection>
           <div className="bg-black/40 backdrop-blur-sm border border-white/10 rounded-3xl p-12">
             <p className="font-mono text-xs text-orange-400 mb-6 tracking-[0.2em] uppercase">
-              Initialize Sequence
+              Stop Guessing. Start Aligning.
             </p>
             
             <h2 className="text-5xl md:text-7xl font-display font-medium text-white mb-10 drop-shadow-lg">
-              Ready to<br />Dive?
+              In the age of AI, be<br />more human.
             </h2>
 
             <p className="text-white/90 mb-12 text-lg">
-              The descent takes 5 minutes. The clarity lasts forever.
+              The analysis takes 5 minutes. The clarity lasts a lifetime.
             </p>
 
             <Link href="/survey" className="group relative inline-flex items-center gap-4 px-12 py-6 bg-white text-black rounded-full font-bold text-lg hover:scale-105 transition-transform">
-              Start Analysis
+              Analyze My Operating System
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
@@ -252,7 +268,7 @@ export default function Landing() {
     <main className="relative w-full">
       {/* Long gradient background that scrolls with content */}
       <div 
-        className="absolute top-0 left-0 right-0 z-[-1] min-h-[400vh] w-full"
+        className="absolute top-0 left-0 right-0 z-[-1] min-h-[500vh] w-full"
         style={{
           background: `linear-gradient(
             to bottom,
