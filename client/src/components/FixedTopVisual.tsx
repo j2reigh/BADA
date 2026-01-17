@@ -20,12 +20,12 @@ const OVERLAY_IMAGES: Record<string, string> = {
   overlay_earth: "/overlays/overlay_earth_1768551282633.png",
 };
 
-export default function FixedTopVisual({ elementOverlay, title }: FixedTopVisualProps) {
+export default function FixedTopVisual({ elementOverlay, title, userName }: FixedTopVisualProps & { userName: string }) {
   const imagePath = OVERLAY_IMAGES[elementOverlay] || OVERLAY_IMAGES.overlay_water;
   const gradientClass = ELEMENT_GRADIENTS[elementOverlay] || ELEMENT_GRADIENTS.overlay_water;
 
   return (
-    <div className="md:hidden fixed top-0 left-0 w-full h-[45vh] z-10 overflow-hidden">
+    <div className="md:hidden fixed top-0 left-0 w-full h-[28vh] z-10 overflow-hidden">
       {/* 배경 이미지 */}
       <img
         src={imagePath}
@@ -49,14 +49,14 @@ export default function FixedTopVisual({ elementOverlay, title }: FixedTopVisual
       />
 
       {/* 제목 영역 (Instagram-ready) */}
-      <div className="absolute inset-0 flex flex-col items-center justify-end pb-8 px-6 text-center">
-        <h1 className="text-4xl font-bold text-white drop-shadow-2xl mb-3 leading-tight">
+      <div className="absolute inset-0 flex flex-col items-center justify-end pb-6 px-6 text-center">
+        <h1 className="text-2xl font-bold text-white drop-shadow-2xl mb-2 leading-tight">
           {title}
         </h1>
         <div className="flex items-center gap-2">
           <div className="h-px w-8 bg-white/50" />
-          <span className="text-[10px] text-white/80 font-medium tracking-[0.3em] uppercase">
-            BADA Blueprint
+          <span className="text-[10px] text-white/90 font-medium tracking-[0.2em] uppercase truncate max-w-[200px]">
+            {userName}'s Blueprint
           </span>
           <div className="h-px w-8 bg-white/50" />
         </div>
