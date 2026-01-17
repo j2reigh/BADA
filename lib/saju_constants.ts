@@ -269,3 +269,20 @@ export const TEN_GODS_MAP: Record<string, TenGodsInfo> = {
     risk: "Complacency, overdependence on theory.",
   },
 };
+
+// Hardware Score 계산을 위한 십성 분류
+export const DYNAMIC_GODS = ["식신", "상관", "편재", "정재", "편관"];
+export const STATIC_GODS = ["비견", "겁재", "정관", "편인", "정인"];
+
+// 오행 분류
+export const DYNAMIC_ELEMENTS = ["wood", "fire"];
+export const STATIC_ELEMENTS = ["metal", "water", "earth"];
+
+// 오행 매핑 (한자 -> 영어)
+export const ELEMENT_MAP: Record<string, string> = {
+  "甲": "wood", "乙": "wood", "寅": "wood", "卯": "wood",
+  "丙": "fire", "丁": "fire", "巳": "fire", "午": "fire",
+  "戊": "earth", "己": "earth", "辰": "earth", "戌": "earth", "丑": "earth", "未": "earth",
+  "庚": "metal", "辛": "metal", "申": "metal", "酉": "metal",
+  "壬": "water", "癸": "water", "亥": "water", "子": "water"
+};

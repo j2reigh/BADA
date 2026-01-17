@@ -1,29 +1,17 @@
 import { Solar } from "lunar-typescript";
 import { getCorrectedKST, formatDateForSaju, formatTimeForSaju } from "./time_utils";
+import {
+  TEN_GODS_MAP,
+  ELEMENT_MAP,
+  DYNAMIC_GODS,
+  STATIC_GODS,
+  DYNAMIC_ELEMENTS,
+  STATIC_ELEMENTS
+} from "./saju_constants";
 
-// 1. Korean Mappings (십성: 한자 -> 한글)
-const TEN_GODS_MAP: Record<string, string> = {
-  "比肩": "비견", "劫財": "겁재",
-  "食神": "식신", "傷官": "상관",
-  "偏財": "편재", "正財": "정재",
-  "七殺": "편관", "正官": "정관",
-  "偏印": "편인", "正印": "정인"
-};
-
-// 2. Element Mappings Helper (오행: 글자 -> 영어)
+// Helper to get element using the map
 const getElement = (char: string): string => {
-  const WOOD = ["甲", "乙", "寅", "卯"];
-  const FIRE = ["丙", "丁", "巳", "午"];
-  const EARTH = ["戊", "己", "辰", "戌", "丑", "未"];
-  const METAL = ["庚", "辛", "申", "酉"];
-  const WATER = ["壬", "癸", "亥", "子"];
-
-  if (WOOD.includes(char)) return "wood";
-  if (FIRE.includes(char)) return "fire";
-  if (EARTH.includes(char)) return "earth";
-  if (METAL.includes(char)) return "metal";
-  if (WATER.includes(char)) return "water";
-  return "unknown";
+  return ELEMENT_MAP[char] || "unknown";
 };
 
 interface PillarData {
@@ -33,6 +21,16 @@ interface PillarData {
   zhi: string;
   zhiElement: string;
   zhiGod: string;
+}
+
+export interface HardwareAnalysis {
+  hardwareType: 'dynamic' | 'static';
+  hardwareScore: number;
+  interactionPenalty: number;
+  details: {
+    tenGodsScore: number;
+    bodyStrengthScore: number;
+  };
 }
 
 export interface SajuResult {
@@ -51,9 +49,52 @@ export interface SajuResult {
     dominant: string;
     distribution: Record<string, number>;
   };
+  // Future: operatingRate will be calculated in routes.ts using alignment
   stats: {
-    operatingRate: number;
+    operatingRate: number; // Legacy support (rough estimate)
   };
+  hardwareAnalysis: HardwareAnalysis;
+}
+
+// v2.2 Interaction Penalty Logic
+function getInteractionPenalty(
+  dayMasterCategory: 'strong' | 'weak' | 'balanced',
+  tenGodsDistribution: Record<string, number>
+): number {
+  let penalty = 0;
+
+  // 재성(財星) 개수 (Control)
+  const jaeCount = (tenGodsDistribution['편재'] || 0) + (tenGodsDistribution['정재'] || 0);
+  // 관성(官星) 개수 (Pressure)
+  const gwanCount = (tenGodsDistribution['편관'] || 0) + (tenGodsDistribution['정관'] || 0);
+  // 식상(食傷) 개수 (Output)
+  const sikCount = (tenGodsDistribution['식신'] || 0) + (tenGodsDistribution['상관'] || 0);
+
+  // 1. 신약 + 재성 과다 (≥2) → 번아웃 가속 (-3)
+  // "목표는 큰데(재성), 내가 약해서(신약) 감당하기 힘듦"
+  if (dayMasterCategory === 'weak' && jaeCount >= 2) {
+    penalty -= 3;
+  }
+
+  // 2. 신강 + 관성 과다 (≥2) → 통제 충돌 (-2)
+  // "나는 강한데(신강), 외부 압력도 강해서(관성) 갈등 발생"
+  if (dayMasterCategory === 'strong' && gwanCount >= 2) {
+    penalty -= 2;
+  }
+
+  // 3. 신약 + 식상 과다 (≥2) → 에너지 고갈 (-2)
+  // "나는 약한데(신약), 너무 많이 쏟아내서(식상) 탈진"
+  if (dayMasterCategory === 'weak' && sikCount >= 2) {
+    penalty -= 2;
+  }
+
+  // 4. 신강 + 재성 과다 (≥2) → 추진력 보너스 (+2)
+  // "나는 강하고(신강), 목표도 뚜렷해서(재성) 성취력 높음"
+  if (dayMasterCategory === 'strong' && jaeCount >= 2) {
+    penalty += 2;
+  }
+
+  return penalty;
 }
 
 export const calculateSaju = (dateStr: string, timeStr: string, timezone?: string): SajuResult => {
@@ -67,7 +108,7 @@ export const calculateSaju = (dateStr: string, timeStr: string, timezone?: strin
       day = corrected.day;
       hour = corrected.hour;
       minute = corrected.minute;
-      
+
       console.log('DST Correction Applied:', {
         original: { date: dateStr, time: timeStr, timezone },
         corrected: { year, month, day, hour, minute },
@@ -84,29 +125,39 @@ export const calculateSaju = (dateStr: string, timeStr: string, timezone?: strin
     const lunar = solar.getLunar();
 
     // 2. Get 'EightChar' (BaZi logic handler)
-    // This automatically handles Jeolgi (Solar Terms) for correct Year/Month pillars
     const eightChar = lunar.getEightChar();
-
-    // Set Sect to 2 (Standard Modern Saju - starts year at Ipchun, starts day at Midnight)
-    eightChar.setSect(2); 
+    eightChar.setSect(2); // Standard Modern Saju
 
     // Helper to extract data for a pillar
     const getPillarData = (
-      gan: string, 
-      zhi: string, 
-      ganGodChinese: string, 
+      gan: string,
+      zhi: string,
+      ganGodChinese: string,
       zhiGodChinese: string[]
     ): PillarData => {
-      // zhiGodChinese is an array of hidden stems' gods. We take the first one (Main Qi usually depends on library, but taking first for now)
       const mainZhiGod = zhiGodChinese.length > 0 ? zhiGodChinese[0] : "";
-      
+
+      // Map Chinese Ten Gods to Korean using logic found in existing calculator
+      // Note: TEN_GODS_MAP in saju_constants.ts is English mapping. 
+      // We need simple Chinese->Korean mapping here.
+      // Since TEN_GODS_MAP structure changed, we'll redefine the simple map locally for now
+      // or rely on a helper if available.
+      // Let's create a local map for Chinese -> Korean as saju_constants seems to have English structures
+      const CH2KO_GENERATOR: Record<string, string> = {
+        "比肩": "비견", "劫財": "겁재",
+        "食神": "식신", "傷官": "상관",
+        "偏財": "편재", "正財": "정재",
+        "七殺": "편관", "正官": "정관",
+        "偏印": "편인", "正印": "정인"
+      };
+
       return {
         gan,
         ganElement: getElement(gan),
-        ganGod: TEN_GODS_MAP[ganGodChinese] || ganGodChinese,
+        ganGod: CH2KO_GENERATOR[ganGodChinese] || ganGodChinese,
         zhi,
         zhiElement: getElement(zhi),
-        zhiGod: TEN_GODS_MAP[mainZhiGod] || mainZhiGod
+        zhiGod: CH2KO_GENERATOR[mainZhiGod] || mainZhiGod
       };
     };
 
@@ -114,27 +165,27 @@ export const calculateSaju = (dateStr: string, timeStr: string, timezone?: strin
     const result: SajuResult = {
       fourPillars: {
         year: getPillarData(
-          eightChar.getYearGan(), 
-          eightChar.getYearZhi(), 
-          eightChar.getYearShiShenGan(), 
+          eightChar.getYearGan(),
+          eightChar.getYearZhi(),
+          eightChar.getYearShiShenGan(),
           eightChar.getYearShiShenZhi()
         ),
         month: getPillarData(
-          eightChar.getMonthGan(), 
-          eightChar.getMonthZhi(), 
-          eightChar.getMonthShiShenGan(), 
+          eightChar.getMonthGan(),
+          eightChar.getMonthZhi(),
+          eightChar.getMonthShiShenGan(),
           eightChar.getMonthShiShenZhi()
         ),
         day: getPillarData(
-          eightChar.getDayGan(), 
-          eightChar.getDayZhi(), 
+          eightChar.getDayGan(),
+          eightChar.getDayZhi(),
           "비견", // Day Master is always Self
           eightChar.getDayShiShenZhi()
         ),
         hour: getPillarData(
-          eightChar.getTimeGan(), 
-          eightChar.getTimeZhi(), 
-          eightChar.getTimeShiShenGan(), 
+          eightChar.getTimeGan(),
+          eightChar.getTimeZhi(),
+          eightChar.getTimeShiShenGan(),
           eightChar.getTimeShiShenZhi()
         ),
       },
@@ -145,10 +196,16 @@ export const calculateSaju = (dateStr: string, timeStr: string, timezone?: strin
         dominant: '',
         distribution: {}
       },
-      stats: { operatingRate: 0 }
+      stats: { operatingRate: 0 },
+      hardwareAnalysis: { // Initial placeholder
+        hardwareType: 'static',
+        hardwareScore: 0,
+        interactionPenalty: 0,
+        details: { tenGodsScore: 0, bodyStrengthScore: 0 }
+      }
     };
 
-    // 4. Calculate Element Counts (Logic that updates the zeros!)
+    // 4. Calculate Element Counts
     const allElements = [
       result.fourPillars.year.ganElement, result.fourPillars.year.zhiElement,
       result.fourPillars.month.ganElement, result.fourPillars.month.zhiElement,
@@ -157,22 +214,42 @@ export const calculateSaju = (dateStr: string, timeStr: string, timezone?: strin
     ];
 
     allElements.forEach(el => {
-      // If the element exists in our keys (wood, fire, etc.), increment the count
       if (el && result.elementCounts[el as keyof typeof result.elementCounts] !== undefined) {
         result.elementCounts[el as keyof typeof result.elementCounts]++;
       }
     });
 
-    // 5. Calculate Ten Gods Analysis
+    // 5. Calculate Ten Gods Distribution
     const tenGodsCount: Record<string, number> = {};
-    [result.fourPillars.year.ganGod, result.fourPillars.month.ganGod, 
-     result.fourPillars.day.ganGod, result.fourPillars.hour.ganGod].forEach(god => {
-      if (god) {
+    const relevantGods = [
+      result.fourPillars.year.ganGod, result.fourPillars.year.zhiGod,
+      result.fourPillars.month.ganGod, result.fourPillars.month.zhiGod,
+      result.fourPillars.day.zhiGod, // Day Gan is Self (not counted in distribution usually, but context matters)
+      result.fourPillars.hour.ganGod, result.fourPillars.hour.zhiGod
+    ];
+    // Note: Previous logic only counted GANs + Hour Zhi? Let's verify standard distribution.
+    // Standard approach: Count all 7 elements (excluding Day Gan).
+    // Let's stick to the visible gods used in pillar data for now.
+
+    // Previous logic was stricter:
+    // [result.fourPillars.year.ganGod, result.fourPillars.month.ganGod, 
+    //  result.fourPillars.day.ganGod, result.fourPillars.hour.ganGod]
+    // Let's use ALL gods available in the pillars (Gan + Zhi) for better accuracy on tendencies.
+
+    [
+      result.fourPillars.year.ganGod, result.fourPillars.year.zhiGod,
+      result.fourPillars.month.ganGod, result.fourPillars.month.zhiGod,
+      result.fourPillars.day.zhiGod,
+      result.fourPillars.hour.ganGod, result.fourPillars.hour.zhiGod
+    ].forEach(god => {
+      if (god && god !== "비견") { // Typically exclude Day Master's own self-element? No, 비견/겁재 are valid gods
+        tenGodsCount[god] = (tenGodsCount[god] || 0) + 1;
+      } else if (god === "비견") {
         tenGodsCount[god] = (tenGodsCount[god] || 0) + 1;
       }
     });
-    
-    const dominantTenGod = Object.entries(tenGodsCount).sort(([,a], [,b]) => b - a)[0]?.[0] || '';
+
+    const dominantTenGod = Object.entries(tenGodsCount).sort(([, a], [, b]) => b - a)[0]?.[0] || '';
     result.tenGodsAnalysis = {
       dominant: dominantTenGod,
       distribution: tenGodsCount
@@ -181,33 +258,61 @@ export const calculateSaju = (dateStr: string, timeStr: string, timezone?: strin
     // 6. Calculate Day Master Strength
     const dayMasterElement = result.fourPillars.day.ganElement;
     const supportingElements = Object.entries(result.elementCounts)
-      .filter(([element]) => element === dayMasterElement || 
+      .filter(([element]) => element === dayMasterElement ||
         (dayMasterElement === 'wood' && element === 'water') ||
         (dayMasterElement === 'fire' && element === 'wood') ||
         (dayMasterElement === 'earth' && element === 'fire') ||
         (dayMasterElement === 'metal' && element === 'earth') ||
         (dayMasterElement === 'water' && element === 'metal'))
       .reduce((sum, [, count]) => sum + count, 0);
-    
+
     const totalElements = Object.values(result.elementCounts).reduce((sum, count) => sum + count, 0);
     const strengthRatio = supportingElements / totalElements;
-    
-    result.dayMasterStrength = Math.round(strengthRatio * 100);
-    result.dayMasterCategory = 
-      result.dayMasterStrength >= 60 ? 'strong' :
-      result.dayMasterStrength <= 40 ? 'weak' : 'balanced';
 
-    // 7. Calculate Operating Rate (Enhanced with Day Master consideration)
-    const counts = Object.values(result.elementCounts);
-    const maxCount = Math.max(...counts);
-    const zeroCount = counts.filter(c => c === 0).length;
-    
-    // Penalize for excessive dominance and missing elements
-    const imbalancePenalty = (maxCount > 3 ? (maxCount - 3) * 10 : 0) + (zeroCount * 5);
-    // Bonus for balanced Day Master
-    const balanceBonus = result.dayMasterCategory === 'balanced' ? 5 : 0;
-    
-    result.stats.operatingRate = Math.max(40, 100 - imbalancePenalty + balanceBonus);
+    result.dayMasterStrength = Math.round(strengthRatio * 100);
+    result.dayMasterCategory =
+      result.dayMasterStrength >= 60 ? 'strong' :
+        result.dayMasterStrength <= 40 ? 'weak' : 'balanced';
+
+    // 7. Calculate Hardware Score (v2.3 Core Logic)
+    let tenGodsScore = 0;
+
+    // Ten Gods Contribution
+    Object.entries(tenGodsCount).forEach(([god, count]) => {
+      if (DYNAMIC_GODS.includes(god)) tenGodsScore += count;
+      if (STATIC_GODS.includes(god)) tenGodsScore -= count;
+    });
+
+    // Body Strength Contribution (Shin-gang/Shin-yak)
+    // Strong body = More capacity for output/control (Dynamic bias) -> + Score
+    // Weak body = Need for support/resource (Static bias) -> - Score
+    let bodyStrengthScore = 0;
+    if (result.dayMasterCategory === 'strong') bodyStrengthScore = 2;
+    if (result.dayMasterCategory === 'weak') bodyStrengthScore = -2;
+
+    const rawHardwareScore = tenGodsScore + bodyStrengthScore;
+
+    // Determine Hardware Type based on raw score
+    const hardwareType = rawHardwareScore >= 0 ? 'dynamic' : 'static';
+
+    // Calculate Interaction Penalty (v2.2)
+    const interactionPenalty = getInteractionPenalty(result.dayMasterCategory, tenGodsCount);
+
+    // Save Analysis
+    result.hardwareAnalysis = {
+      hardwareType,
+      hardwareScore: rawHardwareScore, // v2.3 uses raw score for intensity calc later
+      interactionPenalty,
+      details: {
+        tenGodsScore,
+        bodyStrengthScore
+      }
+    };
+
+    // 8. Legacy Operating Rate (Rough Estimation for backward compatibility)
+    // We can just set a default here, or use the old logic.
+    // Let's keep it simple for now, as the real calc happens in routes.ts with Survey data
+    result.stats.operatingRate = 50;
 
     return result;
 

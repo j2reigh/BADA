@@ -1,16 +1,18 @@
-import { 
-  surveyResults, 
+import {
+  surveyResults,
   birthPatterns,
   leads,
   sajuResults,
-  type SurveyResult, 
+  validCodes,
+  type SurveyResult,
   type InsertSurveyResult,
   type BirthPattern,
   type InsertBirthPattern,
   type Lead,
   type InsertLead,
   type SajuResult,
-  type InsertSajuResult
+  type InsertSajuResult,
+  type ValidCode
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
@@ -36,6 +38,11 @@ export interface IStorage {
   getSajuResultById(id: string): Promise<SajuResult | undefined>;
   getSajuResultsByLeadId(leadId: string): Promise<SajuResult[]>;
   unlockReport(id: string): Promise<SajuResult | undefined>;
+
+  // Unlock code methods
+  getValidCode(code: string): Promise<ValidCode | undefined>;
+  redeemCode(code: string, reportId: string): Promise<{ success: boolean; error?: string }>;
+  createValidCodes(codes: string[], memo?: string): Promise<ValidCode[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -209,6 +216,68 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return result;
   }
+
+  // Unlock code methods
+  async getValidCode(code: string): Promise<ValidCode | undefined> {
+    if (!db) throw new Error("Database not initialized");
+    const [result] = await db
+      .select()
+      .from(validCodes)
+      .where(eq(validCodes.code, code.toUpperCase().trim()));
+    return result;
+  }
+
+  async redeemCode(code: string, reportId: string): Promise<{ success: boolean; error?: string }> {
+    if (!db) throw new Error("Database not initialized");
+
+    const normalizedCode = code.toUpperCase().trim();
+
+    // Check if code exists
+    const validCode = await this.getValidCode(normalizedCode);
+    if (!validCode) {
+      return { success: false, error: "INVALID_CODE" };
+    }
+
+    // Check if already used
+    if (validCode.isUsed) {
+      return { success: false, error: "ALREADY_USED" };
+    }
+
+    // Check if report exists
+    const report = await this.getSajuResultById(reportId);
+    if (!report) {
+      return { success: false, error: "REPORT_NOT_FOUND" };
+    }
+
+    // Check if report is already paid
+    if (report.isPaid) {
+      return { success: false, error: "ALREADY_UNLOCKED" };
+    }
+
+    // Mark code as used
+    await db
+      .update(validCodes)
+      .set({
+        isUsed: true,
+        usedByReportId: reportId,
+        usedAt: new Date(),
+      })
+      .where(eq(validCodes.id, validCode.id));
+
+    // Unlock the report
+    await this.unlockReport(reportId);
+
+    return { success: true };
+  }
+
+  async createValidCodes(codes: string[], memo?: string): Promise<ValidCode[]> {
+    if (!db) throw new Error("Database not initialized");
+    const results = await db
+      .insert(validCodes)
+      .values(codes.map(code => ({ code: code.toUpperCase().trim(), memo })))
+      .returning();
+    return results;
+  }
 }
 
 export class MemStorage implements IStorage {
@@ -343,6 +412,60 @@ export class MemStorage implements IStorage {
       this.sajuResults.set(id, result);
     }
     return result;
+  }
+
+  // Unlock code methods (MemStorage implementation)
+  private validCodes: Map<string, ValidCode> = new Map();
+
+  async getValidCode(code: string): Promise<ValidCode | undefined> {
+    return this.validCodes.get(code.toUpperCase().trim());
+  }
+
+  async redeemCode(code: string, reportId: string): Promise<{ success: boolean; error?: string }> {
+    const normalizedCode = code.toUpperCase().trim();
+    const validCode = this.validCodes.get(normalizedCode);
+
+    if (!validCode) {
+      return { success: false, error: "INVALID_CODE" };
+    }
+    if (validCode.isUsed) {
+      return { success: false, error: "ALREADY_USED" };
+    }
+
+    const report = this.sajuResults.get(reportId);
+    if (!report) {
+      return { success: false, error: "REPORT_NOT_FOUND" };
+    }
+    if (report.isPaid) {
+      return { success: false, error: "ALREADY_UNLOCKED" };
+    }
+
+    validCode.isUsed = true;
+    validCode.usedByReportId = reportId;
+    validCode.usedAt = new Date();
+    this.validCodes.set(normalizedCode, validCode);
+
+    await this.unlockReport(reportId);
+    return { success: true };
+  }
+
+  async createValidCodes(codes: string[], memo?: string): Promise<ValidCode[]> {
+    const results: ValidCode[] = [];
+    for (const code of codes) {
+      const normalizedCode = code.toUpperCase().trim();
+      const validCode: ValidCode = {
+        id: nanoid(),
+        code: normalizedCode,
+        isUsed: false,
+        usedByReportId: null,
+        usedAt: null,
+        createdAt: new Date(),
+        memo: memo || null,
+      };
+      this.validCodes.set(normalizedCode, validCode);
+      results.push(validCode);
+    }
+    return results;
   }
 }
 

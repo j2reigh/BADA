@@ -13,6 +13,54 @@
 
 ## 🔄 최근 회고 (최신순)
 
+### 2026-01-16 - Unlock Code Feature 구현
+**Agent:** Claude
+
+#### 👍 Keep (계속 할 것)
+- **기획 → 구현 체계적 흐름:** 기획서 작성 → 유저 결정사항 질문 → 구현 순서로 진행하여 불필요한 재작업 방지
+- **TodoWrite 적극 활용:** 8개 단계를 todo로 관리하여 진행 상황을 명확하게 추적
+- **풀스택 일관성:** Schema → Storage → Routes → Frontend 순서로 레이어별 구현하여 누락 없이 완료
+- **실용적 코드 생성:** 긍정적 단어(SHINE, BLOOM, BRAVE 등) + 숫자 조합으로 기억하기 쉬운 코드 형식 설계
+
+#### 🤔 Problem (문제점)
+- **환경변수 불일치:** `SUPABASE_DATABASE_URL` vs `DATABASE_URL` 차이로 db:push 첫 시도 실패
+- **기존 타입 에러:** 이번 작업과 무관한 routes.ts:593 타입 에러가 존재 (db null 체크)
+
+#### 💡 Try (시도할 것)
+- **환경변수 문서화:** drizzle.config.ts가 기대하는 환경변수명을 README나 .env.example에 명시
+- **기존 타입 에러 해결:** 다음 세션에서 routes.ts의 db null 체크 에러 수정
+
+#### 📦 산출물
+- `shared/schema.ts`: validCodes 테이블 추가
+- `server/storage.ts`: getValidCode, redeemCode, createValidCodes 함수
+- `server/routes.ts`: /api/codes/redeem 엔드포인트
+- `scripts/generate_codes.ts`: 코드 생성 스크립트
+- `client/src/pages/Results.tsx`: 코드 입력 UI
+- `.ai-workflow/plans/2026-01-16-unlock-code-feature.md`: 기획서
+- 50개 베타 테스터용 코드 생성 완료
+
+---
+
+### 2026-01-15 14:00 - 랜딩페이지 콘텐츠 및 인터랙션 업데이트 (안정화)
+**Agent:** Gemini
+
+#### 👍 Keep (계속 할 것)
+- **사용자 피드백 중심:** 복잡한 UI 구현 실패 시, 과감히 롤백하고 사용자 피드백(안정화)을 최우선으로 반영하여 최종 목표 달성.
+- **문제 해결의 끈기:** 이전부터 존재하던 TypeScript 에러(MemStorage) 및 pre-commit 훅 문제를 끈기 있게 추적하고 해결하여 빌드 안정성 확보.
+- **명확한 커뮤니케이션:** 복잡한 상황(Rollback, Git 사용)에서 사용자에게 상황을 명확히 설명하고 동의를 구하는 과정.
+
+#### 🤔 Problem (문제점)
+- **복잡한 UI 구현의 한계:** Framer Motion을 이용한 복잡한 스태킹 인터랙션 구현 시, `useTransform` 로직 설계의 난이도가 높고 디버깅에 많은 시간이 소요됨. (AI 모델의 시각적 디버깅 한계).
+- **예상치 못한 종속성:** UI 변경 과정에서 백엔드 `MemStorage`의 타입 에러(기존 문제)가 발견되어 작업 흐름이 지연됨.
+- **Git Hook 이해 부족:** `pre-commit` 훅의 존재를 뒤늦게 파악하여 커밋에 지연 발생.
+
+#### 💡 Try (시도할 것)
+- **UI/UX 계획 시 구현 난이도 고려:** AI 모델의 시각적 피드백 및 정교한 애니메이션 구현 한계를 인지하고, 초기 기획 단계에서부터 구현 난이도를 면밀히 평가하여 현실적인 목표 설정.
+- **작업 시작 전 코드베이스 전체 스캔:** 초기 단계에서 `npm run check` 외 `git status`, `git log` 등 전체적인 코드베이스 상태를 점검하여 숨겨진 문제를 조기에 파악.
+- **`pre-commit` 훅 및 프로젝트 규칙 사전 파악:** 작업 시작 전 `README.md`나 `.githooks` 등 프로젝트의 빌드/커밋 규칙을 먼저 확인하여 예상치 못한 블로커 방지.
+
+---
+
 ### 2026-01-14 21:15 - 프리뷰 환경 구성 & 오류 수정
 **Agent:** Gemini
 

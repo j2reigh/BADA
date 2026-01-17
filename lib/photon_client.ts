@@ -63,8 +63,11 @@ export async function searchCities(
   url.searchParams.set("q", query.trim());
   url.searchParams.set("limit", String(limit));
   url.searchParams.set("lang", lang);
-  // Filter to only return cities/towns/villages
-  url.searchParams.set("osm_tag", "place:city");
+  
+  // Filter to return cities, towns, and villages for broader results
+  url.searchParams.append("osm_tag", "place:city");
+  url.searchParams.append("osm_tag", "place:town");
+  url.searchParams.append("osm_tag", "place:village");
 
   try {
     const response = await fetch(url.toString());
@@ -74,27 +77,16 @@ export async function searchCities(
     }
 
     const data: PhotonResponse = await response.json();
-    
-    // Also search for towns and villages to get more results
-    const townUrl = new URL("https://photon.komoot.io/api/");
-    townUrl.searchParams.set("q", query.trim());
-    townUrl.searchParams.set("limit", String(limit));
-    townUrl.searchParams.set("lang", lang);
-    townUrl.searchParams.set("osm_tag", "place:town");
 
-    const townResponse = await fetch(townUrl.toString());
-    const townData: PhotonResponse = townResponse.ok ? await townResponse.json() : { features: [] };
-
-    // Combine and dedupe results
-    const allFeatures = [...data.features, ...townData.features];
+    // The API might return duplicates if a place matches multiple tags; dedupe them.
     const seenIds = new Set<number>();
-    const uniqueFeatures = allFeatures.filter(f => {
+    const uniqueFeatures = data.features.filter(f => {
       if (seenIds.has(f.properties.osm_id)) return false;
       seenIds.add(f.properties.osm_id);
       return true;
     });
 
-    return uniqueFeatures.slice(0, limit).map((feature) => convertToResult(feature));
+    return uniqueFeatures.map((feature) => convertToResult(feature));
   } catch (error) {
     console.error("Photon search error:", error);
     return [];

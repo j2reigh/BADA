@@ -6,9 +6,23 @@ import { z } from "zod";
 import { searchCities } from "../lib/photon_client";
 import { getCorrectedKST } from "../lib/time_utils";
 import { calculateSaju } from "../lib/saju_calculator";
+import { analyzeOperatingState } from "../lib/operating_logic"; // v2.3 Integration
 import { generateLifeBlueprintReport, type SurveyScores } from "../lib/gemini_client";
 import { sendVerificationEmail } from "../lib/email";
 import type { InsertBirthPattern, InsertSajuResult } from "@shared/schema";
+
+// Helper function for unlock code error messages
+function getCodeErrorMessage(error: string): string {
+  const messages: Record<string, string> = {
+    INVALID_CODE: "Invalid code. Please check and try again.",
+    ALREADY_USED: "This code has already been used.",
+    REPORT_NOT_FOUND: "Report not found.",
+    ALREADY_UNLOCKED: "This report is already unlocked.",
+    MISSING_FIELDS: "Code and report ID are required.",
+    UNKNOWN_ERROR: "An unknown error occurred.",
+  };
+  return messages[error] || messages.UNKNOWN_ERROR;
+}
 
 export async function registerRoutes(
   httpServer: Server,
@@ -59,17 +73,17 @@ export async function registerRoutes(
       typeKey: z.string(),
       typeName: z.string(),
     }),
-    
+
     // Birth pattern
     name: z.string().min(1),
     gender: z.enum(["male", "female", "other"]),
     email: z.string().email(),
     marketingConsent: z.boolean().default(true),
-    
+
     birthDate: z.string(),
     birthTime: z.string().optional(),
     birthTimeUnknown: z.boolean().default(false),
-    
+
     birthCity: z.string(),
     birthCountry: z.string().optional(),
     timezone: z.string(),
@@ -88,7 +102,7 @@ export async function registerRoutes(
       console.log("[Assessment] Upserting lead...");
       const lead = await storage.upsertLead(input.email, input.marketingConsent);
       console.log("[Assessment] Lead created/updated:", lead.id);
-      
+
       // 2. Convert birth time to KST with DST correction
       console.log("[Assessment] Converting to KST...");
       let kstData: { year: number; month: number; day: number; hour: number | null; minute: number | null; isDstApplied: boolean };
@@ -114,7 +128,7 @@ export async function registerRoutes(
           isDstApplied: corrected.isDstApplied,
         };
       }
-      
+
       // 3. Calculate Saju (Four Pillars)
       console.log("[Assessment] Calculating Saju...");
       let sajuData: any = null;
@@ -125,7 +139,26 @@ export async function registerRoutes(
           console.log("[Assessment] Running Saju calculation...");
           sajuData = calculateSaju(input.birthDate, input.birthTime, input.timezone);
           console.log("[Assessment] Saju calculated successfully");
-          
+
+          // v2.3 Logic: Perform Operating Analysis (Saju + Survey)
+          const analysisInput = {
+            ...input.surveyScores,
+            answers: input.answers as { q1: string; q2: string; q3: string;[key: string]: string }
+          };
+
+          try {
+            const operatingAnalysis = analyzeOperatingState(sajuData, analysisInput);
+            sajuData.operatingAnalysis = operatingAnalysis;
+            // Also override the legacy operatingRate with the new v2.3 calculated rate
+            if (sajuData.stats) {
+              sajuData.stats.operatingRate = operatingAnalysis._internal.finalRate;
+            }
+            console.log("[Assessment] Operating Analysis v2.3 complete:", operatingAnalysis.levelName);
+          } catch (analysisErr) {
+            console.error("[Assessment] Operating Analysis failed:", analysisErr);
+            // Fallback: keep legacy calculation if new one fails, but log error
+          }
+
           // 4. Generate AI report (5-page Life Blueprint)
           console.log("[Assessment] Generating AI report...");
           const surveyScoresForReport: SurveyScores = {
@@ -149,7 +182,7 @@ export async function registerRoutes(
         sajuData = { note: "Birth time unknown - limited analysis available" };
         reportData = { note: "Full report requires birth time" };
       }
-      
+
       // 5. Create saju result record
       console.log("[Assessment] Creating saju result record...");
       const userInput = {
@@ -165,7 +198,7 @@ export async function registerRoutes(
         surveyAnswers: input.answers,
         surveyScores: input.surveyScores,
       };
-      
+
       const sajuResult = await storage.createSajuResult({
         leadId: lead.id,
         userInput,
@@ -181,7 +214,7 @@ export async function registerRoutes(
         lead.verificationToken,
         lead.id
       );
-      
+
       if (!emailResult.success) {
         console.error("[Assessment] Failed to send verification email:", emailResult.error);
       } else {
@@ -213,17 +246,17 @@ export async function registerRoutes(
   app.get("/api/verify", async (req, res) => {
     try {
       const { token, id } = req.query;
-      
+
       if (!token || !id || typeof token !== 'string' || typeof id !== 'string') {
         return res.redirect("/verification-failed?reason=invalid");
       }
-      
+
       const lead = await storage.getLeadByToken(token);
-      
+
       if (!lead || lead.id !== id) {
         return res.redirect("/verification-failed?reason=expired");
       }
-      
+
       if (lead.isVerified) {
         // Already verified, redirect to results
         const sajuResults = await storage.getSajuResultsByLeadId(lead.id);
@@ -232,16 +265,16 @@ export async function registerRoutes(
         }
         return res.redirect("/verification-failed?reason=no_results");
       }
-      
+
       // Verify the lead
       await storage.verifyLead(id);
-      
+
       // Get latest saju result for this lead
       const sajuResults = await storage.getSajuResultsByLeadId(id);
       if (sajuResults.length > 0) {
         return res.redirect(`/results/${sajuResults[0].id}`);
       }
-      
+
       return res.redirect("/verification-failed?reason=no_results");
     } catch (err) {
       console.error("Verification error:", err);
@@ -253,32 +286,32 @@ export async function registerRoutes(
   app.post("/api/verification/resend", async (req, res) => {
     try {
       const { leadId } = req.body;
-      
+
       if (!leadId) {
         return res.status(400).json({ message: "Lead ID required" });
       }
-      
+
       const lead = await storage.getLeadById(leadId);
       if (!lead) {
         return res.status(404).json({ message: "Lead not found" });
       }
-      
+
       if (lead.isVerified) {
         return res.status(400).json({ message: "Already verified" });
       }
-      
+
       // Regenerate token and send email
       const updatedLead = await storage.regenerateVerificationToken(leadId);
       if (!updatedLead) {
         return res.status(500).json({ message: "Failed to regenerate token" });
       }
-      
+
       const emailResult = await sendVerificationEmail(
         updatedLead.email,
         updatedLead.verificationToken,
         updatedLead.id
       );
-      
+
       res.json({ success: emailResult.success, email: updatedLead.email });
     } catch (err) {
       console.error("Resend verification error:", err);
@@ -290,43 +323,43 @@ export async function registerRoutes(
   app.post("/api/verification/update-email", async (req, res) => {
     try {
       const { leadId, newEmail } = req.body;
-      
+
       if (!leadId || !newEmail) {
         return res.status(400).json({ message: "Lead ID and new email required" });
       }
-      
+
       const lead = await storage.getLeadById(leadId);
       if (!lead) {
         return res.status(404).json({ message: "Lead not found" });
       }
-      
+
       if (lead.isVerified) {
         return res.status(400).json({ message: "Cannot change verified email" });
       }
-      
+
       // Check if new email already exists
       const existingLead = await storage.getLeadByEmail(newEmail);
       if (existingLead && existingLead.id !== leadId) {
         return res.status(400).json({ message: "Email already in use" });
       }
-      
+
       // Update email and regenerate token
       const updatedLead = await storage.updateLeadEmail(leadId, newEmail);
       if (!updatedLead) {
         return res.status(500).json({ message: "Failed to update email" });
       }
-      
+
       // Send verification to new email
       const emailResult = await sendVerificationEmail(
         updatedLead.email,
         updatedLead.verificationToken,
         updatedLead.id
       );
-      
-      res.json({ 
-        success: emailResult.success, 
+
+      res.json({
+        success: emailResult.success,
         email: updatedLead.email,
-        message: "Email updated. Check your inbox." 
+        message: "Email updated. Check your inbox."
       });
     } catch (err) {
       console.error("Update email error:", err);
@@ -338,17 +371,17 @@ export async function registerRoutes(
   app.get("/api/wait/:reportId", async (req, res) => {
     try {
       const { reportId } = req.params;
-      
+
       const sajuResult = await storage.getSajuResultById(reportId);
       if (!sajuResult) {
         return res.status(404).json({ message: "Report not found" });
       }
-      
+
       const lead = await storage.getLeadById(sajuResult.leadId);
       if (!lead) {
         return res.status(404).json({ message: "Lead not found" });
       }
-      
+
       res.json({
         reportId: sajuResult.id,
         leadId: lead.id,
@@ -365,29 +398,42 @@ export async function registerRoutes(
   app.get("/api/results/:reportId", async (req, res) => {
     try {
       const { reportId } = req.params;
-      
+
       const sajuResult = await storage.getSajuResultById(reportId);
       if (!sajuResult) {
         return res.status(404).json({ message: "Report not found" });
       }
-      
+
       const lead = await storage.getLeadById(sajuResult.leadId);
       if (!lead) {
         return res.status(404).json({ message: "Lead not found" });
       }
-      
-      if (!lead.isVerified) {
-        return res.status(403).json({ 
+
+      // Development mode: Skip email verification check
+      const isDevelopment = process.env.NODE_ENV === 'development';
+      if (!isDevelopment && !lead.isVerified) {
+        return res.status(403).json({
           message: "Email not verified",
           redirectTo: `/wait/${reportId}`
         });
       }
-      
+
+      if (isDevelopment && !lead.isVerified) {
+        console.log(`[DEV MODE] Bypassing email verification for report ${reportId}`);
+      }
+
       const reportData = sajuResult.reportData as any;
       const isPaid = (sajuResult as any).isPaid || false;
-      
+
+      // Development mode: Bypass payment check
+      const showFullReport = isPaid || isDevelopment;
+
+      if (isDevelopment && !isPaid) {
+        console.log(`[DEV MODE] Bypassing payment check for report ${reportId} - showing full report`);
+      }
+
       // Always return Page 1 (Identity) - the free hook
-      // Only return Pages 2-5 if paid
+      // Only return Pages 2-5 if paid (or in development mode)
       const responseData: any = {
         reportId: sajuResult.id,
         email: lead.email,
@@ -398,8 +444,8 @@ export async function registerRoutes(
         // Page 1 - always available (free hook)
         page1_identity: reportData.page1_identity || null,
       };
-      
-      if (isPaid) {
+
+      if (showFullReport) {
         // Full report - Pages 2-5
         responseData.page2_hardware = reportData.page2_hardware || null;
         responseData.page3_os = reportData.page3_os || null;
@@ -412,10 +458,11 @@ export async function registerRoutes(
         responseData.page4_mismatch = { section_name: "The Core Tension", locked: true };
         responseData.page5_solution = { section_name: "Your Action Protocol", locked: true };
       }
-      
+
       res.json(responseData);
     } catch (err) {
       console.error("Results fetch error:", err);
+      console.error("Error stack:", err instanceof Error ? err.stack : "No stack trace");
       res.status(500).json({ message: "Failed to get results" });
     }
   });
@@ -424,24 +471,62 @@ export async function registerRoutes(
   app.post("/api/results/:reportId/unlock", async (req, res) => {
     try {
       const { reportId } = req.params;
-      
+
       const sajuResult = await storage.getSajuResultById(reportId);
       if (!sajuResult) {
         return res.status(404).json({ message: "Report not found" });
       }
-      
+
       const lead = await storage.getLeadById(sajuResult.leadId);
       if (!lead || !lead.isVerified) {
         return res.status(403).json({ message: "Email not verified" });
       }
-      
+
       // Update isPaid status
       await storage.unlockReport(reportId);
-      
+
       res.json({ success: true, message: "Report unlocked" });
     } catch (err) {
       console.error("Unlock report error:", err);
       res.status(500).json({ message: "Failed to unlock report" });
+    }
+  });
+
+  // Redeem unlock code endpoint
+  app.post("/api/codes/redeem", async (req, res) => {
+    try {
+      const { code, reportId } = req.body;
+
+      if (!code || !reportId) {
+        return res.status(400).json({
+          success: false,
+          error: "MISSING_FIELDS",
+          message: "Code and reportId are required"
+        });
+      }
+
+      console.log(`[Code Redeem] Attempting to redeem code: ${code} for report: ${reportId}`);
+
+      const result = await storage.redeemCode(code, reportId);
+
+      if (result.success) {
+        console.log(`[Code Redeem] ✅ Successfully redeemed code: ${code}`);
+        return res.json({ success: true, message: "Report unlocked successfully" });
+      } else {
+        console.log(`[Code Redeem] ❌ Failed to redeem code: ${code}, error: ${result.error}`);
+        return res.status(400).json({
+          success: false,
+          error: result.error,
+          message: getCodeErrorMessage(result.error || "UNKNOWN_ERROR")
+        });
+      }
+    } catch (err) {
+      console.error("[Code Redeem] Error:", err);
+      res.status(500).json({
+        success: false,
+        error: "SERVER_ERROR",
+        message: "Failed to redeem code"
+      });
     }
   });
 
@@ -458,8 +543,8 @@ export async function registerRoutes(
       } = req.body;
 
       // Try to find report_id from custom fields (if set up) or fallback to email lookup
-      let targetReportId = req.body.report_id || 
-                           (req.body.custom_fields && req.body.custom_fields.report_id);
+      let targetReportId = req.body.report_id ||
+        (req.body.custom_fields && req.body.custom_fields.report_id);
 
       if (!targetReportId) {
         console.log(`[Gumroad] No report_id in webhook, trying email lookup for: ${email}`);
@@ -517,6 +602,29 @@ export async function registerRoutes(
       console.log(`[Gumroad Test] Report ${reportId} unlocked`);
       res.json({ success: true });
     });
+
+    // Debug: List recent reports
+    app.get("/api/debug/reports", async (req, res) => {
+      try {
+        const { db } = await import("./db");
+        const { sajuResults } = await import("@shared/schema");
+        const { desc } = await import("drizzle-orm");
+
+        const reports = await db.select().from(sajuResults).orderBy(desc(sajuResults.createdAt)).limit(10);
+        res.json({
+          count: reports.length,
+          reports: reports.map((r: any) => ({
+            id: r.id,
+            leadId: r.leadId,
+            createdAt: r.createdAt,
+            hasReportData: !!r.reportData
+          }))
+        });
+      } catch (err) {
+        console.error("[Debug] Error fetching reports:", err);
+        res.status(500).json({ error: "Failed to fetch reports" });
+      }
+    });
   }
 
   // Legacy birth pattern submission (keep for backward compatibility)
@@ -540,9 +648,9 @@ export async function registerRoutes(
   app.post("/api/birth-pattern/submit", async (req, res) => {
     try {
       const input = birthPatternInputSchema.parse(req.body);
-      
+
       let kstData: { year: number; month: number; day: number; hour: number | null; minute: number | null; isDstApplied: boolean };
-      
+
       if (input.birthTimeUnknown || !input.birthTime) {
         const [year, month, day] = input.birthDate.split('-').map(Number);
         kstData = {
@@ -587,7 +695,7 @@ export async function registerRoutes(
       };
 
       const birthPattern = await storage.createBirthPattern(birthPatternData);
-      
+
       res.status(201).json({
         success: true,
         birthPattern,

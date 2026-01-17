@@ -41,7 +41,11 @@
       "Bash(nslookup:*)",
       "Bash(git status:*)",
       "Bash(chmod:*)",
-      "Bash(git config:*)"
+      "Bash(git config:*)",
+      "WebFetch(domain:blog.olivierlarose.com)",
+      "Bash(git checkout:*)",
+      "Bash(source .env)",
+      "WebFetch(domain:kr.pinterest.com)"
     ]
   }
 }

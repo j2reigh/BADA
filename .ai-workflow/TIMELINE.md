@@ -19,10 +19,46 @@
 
 ---
 
+## 2026-01-16
+**Agent:** Claude
+**Task:** Unlock Code Feature 구현 (결제 없이 코드로 리포트 잠금 해제)
+**Status:** ✅ Completed
+**Plan:** [plans/2026-01-16-unlock-code-feature.md](plans/2026-01-16-unlock-code-feature.md)
+**QA:** -
+**Review:** -
+**산출물:**
+- Schema: validCodes 테이블
+- Backend: /api/codes/redeem 엔드포인트
+- Frontend: Results.tsx 코드 입력 UI
+- Script: scripts/generate_codes.ts
+- 50개 베타 테스터용 코드 생성 완료
+
+---
+
+## 2026-01-15 15:15
+**Agent:** Gemini
+**Task:** 리포트 결과 페이지 리디자인 기획
+**Status:** ⏳ Plan Review Pending
+**Plan:** [plans/2026-01-15-1500-report-page-redesign.md](plans/2026-01-15-1500-report-page-redesign.md)
+**QA:**
+**Review:**
+
+---
+
+## 2026-01-15 15:15
+**Agent:** Gemini
+**Task:** 리포트 결과 페이지 리디자인 기획
+**Status:** ⏳ Plan Review Pending
+**Plan:** [plans/2026-01-15-1500-report-page-redesign.md](plans/2026-01-15-1500-report-page-redesign.md)
+**QA:** 
+**Review:**
+
+---
+
 ## 2026-01-15 12:00
 **Agent:** Gemini
 **Task:** 랜딩페이지 정렬 및 인터랙션 수정 기획
-**Status:** ⏳ Plan Review Pending
+**Status:** ✅ Completed
 **Plan:** [plans/2026-01-15-1200-landingpage-alignment-interaction.md](plans/2026-01-15-1200-landingpage-alignment-interaction.md)
 **QA:** 
 **Review:** 

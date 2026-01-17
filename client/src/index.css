@@ -196,4 +196,16 @@
   .dark .sticky-bottom-nav {
     background: rgba(0, 0, 0, 0.8);
   }
+
+  /* Report Stacking Cards - Custom scrollbar for card content */
+  .stacking-card-content::-webkit-scrollbar {
+    width: 4px;
+  }
+  .stacking-card-content::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .stacking-card-content::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 2px;
+  }
 }

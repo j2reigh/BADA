@@ -200,26 +200,43 @@ function AnalysisSection() {
          </div>
       </section>
 
-      {/* Zone 4: The Report Preview (NEW) */}
-      <section id="report-preview" className="h-screen flex items-center px-6">
+      {/* Zone 4: The Report Preview - realfood.gov style list */}
+      <section id="report-preview" className="min-h-screen flex items-center px-6 py-20">
          <div className="max-w-4xl mx-auto w-full">
            <FocusSection>
-             <h2 className="text-5xl md:text-7xl font-display font-medium text-white mb-12">
+             <h2 className="text-4xl md:text-6xl lg:text-7xl font-display font-medium text-white mb-6 md:mb-12">
                See What's Inside<br />Your Report
              </h2>
-             <p className="text-xl text-white/70 mb-12 leading-relaxed">
+             <p className="text-lg md:text-xl text-white/70 mb-10 md:mb-16 leading-relaxed max-w-2xl">
                Get a glimpse of the insights waiting for you. Your report is a comprehensive guide to your inner world.
              </p>
-             
-             <div className="aspect-[4/3] bg-gradient-to-br from-white/10 to-transparent border border-white/10 rounded-xl p-8 max-w-lg mx-auto transform hover:scale-105 transition-transform duration-500">
-                <div className="h-full border border-dashed border-white/10 rounded-lg flex flex-col items-center justify-center text-left p-6 space-y-2">
-                    <p className="font-mono text-xs text-white/40 w-full">Page 1: Your Life Blueprint</p>
-                    <p className="font-mono text-xs text-white/40 w-full">Page 2: Your Natural Blueprint</p>
-                    <p className="font-mono text-xs text-white/40 w-full">Page 3: Your Current Operating System</p>
-                    <p className="font-mono text-xs text-white/40 w-full">Page 4: The Core Tension</p>
-                    <p className="font-mono text-xs text-white/40 w-full">Page 5: Your Action Protocol</p>
-                    <p className="text-center text-sm text-white/60 mt-4">(Report Mockup)</p>
-                </div>
+
+             {/* realfood.gov style list */}
+             <div className="space-y-0">
+               {[
+                 { title: "Your Life Blueprint", desc: "Your core identity and natural strengths" },
+                 { title: "Your Natural Blueprint", desc: "How you're wired to think and act" },
+                 { title: "Your Current Operating System", desc: "Your learned patterns and behaviors" },
+                 { title: "The Core Tension", desc: "Where your nature and nurture conflict" },
+                 { title: "Your Action Protocol", desc: "Personalized steps for alignment" }
+               ].map((item, i) => (
+                 <div
+                   key={i}
+                   className="group flex items-center justify-between py-5 md:py-6 border-b border-white/10 cursor-default hover:bg-white/5 transition-colors -mx-4 px-4 rounded-lg"
+                 >
+                   <div className="flex-1 pr-4">
+                     <h3 className="text-white text-base md:text-lg font-medium underline underline-offset-4 decoration-white/40 group-hover:decoration-white/80 transition-colors">
+                       {item.title}
+                     </h3>
+                     <p className="text-white/50 text-sm mt-1 hidden md:block">
+                       {item.desc}
+                     </p>
+                   </div>
+                   <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/10 group-hover:bg-white/20 flex items-center justify-center transition-colors shrink-0">
+                     <ArrowRight className="w-4 h-4 md:w-5 md:h-5 text-white/70 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+                   </div>
+                 </div>
+               ))}
              </div>
            </FocusSection>
          </div>
