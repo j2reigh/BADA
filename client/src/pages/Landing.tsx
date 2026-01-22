@@ -191,10 +191,10 @@ function AnalysisSection() {
                Your Personal<br />Instruction Manual
              </h2>
              <p className="text-xl text-white/70 mb-12 leading-relaxed">
-              BADA offers a new kind of analysis. We blend timeless wisdom about natural energy (your **Birth Pattern**) with modern concepts from systems thinking. The result is a detailed map of your internal **Operating System (OS)** — revealing how you're wired to think, act, and connect.
+              BADA offers a new kind of analysis. We blend ancient eastern wisdom about <strong>your natural rhythm</strong> with modern neuroscience. The result is a clear picture of <strong>how your mind works</strong> — revealing how you're wired to think, act, and connect.
              </p>
              <p className="text-xl text-white/70 leading-relaxed">
-              We don't give you a simple label. We show you how your system works: your core drives (Hardware), your current mindset (Software), and the conflicts between them that cause "energy leaks."
+              We don't give you a simple label. We show you your nature, your patterns, and what drains you.
              </p>
            </FocusSection>
          </div>
@@ -214,11 +214,11 @@ function AnalysisSection() {
              {/* realfood.gov style list */}
              <div className="space-y-0">
                {[
-                 { title: "Your Life Blueprint", desc: "Your core identity and natural strengths" },
-                 { title: "Your Natural Blueprint", desc: "How you're wired to think and act" },
-                 { title: "Your Current Operating System", desc: "Your learned patterns and behaviors" },
-                 { title: "The Core Tension", desc: "Where your nature and nurture conflict" },
-                 { title: "Your Action Protocol", desc: "Personalized steps for alignment" }
+                 { title: "Who You Are", desc: "Your core identity and natural strengths" },
+                 { title: "Your Nature", desc: "How you're wired to think and act" },
+                 { title: "Your Mind", desc: "Your patterns and how they shape you" },
+                 { title: "Your Friction", desc: "What's blocking your natural flow" },
+                 { title: "Your Guide", desc: "Personalized steps for alignment" }
                ].map((item, i) => (
                  <div
                    key={i}
@@ -270,7 +270,7 @@ function FinalCTA() {
             </p>
 
             <Link href="/survey" className="group relative inline-flex items-center gap-4 px-12 py-6 bg-white text-black rounded-full font-bold text-lg hover:scale-105 transition-transform">
-              Analyze My Operating System
+              Start My Analysis
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>

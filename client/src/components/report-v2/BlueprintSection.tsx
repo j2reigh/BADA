@@ -5,7 +5,7 @@ export default function BlueprintSection({ data }: { data: ResultsData }) {
     if (!data.page2_hardware) return null;
 
     return (
-        <section className="relative min-h-screen w-full bg-zinc-950 py-24 px-6 md:px-20 z-20">
+        <section className="relative min-h-screen w-full bg-transparent py-24 px-6 md:px-20 z-20">
             <div className="max-w-4xl mx-auto space-y-32">
 
                 {/* Part 1: Nature */}
@@ -15,7 +15,7 @@ export default function BlueprintSection({ data }: { data: ResultsData }) {
                     transition={{ duration: 0.8 }}
                     viewport={{ once: true, margin: "-100px" }}
                 >
-                    <span className="block text-[10px] uppercase tracking-[0.3em] text-emerald-500 mb-6">Act II : The Blueprint</span>
+                    <span className="block text-[10px] uppercase tracking-[0.3em] text-emerald-500 mb-6">Part 2. Your Nature</span>
                     <h2 className="text-3xl md:text-5xl font-light text-white leading-tight mb-12">
                         {data.page2_hardware.nature_title}
                     </h2>

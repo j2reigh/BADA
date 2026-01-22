@@ -132,15 +132,15 @@ function generateVerificationEmailHtml(verificationLink: string): string {
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Verify Your Email</title>
     </head>
-    <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #F0F8FF;">
+    <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #E8F4F8;">
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
         <tr>
           <td style="background-color: #ffffff; border-radius: 16px; padding: 40px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
             <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
               <tr>
                 <td style="text-align: center; padding-bottom: 30px;">
-                  <h1 style="margin: 0; font-size: 28px; font-weight: bold; color: #0800FF;">BADA</h1>
-                  <p style="margin: 10px 0 0; font-size: 14px; color: #666;">Operating Pattern Assessment</p>
+                  <h1 style="margin: 0; font-size: 28px; font-weight: bold; color: #4A7BA7;">BADA</h1>
+                  <p style="margin: 10px 0 0; font-size: 14px; color: #666; font-style: italic;">Flow with your nature</p>
                 </td>
               </tr>
               <tr>
@@ -151,14 +151,14 @@ function generateVerificationEmailHtml(verificationLink: string): string {
               <tr>
                 <td style="padding-bottom: 30px;">
                   <p style="margin: 0; font-size: 16px; line-height: 1.6; color: #4a4a4a;">
-                    Thank you for completing your BADA assessment. Click the button below to verify your email and unlock your personalized Operating Pattern report with Saju insights.
+                    Thank you for completing your BADA assessment. Click the button below to verify your email and unlock your personalized report.
                   </p>
                 </td>
               </tr>
               <tr>
                 <td style="text-align: center; padding-bottom: 30px;">
-                  <a href="${verificationLink}" 
-                     style="display: inline-block; background-color: #0800FF; color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; padding: 16px 40px; border-radius: 50px; box-shadow: 0 4px 12px rgba(8, 0, 255, 0.3);">
+                  <a href="${verificationLink}"
+                     style="display: inline-block; background-color: #4A7BA7; color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; padding: 16px 40px; border-radius: 50px; box-shadow: 0 4px 12px rgba(74, 123, 167, 0.3);">
                     View My Results
                   </a>
                 </td>
@@ -170,7 +170,7 @@ function generateVerificationEmailHtml(verificationLink: string): string {
                     <br><br>
                     If the button doesn't work, copy and paste this link into your browser:
                     <br>
-                    <a href="${verificationLink}" style="color: #0800FF; word-break: break-all;">${verificationLink}</a>
+                    <a href="${verificationLink}" style="color: #4A7BA7; word-break: break-all;">${verificationLink}</a>
                   </p>
                 </td>
               </tr>
