@@ -174,3 +174,29 @@ Standardizing Part 5 (Action Protocol) to move away from generic "neuroscience a
 ## Results
 -   **Verified:** Passive Floater user correctly received "The Ignition Protocol" with "Morning Sunlight Exposure".
 -   **Identity:** Confirmed that Part 1 and Part 5 are now effectively "Bookends" of the report—starting with a standardized Identity and ending with a standardized Solution Strategy, providing a cohesive narrative structure.
+
+## Context (Session 7 - One-Liner Anchors)
+User requested more "Sharpness" and "Anchoring" in the report reading experience, feeling lost in the text.
+
+## Solution: The Anchor System
+Implemented explicit "One-Liner Anchor" fields in the prompt output for each major section to provide an immediate conceptual hook.
+-   **Part 2 (Nature):** `core_drive` ("You flourish when X, but rot when Y")
+-   **Part 3 (Mind):** `os_anchor` ("System Diagnosis")
+-   **Part 4 (Friction):** `friction_anchor` ("The Loop")
+-   **Part 5 (Guide):** `protocol_anchor` ("The Command")
+
+## Result
+Generated report successfully includes these sharp summaries (e.g., "Whisper your vision. Light your small spark." for Passive Floater).
+
+## Context (Session 7 - UI Polish)
+User requested a "Text Gradient Scroll Opacity" effect (Reference: Olivier Larose) for the One-Liner Anchors to improve readability and visual impact.
+
+## Solution
+Created `ScrollRevealText.tsx` reusable component using Framer Motion:
+1.  Splits text into words.
+2.  Uses `useScroll` to track container position.
+3.  Maps scroll progress to opacity for each word sequentially.
+4.  Integrated this component into Part 2, 3, 4, and 5 sections to display the new Anchors.
+
+## Result
+Anchors now have a high-end "Scroll Reveal" animation, guiding the user's eye and providing the requested "Sharpness" in UX.

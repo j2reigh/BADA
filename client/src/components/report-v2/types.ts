@@ -15,6 +15,7 @@ export interface Page2Hardware {
     shadow_title?: string;
     shadow_description?: string;
     core_insights?: string[];
+    core_drive?: string;
 }
 
 export interface Page3OS {
@@ -25,6 +26,7 @@ export interface Page3OS {
     environment_axis?: { title: string; level: string; description: string };
     agency_axis?: { title: string; level: string; description: string };
     os_summary?: string;
+    os_anchor?: string;
 }
 
 export interface Page4Mismatch {
@@ -34,6 +36,7 @@ export interface Page4Mismatch {
     career_friction?: { title: string; description: string; quick_tip: string };
     relationship_friction?: { title: string; description: string; quick_tip: string };
     money_friction?: { title: string; description: string; quick_tip: string };
+    friction_anchor?: string;
 }
 
 export interface Page5Solution {
@@ -44,6 +47,7 @@ export interface Page5Solution {
     daily_rituals?: Array<{ name: string; description: string; when: string }>;
     environment_boost?: { element_needed: string; tips: string[] };
     closing_message?: string;
+    protocol_anchor?: string;
 }
 
 export interface ResultsData {

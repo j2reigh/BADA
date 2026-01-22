@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { ResultsData } from "./types";
 import { Check, Sun, Moon, Clock, ArrowRight } from "lucide-react";
+import ScrollRevealText from "../ui/ScrollRevealText";
 
 export default function ProtocolSection({ data }: { data: ResultsData }) {
     if (!data.page5_solution) return null;
@@ -23,52 +24,62 @@ export default function ProtocolSection({ data }: { data: ResultsData }) {
     }
 
     return (
-        <section className="relative min-h-screen w-full bg-transparent py-32 px-6 md:px-20 z-30">
-            <div className="max-w-5xl mx-auto space-y-32">
+        <section className="relative w-full py-24 px-6 md:px-20 z-30">
+            <div className="max-w-5xl mx-auto space-y-24">
                 {/* Header */}
                 <motion.div
-                    className="text-center"
+                    className="text-center flex flex-col items-center"
                     initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                 >
-                    <span className="block text-[10px] uppercase tracking-[0.3em] text-emerald-400 mb-6">Part 5. Your Guide</span>
-                    <h2 className="text-5xl md:text-7xl font-thin mb-8 tracking-tighter text-white">{sol.protocol_name}</h2>
-                    <p className="text-xl md:text-2xl text-white/60 font-light italic max-w-3xl mx-auto leading-relaxed">
+                    <span className="block text-[10px] uppercase tracking-[0.3em] text-[#233F64] mb-6">Part 5. Your Guide</span>
+                    <h2 className="text-4xl md:text-6xl font-light mb-8 tracking-tighter text-[#402525]">{sol.protocol_name}</h2>
+
+                    {/* One-Liner Anchor */}
+                    {sol.protocol_anchor && (
+                        <div className="mb-8 max-w-2xl">
+                            <ScrollRevealText
+                                text={sol.protocol_anchor}
+                                className="text-2xl md:text-3xl font-medium text-[#233F64] justify-center"
+                            />
+                        </div>
+                    )}
+
+                    <p className="text-lg md:text-xl text-[#402525]/60 font-light italic max-w-3xl mx-auto leading-relaxed">
                         "{sol.transformation_goal}"
                     </p>
                 </motion.div>
 
                 {/* Rituals Grid */}
                 <div className="space-y-8">
-                    <div className="flex items-center gap-4 border-b border-white/10 pb-4">
-                        <h3 className="text-sm font-medium uppercase tracking-widest text-white/50">Daily Rituals</h3>
-                        <div className="h-px bg-white/10 flex-1" />
-                        <span className="text-xs text-white/40">Execution Mode</span>
+                    <div className="flex items-center gap-4 border-b border-[#402525]/10 pb-4">
+                        <h3 className="text-sm font-medium uppercase tracking-widest text-[#402525]/50">Daily Rituals</h3>
+                        <div className="h-px bg-[#402525]/10 flex-1" />
                     </div>
 
                     <div className="grid md:grid-cols-3 gap-8">
                         {sol.daily_rituals?.map((ritual, i) => (
                             <motion.div
                                 key={i}
-                                className="bg-white/5 backdrop-blur-sm p-8 rounded-2xl border border-white/10 hover:bg-white/10 hover:border-white/20 hover:-translate-y-1 transition-all duration-300 group"
+                                className="bg-[#ABBBD5]/10 p-8 rounded-2xl border border-[#879DC6]/20 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group"
                                 initial={{ opacity: 0, y: 30 }}
                                 whileInView={{ opacity: 1, y: 0 }}
                                 transition={{ delay: i * 0.1 }}
                             >
                                 <div className="flex justify-between items-start mb-8">
-                                    <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                                    <div className="w-10 h-10 bg-[#233F64] rounded-lg flex items-center justify-center text-white group-hover:bg-[#182339] transition-colors">
                                         <span className="text-sm font-bold">{i + 1}</span>
                                     </div>
-                                    {i === 0 ? <Sun className="w-5 h-5 text-white/30" /> : i === 1 ? <Clock className="w-5 h-5 text-white/30" /> : <Moon className="w-5 h-5 text-white/30" />}
+                                    {i === 0 ? <Sun className="w-5 h-5 text-[#879DC6]" /> : i === 1 ? <Clock className="w-5 h-5 text-[#879DC6]" /> : <Moon className="w-5 h-5 text-[#879DC6]" />}
                                 </div>
 
-                                <h4 className="text-xl font-medium mb-3 text-white">{ritual.name}</h4>
-                                <p className="text-[10px] text-white/40 uppercase tracking-wider mb-6 flex items-center gap-2">
-                                    <div className="w-1 h-3 bg-emerald-500/30" />
+                                <h4 className="text-xl font-medium mb-3 text-[#402525]">{ritual.name}</h4>
+                                <p className="text-[10px] text-[#402525]/40 uppercase tracking-wider mb-6 flex items-center gap-2">
+                                    <div className="w-1 h-3 bg-[#233F64]/30" />
                                     {ritual.when}
                                 </p>
-                                <p className="text-sm text-white/60 leading-relaxed font-light">{ritual.description}</p>
+                                <p className="text-sm text-[#402525]/70 leading-relaxed font-light">{ritual.description}</p>
                             </motion.div>
                         ))}
                     </div>
@@ -76,28 +87,25 @@ export default function ProtocolSection({ data }: { data: ResultsData }) {
 
                 {/* Environment Boost */}
                 <motion.div
-                    className="bg-[#0A1F1C] text-white p-10 md:p-16 rounded-[2rem] relative overflow-hidden"
+                    className="bg-[#233F64]/5 border border-[#233F64]/10 p-10 md:p-16 rounded-[2rem] relative overflow-hidden"
                     initial={{ opacity: 0, scale: 0.98 }}
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true }}
                 >
-                    {/* Background Element */}
-                    <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/4" />
-
                     <div className="relative z-10 grid md:grid-cols-5 gap-12 items-center">
                         <div className="md:col-span-2">
-                            <span className="block text-[10px] uppercase tracking-[0.2em] text-emerald-400/80 mb-6">Your Environment</span>
-                            <h3 className="text-4xl font-light mb-2 capitalize">
+                            <span className="block text-[10px] uppercase tracking-[0.2em] text-[#233F64] mb-6">Your Environment</span>
+                            <h3 className="text-3xl font-light text-[#402525] mb-2 capitalize">
                                 {sol.environment_boost?.element_needed} Element
                             </h3>
-                            <p className="text-emerald-100/50 text-sm font-mono">Restoring Balance...</p>
+                            <p className="text-[#233F64]/50 text-sm">Restoring Balance...</p>
                         </div>
 
                         <div className="md:col-span-3">
                             <ul className="grid gap-6">
                                 {sol.environment_boost?.tips.map((tip, i) => (
-                                    <li key={i} className="flex items-start gap-4 text-lg text-emerald-50 font-light border-b border-emerald-500/20 pb-4 last:border-0 last:pb-0">
-                                        <ArrowRight className="w-5 h-5 text-emerald-500 mt-1 shrink-0" />
+                                    <li key={i} className="flex items-start gap-4 text-lg text-[#402525]/80 font-light border-b border-[#233F64]/20 pb-4 last:border-0 last:pb-0">
+                                        <ArrowRight className="w-5 h-5 text-[#233F64] mt-1 shrink-0" />
                                         {tip}
                                     </li>
                                 ))}
@@ -106,18 +114,18 @@ export default function ProtocolSection({ data }: { data: ResultsData }) {
                     </div>
                 </motion.div>
 
-                {/* Closing Message - Rising to Surface */}
+                {/* Closing Message */}
                 <motion.div
-                    className="bg-gradient-to-b from-[#E8F4F8] to-white text-gray-900 rounded-[2rem] p-12 md:p-16 text-center max-w-3xl mx-auto"
+                    className="text-center max-w-3xl mx-auto py-12"
                     initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                 >
-                    <div className="w-px h-12 bg-gradient-to-b from-[#4A7BA7] to-transparent mx-auto mb-8" />
-                    <p className="text-2xl md:text-3xl text-gray-800 font-serif leading-relaxed italic">
+                    <div className="w-px h-12 bg-gradient-to-b from-[#879DC6] to-transparent mx-auto mb-8" />
+                    <p className="text-2xl md:text-3xl text-[#402525] font-serif leading-relaxed italic">
                         "{sol.closing_message}"
                     </p>
-                    <div className="mt-12 text-[10px] uppercase tracking-[0.25em] text-gray-400 space-y-2">
+                    <div className="mt-12 text-[10px] uppercase tracking-[0.25em] text-[#402525]/40 space-y-2">
                         <p>BADA Report ID: {data.reportId.slice(0, 8)}</p>
                         <p>Analysis Valid Until: {expiredAtString}</p>
                     </div>
