@@ -86,3 +86,91 @@ Implementing Operating Rate v2.3 based on Hardware (Saju) + OS (Survey) Alignmen
 ## Lessons Learned
 - **Type Consistency verifies Architecture:** When data types conflict between PDF generation and API validation, it often signals a need to support backward compatibility (Optional fields) or strict migration.
 - **Server Process:** In Node.js development, always check if the process actually restarted after editing core library files. `lsof -t | xargs kill` is a handy tool.
+
+---
+
+## Context (Session 5 - 2026-01-17 Part 2)
+UI/UX Redesign of the Report Results Page and PDF Export to align with a "Raw Nature & Technical Precision" aesthetic (Arcteryx-inspired). Implementing a 5-Act Narrative structure.
+
+## Observations & Issues
+- **API Route Mismatch:** The client was calling `/api/reports/:id` while the server endpoint was defined as `/api/results/:id`. This caused a 404/Fallback error, leading to a "Sequence Loading Failed" message.
+- **Rendering Crashes:** The new UI components (`HeroSection`) accessed deep properties like `data.page1_identity.visual_concept.overlay_id` which were missing in some legacy/fallback data, causing White Screen crashes.
+- **Scope Creep (Positive):** The initial analysis missed the "Friction" section, but the user correctly pointed out the 5-section structure. This required a quick pivot in the design plan (v2.1) to include a "Glitch" visualization for the Friction section.
+- **Asset Dependency:** The design relies heavily on "3D Symbols" and "Nature Backgrounds". Since these were not ready, I implemented a robust `SymbolRenderer` component that uses existing overlay images as 3D placeholders with `framer-motion` animations.
+
+## Actions Taken
+1. **Frontend Architecture:** Refactored `Results.tsx` into a modular 5-Act structure (`components/report-v2/`) using `framer-motion` for scroll interactions (Parallax, Reveal, Glitch).
+2. **PDF Redesign:** Completely rewrote `client/src/lib/pdfExport.ts` to generate a Dark Mode, magazine-style PDF that mirrors the new web aesthetic.
+3. **Critical Fixes:** 
+   - Corrected the API endpoint mismatch.
+   - Added Optional Chaining (`?.`) and fallback values across all V2 components to ensure stability.
+4. **Verification:** Confirmed the page loads correctly and flows through the 5 Acts (Identity -> Blueprint -> Diagnostics -> Interference -> Protocol).
+
+## Lessons Learned
+- **API Consistency Check:** Always verify the `server/routes.ts` definition before writing the client-side `useQuery` fetcher. A simple mismatch can look like a complex server error.
+- **Robust Rendering:** When building high-fidelity UIs that depend on specific data structures (like `visual_concept`), always implement Defensive Programming (Optional Chaining) to handle legacy or incomplete data gracefully.
+- **User Feedback Loop:** The user's correction about the "5 sections" was critical. Rapidly adjusting the plan (v2 -> v2.1) and acknowledging the oversight built trust and led to a improved narrative design ("The Glitch").
+
+---
+
+## Context (Session 6 - 2026-01-17 Part 3)
+Planning the "Calibration Loop" (Self-Debugging Protocol) feature. This feature reframes "report inaccuracy" as "user decalibration" (Masking, Burnout, etc.) and uses therapeutic questioning to deepen the user's self-reflection, eventually feeding into a Retrospective system.
+
+## Observations & Issues
+- **Conceptual Depth:** The planning went through multiple iterations (v1 to v7) to refine the tone from "defensive disclaimer" to "therapeutic container".
+- **Process Error (Critical):** During the rapid iteration of the concept document (`.ai-workflow/plans/2026-01-17-calibration-loop-concept.md`), I used the `write_to_file` tool to overwrite the file but lazily used `(omitted)` for sections I thought remained unchanged.
+- **Consequence:** This resulted in **Data Loss**. The document became fragmented, and the Change Log was momentarily lost. The user correctly pointed out "Why overwrite instead of modify?"
+- **Feature Evolution:**
+    -   **v4:** Shifted from static text to dynamic generation based on report results.
+    -   **v5:** Improved question quality (Somatic/Narrative therapy).
+    -   **v6:** Added "Write & Release" interaction.
+    -   **v7:** Added "Time Capsule Email" with specific `retrospective_email` consent flag.
+
+## Actions Taken
+1.  **Drafting:** Created a comprehensive concept document for the Calibration Loop.
+2.  **Correction:** Fully restored the concept document, manually merging all previous versions' logic and the full changelog logic into a single complete file (v7).
+3.  **Protocol Definition:** Established a "Prevention Measure" for document editing.
+
+## Lessons Learned & Prevention Measures
+-   **Document Integrity Protocol:**
+    1.  **NEVER use placeholders** (e.g., `(rest of content omitted)`) when using `write_to_file`. If valid content exists, it **MUST** be included in the write payload.
+    2.  **Read before Write:** Always `view_file` immediately before writing to ensure you are merging with the latest state, not an outdated memory.
+    3.  **Respect History:** Changelogs are vital for tracking thought processes. Never delete them "for brevity".
+-   **User Trust:** "Laziness" in file writing (omitting parts) erodes trust faster than logic errors. Complete execution is better than fast execution.
+---
+
+## Context (Session 7 - 2026-01-19)
+Standardizing the "Identity" section of the report to be deterministic (Adjective + Gapja Noun) for 480 combinations (60 Day Pillars x 8 OS Types). Moving from pure AI generation to a "Fetch & Display" model with standardized quality.
+
+## Observations & Issues
+- **Linguistic Nuance:** The initial adjective mapping (e.g., "State Architect" -> "Calculated") felt mechanical. The user requested more poetic/atmospheric alternatives.
+- **Solution Innovation:** Instead of a single hardcoded adjective, we implemented a **Dual Option System** (e.g., ["Structured", "Architectural"]) and updated the generation script to ask Gemini to *select* the best fit for the specific Nature Noun context.
+- **Data Integrity:** After generating the batch, checks revealed only 479 items in the DB. One combination (`丙寅` + `Conscious Maintainer`) was missing.
+- **File Overwrite Risk:** During verification, the `archetypes_data.json` (containing 480 items) was accidentally overwritten by a test run (containing only 2 items). recovering this required careful script adjustment or pulling from DB state.
+- **Database Schema Sync:** Encountered `relation "content_archetypes" does not exist` errors because `drizzle-kit push` required specific environment variable formatting (`DATABASE_URL`).
+
+## Actions Taken
+1.  **Dictionary Design:** Created `lib/standardization_dictionaries.ts` mapping 60 Nature Nouns and 8 OS Type Adjective Pairs.
+2.  **Smart Batch Generation:** Developed `scripts/generate_archetypes.ts` to generate 480 identities, featuring "Context-Aware Adjective Selection" logic.
+3.  **Database Integration:**
+    -   Added `content_archetypes` table to schema.
+    -   Created `scripts/upload_archetypes.ts` to populate DB from JSON.
+    -   Integrated `server/routes.ts` and `lib/gemini_client.ts` to seamlessy fetch and enforce these standardized identities during report generation.
+4.  **Error Recovery:** Wrote `scripts/generate_missing.ts` and `scripts/upload_fix.ts` to successfully regenerate and upload the single missing archetype (`The Enduring Sunrise`), completing the set to 480/480.
+
+## Lessons Learned
+-   **Deterministic ≠ Rigid:** "Standardization" doesn't mean removing AI intelligence. Using AI to *choose* between pre-defined options allows for both consistency and linguistic quality.
+-   **Verification is Mandatory:** Even with automated scripts, always verify the final count (`DB Count: 480`). The "missing one" is a classic edge case in batch processing.
+-   **Intermediate Backups:** Saving the generated content to a local JSON file (`archetypes_data.json`) before DB upload is a critical safety net. It allows for inspection, manual fixing, and re-uploading without re-spending API credits.
+
+## Context (Session 7 - 2026-01-22 Update)
+Standardizing Part 5 (Action Protocol) to move away from generic "neuroscience advice" to OS-Type specific "Protocol Strategies".
+
+## Observations
+-   **Generic Advice:** Users felt Part 5 was repetitive. AI tended to default to "Meditation" or "Journaling" for everyone.
+-   **Solution:** Defined 8 distinct "Protocol Archetypes" (e.g., *The Decompression Protocol* for State Architects, *The Ignition Protocol* for Passive Floaters) in `lib/standardization_dictionaries.ts`.
+-   **Implementation:** Updated `generatePage5` to strictly follow these archetypes, enforcing the Protocol Name, Core Focus, and a mandatory Key Ritual while letting AI personalize the *description* based on the user's specific friction.
+
+## Results
+-   **Verified:** Passive Floater user correctly received "The Ignition Protocol" with "Morning Sunlight Exposure".
+-   **Identity:** Confirmed that Part 1 and Part 5 are now effectively "Bookends" of the report—starting with a standardized Identity and ending with a standardized Solution Strategy, providing a cohesive narrative structure.
