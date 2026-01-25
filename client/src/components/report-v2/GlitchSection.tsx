@@ -3,9 +3,12 @@ import { ResultsData } from "./types";
 import SymbolRenderer from "./SymbolRenderer";
 import ScrollRevealText from "../ui/ScrollRevealText";
 
+import LockedBlurOverlay from "./LockedBlurOverlay";
+
 export default function GlitchSection({ data }: { data: ResultsData }) {
     if (!data.page4_mismatch) return null;
     const mm = data.page4_mismatch;
+    const isLocked = mm.locked;
 
     return (
         <section className="relative w-full py-24 px-6 md:px-20 z-20 overflow-hidden">
@@ -16,7 +19,7 @@ export default function GlitchSection({ data }: { data: ResultsData }) {
                         {mm.friction_title}
                     </h2>
 
-                    {/* One-Liner Anchor */}
+                    {/* One-Liner Anchor (Always Visible) */}
                     {mm.friction_anchor && (
                         <div className="mb-8 max-w-2xl">
                             <ScrollRevealText
@@ -26,16 +29,27 @@ export default function GlitchSection({ data }: { data: ResultsData }) {
                         </div>
                     )}
 
-                    {/* Center Symbol */}
-                    <div className="h-48 flex items-center justify-center my-8 opacity-20">
-                        <SymbolRenderer overlayId={data.page1_identity?.visual_concept?.overlay_id || 'overlay_fire'} className="w-40 h-40" />
-                    </div>
-                </div>
+                    {isLocked ? (
+                        <div className="w-full">
+                            <LockedBlurOverlay
+                                partName="Part 4"
+                                title="Unlock Your Friction Analysis"
+                            />
+                        </div>
+                    ) : (
+                        <>
+                            {/* Center Symbol */}
+                            <div className="h-48 flex items-center justify-center my-8 opacity-20">
+                                <SymbolRenderer overlayId={data.page1_identity?.visual_concept?.overlay_id || 'overlay_fire'} className="w-40 h-40" />
+                            </div>
 
-                <div className="grid md:grid-cols-2 gap-6 md:gap-8">
-                    <FrictionCard data={mm.career_friction} title="Career Signal" />
-                    <FrictionCard data={mm.relationship_friction} title="Relationship Signal" />
-                    <FrictionCard data={mm.money_friction} title="Resource Signal" className="md:col-span-2" />
+                            <div className="grid md:grid-cols-2 gap-6 md:gap-8 w-full">
+                                <FrictionCard data={mm.career_friction} title="Career Signal" />
+                                <FrictionCard data={mm.relationship_friction} title="Relationship Signal" />
+                                <FrictionCard data={mm.money_friction} title="Resource Signal" className="md:col-span-2" />
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
         </section>

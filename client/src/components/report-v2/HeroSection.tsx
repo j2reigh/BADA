@@ -13,74 +13,79 @@ export default function HeroSection({ data }: { data: ResultsData }) {
     const identity = data.page1_identity;
 
     return (
-        <section className="relative h-screen w-full flex flex-col items-center overflow-hidden">
+        <section className="relative min-h-screen w-full flex flex-col items-center overflow-hidden py-20">
             {/* Background Symbol (Parallax) */}
-            <motion.div style={{ y: y1, scale }} className="absolute inset-0 flex items-center justify-center z-0">
-                <SymbolRenderer overlayId={overlayId} className="w-[90vw] h-[90vw] md:w-[40vw] md:h-[40vw]" />
+            <motion.div style={{ y: y1, scale }} className="absolute inset-0 flex items-center justify-center z-0 opacity-10">
+                <SymbolRenderer overlayId={overlayId} className="w-[90vw] h-[90vw] md:w-[50vw] md:h-[50vw]" />
             </motion.div>
 
-            {/* Foreground Content - Adjusted for Mobile to be Top-aligned */}
-            <div className="relative z-10 w-full h-full flex flex-col items-center justify-start pt-32 md:justify-center md:pt-0 pointer-events-none">
+            {/* Foreground Content */}
+            <div className="relative z-10 w-full flex flex-col items-center justify-center pt-20 md:pt-32">
                 <motion.div className="text-center px-6" style={{ opacity: textOpacity }}>
-                    <p className="text-xs md:text-sm text-white/50 tracking-[0.3em] uppercase mb-4">
+                    <p className="text-xs md:text-sm text-[#879DC6] tracking-[0.3em] uppercase mb-4">
                         Analysis Complete
                     </p>
-                    <h1 className="text-5xl md:text-9xl font-thin text-white mb-4 tracking-tighter">
+                    <h1 className="text-5xl md:text-8xl font-thin text-[#402525] mb-4 tracking-tighter">
                         {data.userInput?.name || "User"}
                     </h1>
-                    <h2 className="text-lg md:text-xl text-white/70 font-light tracking-wide italic max-w-2xl mx-auto">
+                    <h2 className="text-lg md:text-xl text-[#402525]/70 font-light tracking-wide italic max-w-2xl mx-auto">
                         "{identity.sub_headline}"
                     </h2>
                 </motion.div>
             </div>
 
-            {/* Bottom Content Grid (Slides Up) */}
+            {/* Bottom Content Grid */}
             <motion.div
-                className="absolute bottom-0 w-full bg-gradient-to-t from-[#0A1628] via-[#0A1628]/95 to-transparent pt-24 pb-12 px-6 z-20"
-                initial={{ y: 200, opacity: 0 }}
+                className="w-full max-w-5xl mx-auto mt-20 px-6 z-20"
+                initial={{ y: 50, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.5, duration: 1, ease: "easeOut" }}
+                transition={{ delay: 0.5, duration: 0.8, ease: "easeOut" }}
             >
-                <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-8 md:gap-16">
-                    {/* Act I: The Core Identity */}
-                    <div className="space-y-3">
-                        <div className="flex items-center gap-2 mb-1">
-                            <div className="w-1 h-1 bg-emerald-500 rounded-full" />
-                            <span className="text-[10px] uppercase tracking-[0.2em] text-emerald-500 font-bold">Part 1. Who You Are</span>
+                <div className="grid md:grid-cols-2 gap-6 md:gap-8">
+                    {/* Part 1: Who You Are */}
+                    <div className="relative group overflow-hidden bg-white/40 backdrop-blur-md border border-[#233F64]/10 p-8 md:p-10 rounded-[2rem] hover:shadow-xl transition-all duration-500 hover:border-[#233F64]/20">
+                        <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+                            <SymbolRenderer overlayId="overlay_water" className="w-24 h-24" />
                         </div>
-                        <h3 className="text-xl text-white font-light">{identity.title}</h3>
-                        <p className="text-sm text-gray-400 leading-relaxed font-light">
-                            {identity.nature_snapshot.explanation || identity.nature_snapshot.definition}
-                        </p>
+
+                        <div className="relative z-10">
+                            <span className="block text-[10px] uppercase tracking-[0.3em] text-[#233F64] mb-6">Part 1. Your Essence</span>
+                            <h3 className="text-2xl md:text-3xl text-[#402525] font-light mb-4">{identity.title}</h3>
+                            <p className="text-sm md:text-base text-[#402525]/70 leading-relaxed font-light">
+                                {identity.nature_snapshot.definition}
+                            </p>
+                            <div className="w-12 h-px bg-[#233F64]/20 my-6" />
+                            <p className="text-sm text-[#402525]/60 italic">
+                                "{identity.nature_snapshot.explanation}"
+                            </p>
+                        </div>
                     </div>
 
-                    {/* Act I: Operating System */}
-                    <div className="space-y-3">
-                        <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center gap-2">
-                                <div className="w-1 h-1 bg-blue-500 rounded-full" />
-                                <span className="text-[10px] uppercase tracking-[0.2em] text-blue-500 font-bold">Current State</span>
+                    {/* Current State */}
+                    <div className="relative group overflow-hidden bg-[#233F64]/5 backdrop-blur-md border border-[#233F64]/10 p-8 md:p-10 rounded-[2rem] hover:shadow-xl transition-all duration-500 hover:bg-[#233F64]/10">
+                        <div className="relative z-10">
+                            <div className="flex justify-between items-start mb-6">
+                                <span className="block text-[10px] uppercase tracking-[0.3em] text-[#233F64]">Operating Efficiency</span>
+                                {identity.efficiency_snapshot.level_name && (
+                                    <span className="text-[10px] bg-[#233F64] text-white px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
+                                        Level {identity.efficiency_snapshot.level || "?"}
+                                    </span>
+                                )}
                             </div>
-                            {identity.efficiency_snapshot.level_name && (
-                                <span className="text-[9px] bg-blue-900/50 text-blue-200 px-2 py-0.5 rounded border border-blue-500/20 uppercase tracking-wider">
-                                    {identity.efficiency_snapshot.level_name}
-                                </span>
-                            )}
+
+                            <h3 className="text-2xl md:text-3xl text-[#402525] font-light mb-2">
+                                {identity.efficiency_snapshot.label}
+                            </h3>
+                            <p className="text-lg text-[#233F64] font-serif italic mb-6">
+                                "{identity.efficiency_snapshot.metaphor}"
+                            </p>
+
+                            <p className="text-sm text-[#402525]/70 leading-relaxed font-light">
+                                Current System Check: <strong className="font-medium text-[#402525]">{identity.efficiency_snapshot.level_name}</strong>
+                            </p>
                         </div>
-                        <h3 className="text-xl text-white font-light">{identity.efficiency_snapshot.metaphor ? "Finding Balance" : "Your Flow"}</h3>
-                        <p className="text-sm text-gray-400 leading-relaxed font-light">
-                            {identity.efficiency_snapshot.metaphor || identity.efficiency_snapshot.label}
-                        </p>
                     </div>
                 </div>
-
-                <motion.div
-                    className="absolute bottom-4 left-1/2 -translate-x-1/2 opacity-30 hidden md:block" // Hide scroll indicator on mobile to save space
-                    animate={{ y: [0, 5, 0] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                >
-                    <div className="w-px h-6 bg-white" />
-                </motion.div>
             </motion.div>
         </section>
     );
