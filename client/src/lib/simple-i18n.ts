@@ -69,18 +69,54 @@ export const translations = {
     'landing.sticky.continue': 'Continue',
     'landing.sticky.continue.mobile': 'Continue Diagnosis',
 
-    // Survey Questions
-    'survey.q1.question': 'Right now, which feels more true?',
-    'survey.q1.option1': 'Something feels off—I sense a threat I can\'t quite name',
-    'survey.q1.option2': 'Things are stable—no major worries on my radar',
+    // Survey Questions (Q1-Q8) - matches scoring.ts QUESTIONS
+    'survey.q1.text': 'When things get intense or chaotic, what happens first?',
+    'survey.q1.A': 'I become more alert and focused',
+    'survey.q1.B': 'I feel overwhelmed or emotional',
+    'survey.q1.C': 'I try to escape the situation',
+    'survey.q1.D': 'It depends, but usually A or B',
 
-    'survey.q2.question': 'When life gets chaotic, you tend to...',
-    'survey.q2.option1': 'Slow down and observe before acting',
-    'survey.q2.option2': 'Speed up and try multiple solutions fast',
+    'survey.q2.text': 'In crisis situations, people often say I am:',
+    'survey.q2.A': 'Calm and clear-headed',
+    'survey.q2.B': 'Emotional but expressive',
+    'survey.q2.C': 'Quiet or frozen',
+    'survey.q2.D': 'Not sure',
 
-    'survey.q3.question': 'Your default approach to goals is...',
-    'survey.q3.option1': 'Conserve energy until the right moment',
-    'survey.q3.option2': 'Push forward even when uncertain',
+    'survey.q3.text': 'I feel most "alive" when:',
+    'survey.q3.A': "I'm pushed beyond my limits",
+    'survey.q3.B': 'Things feel safe and predictable',
+    'survey.q3.C': "I'm emotionally connected",
+    'survey.q3.D': "I don't know",
+
+    'survey.q4.text': 'Growing up, my environment felt:',
+    'survey.q4.A': 'Safe and predictable',
+    'survey.q4.B': 'Unstable or unclear',
+    'survey.q4.C': 'Mixed',
+    'survey.q4.D': "I don't remember clearly",
+
+    'survey.q5.text': 'I feel most stressed when:',
+    'survey.q5.A': 'Nothing changes',
+    'survey.q5.B': "I don't know what's coming",
+    'survey.q5.C': "People don't say what they really think",
+    'survey.q5.D': 'I feel watched or judged',
+
+    'survey.q6.text': 'When something feels wrong in my life, I usually:',
+    'survey.q6.A': 'Try to redesign my situation',
+    'survey.q6.B': 'Adjust myself',
+    'survey.q6.C': 'Wait and see',
+    'survey.q6.D': 'Talk to others first',
+
+    'survey.q7.text': 'I believe that my current state is:',
+    'survey.q7.A': 'Something I can actively shape',
+    'survey.q7.B': 'Mostly decided by circumstances',
+    'survey.q7.C': 'A mix of both',
+    'survey.q7.D': "I'm not sure",
+
+    'survey.q8.text': 'If nothing changed for the next year, I would feel:',
+    'survey.q8.A': 'Very uncomfortable',
+    'survey.q8.B': 'Mostly okay',
+    'survey.q8.C': 'Relieved',
+    'survey.q8.D': 'Confused',
 
     // Survey UI
     'survey.title': 'Operating Pattern Assessment',
@@ -206,18 +242,54 @@ export const translations = {
     'landing.sticky.continue': '계속하기',
     'landing.sticky.continue.mobile': '진단 계속하기',
 
-    // Survey Questions
-    'survey.q1.question': '지금 이 순간, 어느 쪽이 더 와닿나요?',
-    'survey.q1.option1': '뭔가 불안하다—정확히 뭔지 모르겠지만 위협을 느낀다',
-    'survey.q1.option2': '안정적이다—당장 큰 걱정거리는 없다',
+    // Survey Questions (Q1-Q8)
+    'survey.q1.text': '긴장되거나 혼란스러울 때, 가장 먼저 어떤 반응이 나오나요?',
+    'survey.q1.A': '더 또렷하고 집중하게 된다',
+    'survey.q1.B': '압도당하거나 감정적이 된다',
+    'survey.q1.C': '그 상황을 피하려고 한다',
+    'survey.q1.D': '상황에 따라 다르지만, 보통 A나 B',
 
-    'survey.q2.question': '삶이 혼란스러울 때, 당신은...',
-    'survey.q2.option1': '천천히 관찰한 후 행동한다',
-    'survey.q2.option2': '빠르게 여러 해결책을 시도한다',
+    'survey.q2.text': '위기 상황에서 주변 사람들은 나를 이렇게 평가해요:',
+    'survey.q2.A': '침착하고 명료하다',
+    'survey.q2.B': '감정적이지만 솔직하다',
+    'survey.q2.C': '조용하거나 얼어붙는다',
+    'survey.q2.D': '잘 모르겠다',
 
-    'survey.q3.question': '목표를 향한 당신의 기본 방식은...',
-    'survey.q3.option1': '적절한 순간까지 에너지를 아낀다',
-    'survey.q3.option2': '불확실해도 일단 밀고 나간다',
+    'survey.q3.text': '나는 이럴 때 가장 "살아있다"고 느껴요:',
+    'survey.q3.A': '한계를 넘어설 때',
+    'survey.q3.B': '안전하고 예측 가능할 때',
+    'survey.q3.C': '감정적으로 연결될 때',
+    'survey.q3.D': '잘 모르겠다',
+
+    'survey.q4.text': '자라면서 내 환경은 어땠나요?',
+    'survey.q4.A': '안전하고 예측 가능했다',
+    'survey.q4.B': '불안정하거나 불확실했다',
+    'survey.q4.C': '섞여 있었다',
+    'survey.q4.D': '잘 기억나지 않는다',
+
+    'survey.q5.text': '나는 이럴 때 가장 스트레스를 받아요:',
+    'survey.q5.A': '아무것도 변하지 않을 때',
+    'survey.q5.B': '무슨 일이 일어날지 모를 때',
+    'survey.q5.C': '사람들이 속마음을 말하지 않을 때',
+    'survey.q5.D': '누군가 나를 지켜보거나 판단할 때',
+
+    'survey.q6.text': '내 삶에서 뭔가 잘못됐다고 느끼면, 보통:',
+    'survey.q6.A': '상황을 바꾸려고 한다',
+    'survey.q6.B': '나 자신을 조정한다',
+    'survey.q6.C': '지켜보며 기다린다',
+    'survey.q6.D': '다른 사람들에게 먼저 이야기한다',
+
+    'survey.q7.text': '내 현재 상태는:',
+    'survey.q7.A': '내가 적극적으로 만들어갈 수 있다',
+    'survey.q7.B': '대부분 환경에 의해 결정된다',
+    'survey.q7.C': '둘 다 섞여 있다',
+    'survey.q7.D': '잘 모르겠다',
+
+    'survey.q8.text': '만약 앞으로 1년간 아무것도 변하지 않는다면:',
+    'survey.q8.A': '매우 불편할 것이다',
+    'survey.q8.B': '대체로 괜찮을 것이다',
+    'survey.q8.C': '안도할 것이다',
+    'survey.q8.D': '혼란스러울 것이다',
 
     // Survey UI
     'survey.title': '운영 패턴 진단',
@@ -343,18 +415,54 @@ export const translations = {
     'landing.sticky.continue': 'Lanjut',
     'landing.sticky.continue.mobile': 'Lanjut Diagnosis',
 
-    // Survey Questions
-    'survey.q1.question': 'Saat ini, mana yang lebih terasa benar?',
-    'survey.q1.option1': 'Ada yang tidak beres—aku merasakan ancaman yang tidak bisa kujelaskan',
-    'survey.q1.option2': 'Semuanya stabil—tidak ada kekhawatiran besar',
+    // Survey Questions (Q1-Q8) - matches scoring.ts QUESTIONS
+    'survey.q1.text': 'Saat sesuatu terasa intens atau kacau, apa yang terjadi pertama kali?',
+    'survey.q1.A': 'Aku jadi lebih waspada dan fokus',
+    'survey.q1.B': 'Aku merasa kewalahan atau emosional',
+    'survey.q1.C': 'Aku mencoba melarikan diri dari situasi itu',
+    'survey.q1.D': 'Tergantung, tapi biasanya A atau B',
 
-    'survey.q2.question': 'Saat hidup kacau, kamu cenderung...',
-    'survey.q2.option1': 'Melambat dan mengamati sebelum bertindak',
-    'survey.q2.option2': 'Mempercepat dan mencoba berbagai solusi',
+    'survey.q2.text': 'Dalam situasi krisis, orang-orang biasanya bilang aku:',
+    'survey.q2.A': 'Tenang dan berpikir jernih',
+    'survey.q2.B': 'Emosional tapi ekspresif',
+    'survey.q2.C': 'Diam atau membeku',
+    'survey.q2.D': 'Tidak yakin',
 
-    'survey.q3.question': 'Pendekatanmu terhadap tujuan biasanya...',
-    'survey.q3.option1': 'Menyimpan energi sampai momen yang tepat',
-    'survey.q3.option2': 'Terus maju meski tidak yakin',
+    'survey.q3.text': 'Aku merasa paling "hidup" saat:',
+    'survey.q3.A': 'Aku didorong melampaui batasku',
+    'survey.q3.B': 'Semuanya terasa aman dan terprediksi',
+    'survey.q3.C': 'Aku terhubung secara emosional',
+    'survey.q3.D': 'Aku tidak tahu',
+
+    'survey.q4.text': 'Saat tumbuh dewasa, lingkunganku terasa:',
+    'survey.q4.A': 'Aman dan terprediksi',
+    'survey.q4.B': 'Tidak stabil atau tidak jelas',
+    'survey.q4.C': 'Campuran',
+    'survey.q4.D': 'Aku tidak ingat dengan jelas',
+
+    'survey.q5.text': 'Aku paling stres saat:',
+    'survey.q5.A': 'Tidak ada yang berubah',
+    'survey.q5.B': 'Aku tidak tahu apa yang akan terjadi',
+    'survey.q5.C': 'Orang-orang tidak mengatakan apa yang sebenarnya mereka pikirkan',
+    'survey.q5.D': 'Aku merasa diawasi atau dinilai',
+
+    'survey.q6.text': 'Saat sesuatu terasa salah dalam hidupku, aku biasanya:',
+    'survey.q6.A': 'Mencoba mendesain ulang situasiku',
+    'survey.q6.B': 'Menyesuaikan diriku sendiri',
+    'survey.q6.C': 'Menunggu dan melihat',
+    'survey.q6.D': 'Berbicara dengan orang lain dulu',
+
+    'survey.q7.text': 'Aku percaya bahwa kondisiku saat ini adalah:',
+    'survey.q7.A': 'Sesuatu yang bisa kubentuk secara aktif',
+    'survey.q7.B': 'Sebagian besar ditentukan oleh keadaan',
+    'survey.q7.C': 'Campuran keduanya',
+    'survey.q7.D': 'Aku tidak yakin',
+
+    'survey.q8.text': 'Jika tidak ada yang berubah selama setahun ke depan, aku akan merasa:',
+    'survey.q8.A': 'Sangat tidak nyaman',
+    'survey.q8.B': 'Sebagian besar baik-baik saja',
+    'survey.q8.C': 'Lega',
+    'survey.q8.D': 'Bingung',
 
     // Survey UI
     'survey.title': 'Tes Pola Operasi',

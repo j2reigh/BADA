@@ -307,7 +307,7 @@ export default function Survey() {
                 </span>
                 
                 <h2 className="text-4xl md:text-6xl font-display font-medium text-white mb-16 leading-tight">
-                  {question?.text}
+                  {t(`survey.q${currentStep + 1}.text`)}
                 </h2>
 
                 <div className="grid md:grid-cols-2 gap-4">
@@ -321,7 +321,7 @@ export default function Survey() {
                       className="group text-left p-6 border border-white/10 hover:border-white/40 hover:bg-white/5 transition-all duration-300 rounded-lg flex items-center justify-between"
                     >
                       <span className="text-lg text-white/80 group-hover:text-white transition-colors">
-                        {option.label}
+                        {t(`survey.q${currentStep + 1}.${option.value}`)}
                       </span>
                       <ArrowRight className="w-4 h-4 text-white/0 group-hover:text-white group-hover:translate-x-1 transition-all" />
                     </motion.button>

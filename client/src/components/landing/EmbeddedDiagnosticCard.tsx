@@ -11,9 +11,12 @@ interface Props {
 export default function EmbeddedDiagnosticCard({ t }: Props) {
   const [, setLocation] = useLocation();
 
+  // Use actual Survey Q1 options (A, B, C, D)
   const Q1_OPTIONS = [
-    { value: "A", label: t('landing.q1.option1') },
-    { value: "B", label: t('landing.q1.option2') },
+    { value: "A", label: t('survey.q1.A') },
+    { value: "B", label: t('survey.q1.B') },
+    { value: "C", label: t('survey.q1.C') },
+    { value: "D", label: t('survey.q1.D') },
   ];
 
   const handleOptionClick = (value: string) => {
@@ -36,23 +39,23 @@ export default function EmbeddedDiagnosticCard({ t }: Props) {
           Q1
         </span>
         <h3 className="text-lg md:text-xl font-medium text-[#182339] leading-snug">
-          {t('landing.q1.prompt')}
+          {t('survey.q1.text')}
         </h3>
       </div>
 
       {/* Options */}
-      <div className="space-y-3">
+      <div className="space-y-2">
         {Q1_OPTIONS.map((option, idx) => (
           <motion.button
             key={option.value}
             onClick={() => handleOptionClick(option.value)}
-            className="w-full text-left p-4 rounded-xl border border-[#233F64]/10 hover:border-[#233F64]/30 hover:bg-[#ABBBD5]/10 transition-all duration-200 group flex items-center justify-between"
+            className="w-full text-left p-3 rounded-xl border border-[#233F64]/10 hover:border-[#233F64]/30 hover:bg-[#ABBBD5]/10 transition-all duration-200 group flex items-center justify-between"
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.5 + idx * 0.1 }}
+            transition={{ delay: 0.5 + idx * 0.08 }}
             whileHover={{ x: 4 }}
           >
-            <span className="text-sm md:text-base text-[#402525] group-hover:text-[#233F64] transition-colors">
+            <span className="text-sm text-[#402525] group-hover:text-[#233F64] transition-colors">
               {option.label}
             </span>
             <ArrowRight className="w-4 h-4 text-[#233F64]/0 group-hover:text-[#233F64] transition-all" />
