@@ -200,3 +200,47 @@ Created `ScrollRevealText.tsx` reusable component using Framer Motion:
 
 ## Result
 Anchors now have a high-end "Scroll Reveal" animation, guiding the user's eye and providing the requested "Sharpness" in UX.
+
+## Context (Session 8 - Conversion Optimization)
+User proposed "Tease & Lock" strategy: Show Part 1 fully (make it richer), and for Part 2-5, show Title + One-Liner Anchor but hide details with a lock overlay to induce curiosity ("Information Gap").
+
+## Solution
+1.  **Backend ()**: Modified . In masked mode (unpaid), it now sends , , and the high-value  fields, while stripping all detailed content.
+2.  **Frontend**:
+    *   Created : Reusable component with blurred "skeleton" content and a generic Lock Card.
+    *   Updated , , ,  to render this overlay when .
+    *   Updated  (Part 1) to use "Glassmorphism" cards and better typography, matching the premium feel of paid sections.
+3.  **Visuals**: Verified  works even in teaser mode.
+
+## Result
+The report now functions as a "Sales Page" for itself. Top (Identity) is open and rich. Bottom (Blueprint/Protocol) is teased with sharp one-liners but locked details.
+
+---
+
+## Context (Session 9 - 2026-01-28)
+Implementing Internationalization (i18n) for both UI and AI-generated reports.
+
+## Key Decisions
+- **UI Translations:** Limited to EN/KO/ID (manual dictionary approach, no external libraries)
+- **Report Generation:** Any language supported by Gemini (just pass language instruction to prompts)
+- **No Cultural Differentiation:** Standardized tone (warm, direct, actionable) across all languages
+- **Language Selection:** User chooses report language in Survey (birth info step); UI language via Footer toggle
+
+## Observations & Issues
+- **Architecture Split:** Realized UI translations (finite, need manual curation) should be separate from report language (infinite, AI handles). This led to `UILanguage` (en/ko/id) vs `ReportLanguage` (11+ languages) type distinction.
+- **Component Prop Drilling:** Landing page has many nested components (Header, Hero, Problem, Solution, etc.). Passing `t` function to each was tedious but cleaner than context for this scope.
+- **Survey Questions:** Scoring logic depends on fixed Q1-Q8 structure in `scoring.ts`. Full translation would require significant refactor. Deferred to future work.
+- **MemStorage Fix:** Forgot to add `language` field to in-memory storage mock, causing TypeScript error.
+
+## Actions Taken
+1. **Schema:** Added `language` field to `sajuResults` table
+2. **Gemini Client:** Created `getLanguageInstruction()` helper; updated all 5 page generators
+3. **Translation System:** Expanded `simple-i18n.ts` with comprehensive EN/KO/ID translations for Landing, Survey, and common UI
+4. **Landing Redesign:** Rewrote with "Two-Track" UX (embedded Q1 card + scroll persuasion)
+5. **Components:** Created `TypewriterText.tsx`, `EmbeddedDiagnosticCard.tsx`; added Footer language toggle
+6. **Survey:** Added report language selector dropdown in birth info step
+
+## Lessons Learned
+- **Separate Concerns Early:** Distinguishing "UI Language" from "Report Language" upfront prevented scope creep. UI needs curation; AI content can be dynamic.
+- **Incremental i18n:** It's okay to translate core flows (Landing, Survey) first and defer low-traffic pages (Wait, Results UI text). User sees value immediately.
+- **Translation Keys as Documentation:** Well-named keys (`landing.problem.card1.title`) serve as implicit documentation of the content structure.
