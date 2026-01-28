@@ -2,9 +2,10 @@ import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
 import { QUESTIONS, calculateScore } from "@/lib/scoring";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, ArrowLeft, CheckCircle2, MapPin, Calendar, Clock, Mail, User, Loader2 } from "lucide-react";
+import { ArrowRight, ArrowLeft, CheckCircle2, MapPin, Calendar, Clock, Mail, User, Loader2, Globe, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { REPORT_LANGUAGES, detectUILanguage, getDefaultReportLanguage, useTranslation, type ReportLanguage } from "@/lib/simple-i18n";
 
 interface CityResult {
   id: string;
@@ -31,22 +32,48 @@ interface BirthPatternData {
   email: string;
   consent: boolean;
   notificationConsent: boolean;
+  reportLanguage: ReportLanguage;
 }
 
 export default function Survey() {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [birthData, setBirthData] = useState<BirthPatternData>({
-    name: "",
-    gender: "",
-    birthDate: "",
-    birthTime: "",
-    birthTimeUnknown: false,
-    placeOfBirth: "",
-    placeOfBirthCity: null,
-    email: "",
-    consent: false,
-    notificationConsent: true,
+  const { t } = useTranslation();
+
+  // Check if coming from landing page with first answer
+  const [currentStep, setCurrentStep] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const start = params.get("start");
+    return start ? parseInt(start, 10) : 0;
+  });
+
+  const [answers, setAnswers] = useState<Record<string, string>>(() => {
+    // Load first answer from localStorage if available
+    const savedFirst = localStorage.getItem("bada_first_answer");
+    if (savedFirst) {
+      try {
+        const parsed = JSON.parse(savedFirst);
+        localStorage.removeItem("bada_first_answer"); // Clean up
+        return parsed;
+      } catch {
+        return {};
+      }
+    }
+    return {};
+  });
+  const [birthData, setBirthData] = useState<BirthPatternData>(() => {
+    const defaultLang = getDefaultReportLanguage(detectUILanguage());
+    return {
+      name: "",
+      gender: "",
+      birthDate: "",
+      birthTime: "",
+      birthTimeUnknown: false,
+      placeOfBirth: "",
+      placeOfBirthCity: null,
+      email: "",
+      consent: false,
+      notificationConsent: true,
+      reportLanguage: defaultLang,
+    };
   });
   const [placeSearchOpen, setPlaceSearchOpen] = useState(false);
   const [cityResults, setCityResults] = useState<CityResult[]>([]);
@@ -165,6 +192,7 @@ export default function Survey() {
         utcOffset: birthData.placeOfBirthCity.utcOffset,
         latitude: birthData.placeOfBirthCity.lat,
         longitude: birthData.placeOfBirthCity.lon,
+        language: birthData.reportLanguage,
       };
 
       const response = await fetch("/api/assessment/submit", {
@@ -193,14 +221,21 @@ export default function Survey() {
     }
   };
 
-  // Background darkness increases with depth - start darker for better contrast
-  // 0 -> Ocean Surface (not sky)
-  // QUESTIONS.length -> Abyss  
-  const darkness = Math.min((currentStep / QUESTIONS.length) * 70, 85);
-  
+  // New color palette: #879DC6 (Soft Blue) -> #182339 (Deep Navy)
+  // Interpolate based on progress through 9 pages
+  const progress = currentStep / QUESTIONS.length;
+  const startColor = { r: 135, g: 157, b: 198 }; // #879DC6
+  const endColor = { r: 24, g: 35, b: 57 };      // #182339
+
+  const currentBg = {
+    r: Math.round(startColor.r + (endColor.r - startColor.r) * progress),
+    g: Math.round(startColor.g + (endColor.g - startColor.g) * progress),
+    b: Math.round(startColor.b + (endColor.b - startColor.b) * progress),
+  };
+
   return (
     <div className="min-h-screen w-full relative overflow-hidden flex flex-col items-center justify-center transition-colors duration-1000"
-         style={{ backgroundColor: `hsl(215, 40%, ${Math.max(60 - darkness, 8)}%)` }}>
+         style={{ backgroundColor: `rgb(${currentBg.r}, ${currentBg.g}, ${currentBg.b})` }}>
       
       {/* Dynamic Background Noise/Texture */}
       <div 
@@ -233,21 +268,23 @@ export default function Survey() {
       </button>
 
       {/* Depth Indicator */}
-      <div className="fixed top-8 right-8 z-50 text-right mix-blend-difference text-white">
-        <div className="text-xs font-mono uppercase tracking-widest opacity-60 mb-1">
+      <div className="fixed top-8 right-8 z-50 text-right">
+        <div className="text-xs font-mono uppercase tracking-widest mb-1" style={{ color: '#402525' }}>
           Current Depth
         </div>
-        <motion.div 
+        <motion.div
           key={currentStep}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-2xl font-display"
+          style={{ color: '#402525' }}
         >
-          {question?.section || "Final Sequence"}
+          {currentStep + 1}/{totalSteps}
         </motion.div>
-        <div className="mt-2 h-1 w-32 bg-white/20 ml-auto rounded-full overflow-hidden">
-          <motion.div 
-            className="h-full bg-white"
+        <div className="mt-2 h-1 w-32 ml-auto rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(64, 37, 37, 0.2)' }}>
+          <motion.div
+            className="h-full"
+            style={{ backgroundColor: '#402525' }}
             initial={{ width: "0%" }}
             animate={{ width: `${((currentStep + 1) / (totalSteps)) * 100}%` }}
             transition={{ duration: 0.5 }}
@@ -301,42 +338,46 @@ export default function Survey() {
               >
                 <div className="mb-12">
                   <span className="text-xs font-mono text-white/40 uppercase tracking-widest mb-2 block">
-                    Final Sequence
+                    Final
                   </span>
                   <h2 className="text-4xl md:text-5xl font-display text-white mb-4">
-                    Complete Your<br />Birth Pattern
+                    {t('birth.title')}
                   </h2>
                   <p className="text-white/60">
-                    To calculate your precise navigation chart, we need your celestial coordinates.
+                    {t('birth.subtitle')}
                   </p>
                 </div>
 
                 <div className="space-y-8">
                   <div>
-                    <label className="text-white/80 block mb-4">What do you want to be called? *</label>
-                    <input 
+                    <label className="text-white/80 block mb-4">{t('birth.name')} *</label>
+                    <input
                       type="text"
                       value={birthData.name}
                       onChange={(e) => handleBirthPatternChange("name", e.target.value)}
-                      placeholder="Enter your name" 
+                      placeholder={t('birth.name.placeholder')}
                       className="w-full bg-transparent border-0 border-b border-white/20 rounded-none px-0 py-6 text-xl text-white focus:outline-none focus:border-white placeholder:text-white/20 transition-colors"
                     />
                   </div>
 
                   <div className="space-y-4">
-                    <label className="text-white/80 block">Gender *</label>
+                    <label className="text-white/80 block">{t('birth.gender')} *</label>
                     <div className="flex flex-col space-y-1">
-                      {["Male", "Female", "Rather not to say"].map((option) => (
-                        <label key={option} className="flex items-center space-x-3 space-y-0 text-white/70 hover:text-white transition-colors cursor-pointer">
+                      {[
+                        { value: "Male", label: t('birth.gender.male') },
+                        { value: "Female", label: t('birth.gender.female') },
+                        { value: "Rather not to say", label: t('birth.gender.other') }
+                      ].map((option) => (
+                        <label key={option.value} className="flex items-center space-x-3 space-y-0 text-white/70 hover:text-white transition-colors cursor-pointer">
                           <input
                             type="radio"
                             name="gender"
-                            value={option}
-                            checked={birthData.gender === option}
+                            value={option.value}
+                            checked={birthData.gender === option.value}
                             onChange={(e) => handleBirthPatternChange("gender", e.target.value)}
                             className="w-4 h-4 accent-white"
                           />
-                          <span>{option}</span>
+                          <span>{option.label}</span>
                         </label>
                       ))}
                     </div>
@@ -345,10 +386,10 @@ export default function Survey() {
                   <div className="grid md:grid-cols-2 gap-8">
                     <div>
                       <label className="text-white/80 flex items-center gap-2 mb-4">
-                        <Calendar className="w-4 h-4" /> Birth Date *
+                        <Calendar className="w-4 h-4" /> {t('birth.date')} *
                       </label>
-                      <input 
-                        type="date" 
+                      <input
+                        type="date"
                         value={birthData.birthDate}
                         onChange={(e) => handleBirthPatternChange("birthDate", e.target.value)}
                         min="1900-01-01"
@@ -359,10 +400,10 @@ export default function Survey() {
 
                     <div>
                       <label className="text-white/80 flex items-center gap-2 mb-4">
-                        <Clock className="w-4 h-4" /> Birth Time
+                        <Clock className="w-4 h-4" /> {t('birth.time')}
                       </label>
-                      <input 
-                        type="time" 
+                      <input
+                        type="time"
                         value={birthData.birthTime}
                         onChange={(e) => handleBirthPatternChange("birthTime", e.target.value)}
                         disabled={birthData.birthTimeUnknown}
@@ -376,7 +417,7 @@ export default function Survey() {
                             onChange={(e) => handleBirthPatternChange("birthTimeUnknown", e.target.checked)}
                             className="w-4 h-4 accent-white mt-0.5"
                           />
-                          <span>I don't know my birth time</span>
+                          <span>{t('birth.time_unknown')}</span>
                         </label>
                       </div>
                     </div>
@@ -384,10 +425,10 @@ export default function Survey() {
 
                   <div className="relative">
                     <label className="text-white/80 flex items-center gap-2 mb-4">
-                      <MapPin className="w-4 h-4" /> Place of Birth (City) *
+                      <MapPin className="w-4 h-4" /> {t('birth.location')} *
                     </label>
                     <div className="relative">
-                      <input 
+                      <input
                         type="text"
                         value={birthData.placeOfBirth}
                         onChange={(e) => {
@@ -397,7 +438,7 @@ export default function Survey() {
                         }}
                         onFocus={() => setPlaceSearchOpen(true)}
                         onBlur={() => setTimeout(() => setPlaceSearchOpen(false), 200)}
-                        placeholder="Search for your birth city"
+                        placeholder={t('birth.location.placeholder')}
                         className="w-full bg-transparent border-0 border-b border-white/20 rounded-none px-0 py-6 text-xl text-white focus:outline-none focus:border-white placeholder:text-white/20 transition-colors"
                         data-testid="input-birth-city"
                       />
@@ -449,15 +490,38 @@ export default function Survey() {
 
                   <div>
                     <label className="text-white/80 flex items-center gap-2 mb-4">
-                      <Mail className="w-4 h-4" /> Email Address *
+                      <Mail className="w-4 h-4" /> {t('birth.email')} *
                     </label>
-                    <input 
+                    <input
                       type="email"
                       value={birthData.email}
                       onChange={(e) => handleBirthPatternChange("email", e.target.value)}
-                      placeholder="your@email.com"
+                      placeholder={t('birth.email.placeholder')}
                       className="w-full bg-transparent border-0 border-b border-white/20 rounded-none px-0 py-6 text-xl text-white focus:outline-none focus:border-white placeholder:text-white/20 transition-colors"
                     />
+                  </div>
+
+                  <div>
+                    <label className="text-white/80 flex items-center gap-2 mb-4">
+                      <Globe className="w-4 h-4" /> {t('birth.report_language')}
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={birthData.reportLanguage}
+                        onChange={(e) => handleBirthPatternChange("reportLanguage", e.target.value)}
+                        className="w-full bg-transparent border-0 border-b border-white/20 rounded-none px-0 py-6 text-xl text-white focus:outline-none focus:border-white transition-colors appearance-none cursor-pointer"
+                      >
+                        {REPORT_LANGUAGES.map((lang) => (
+                          <option key={lang.code} value={lang.code} className="bg-[#182339] text-white">
+                            {lang.native} ({lang.name})
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-5 h-5 text-white/60 pointer-events-none" />
+                    </div>
+                    <p className="text-xs text-white/40 mt-2">
+                      {t('birth.report_language.note')}
+                    </p>
                   </div>
 
                   <div className="space-y-3 pt-4">
@@ -468,9 +532,9 @@ export default function Survey() {
                         onChange={(e) => handleBirthPatternChange("consent", e.target.checked)}
                         className="w-4 h-4 accent-white mt-0.5"
                       />
-                      <span>I agree to the terms and conditions and consent to process my information *</span>
+                      <span>{t('birth.consent')} *</span>
                     </label>
-                    
+
                     <label className="flex items-start gap-3 text-sm cursor-pointer text-white/50">
                       <input
                         type="checkbox"
@@ -478,18 +542,18 @@ export default function Survey() {
                         onChange={(e) => handleBirthPatternChange("notificationConsent", e.target.checked)}
                         className="w-4 h-4 accent-white mt-0.5"
                       />
-                      <span>I would like to receive updates and insights about my BADA type</span>
+                      <span>{t('birth.marketing')}</span>
                     </label>
                   </div>
 
                   <div className="pt-8">
-                    <button 
+                    <button
                       type="button"
                       onClick={handleBirthPatternSubmit}
                       disabled={!isBirthFormValid || isSubmitting}
                       className="w-full bg-white text-black font-bold text-lg py-5 rounded-full hover:scale-[1.01] hover:bg-white/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {isSubmitting ? "Submitting..." : "Generate Navigation Chart"} <ArrowRight className="w-5 h-5" />
+                      {isSubmitting ? t('common.loading') : t('survey.submit')} <ArrowRight className="w-5 h-5" />
                     </button>
                   </div>
                 </div>

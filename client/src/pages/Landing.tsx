@@ -1,11 +1,16 @@
-import { motion, useScroll, useTransform, useSpring, useInView } from "framer-motion";
-import { ArrowRight, ArrowDown, Menu, X } from "lucide-react";
+import { motion, useScroll, useTransform, useInView } from "framer-motion";
+import { ArrowRight, ArrowDown, Menu, X, ExternalLink } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { Link } from "wouter";
+import TypewriterText from "@/components/landing/TypewriterText";
+import EmbeddedDiagnosticCard from "@/components/landing/EmbeddedDiagnosticCard";
+import { useTranslation, type UILanguage } from "@/lib/simple-i18n";
 
 // --- Components ---
 
-function Header() {
+type TranslateFn = (key: string, params?: Record<string, any>) => string;
+
+function Header({ t }: { t: TranslateFn }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -16,9 +21,9 @@ function Header() {
         </a>
 
         <nav className="hidden md:flex items-center gap-8 mix-blend-difference text-white">
-          <a href="#system" className="text-sm hover:opacity-70 transition-opacity">Why Lost?</a>
-          <a href="#analysis" className="text-sm hover:opacity-70 transition-opacity">The How</a>
-          <a href="#report-preview" className="text-sm hover:opacity-70 transition-opacity">Preview</a>
+          <a href="#problem" className="text-sm hover:opacity-70 transition-opacity">{t('landing.nav.problem')}</a>
+          <a href="#solution" className="text-sm hover:opacity-70 transition-opacity">{t('landing.nav.solution')}</a>
+          <a href="#community" className="text-sm hover:opacity-70 transition-opacity">{t('landing.nav.community')}</a>
         </nav>
 
         <div className="flex items-center gap-4">
@@ -34,56 +39,83 @@ function Header() {
   );
 }
 
-function StickyBottomNav() {
+function StickyProgressBar({ t }: { t: TranslateFn }) {
   const [isVisible, setIsVisible] = useState(false);
   const { scrollY } = useScroll();
 
   useEffect(() => {
     return scrollY.onChange((latest) => {
-      setIsVisible(latest > 100);
+      // Show after scrolling past hero (roughly 80vh)
+      setIsVisible(latest > window.innerHeight * 0.7);
     });
   }, [scrollY]);
 
   return (
-    <motion.div
-      className="fixed bottom-0 left-0 right-0 z-50 p-4 pb-6 md:pb-4 pointer-events-none"
-      initial={{ y: 100 }}
-      animate={{ y: isVisible ? 0 : 100 }}
-      transition={{ duration: 0.3 }}
-    >
-      <div className="max-w-md mx-auto pointer-events-auto">
-        <div className="bg-white/10 backdrop-blur-md border border-white/20 p-2 rounded-full shadow-2xl flex items-center justify-between pl-6 pr-2">
-          <span className="text-sm font-medium text-white mix-blend-difference hidden sm:block">
-            Start your self-alignment
-          </span>
-          <span className="text-sm font-medium text-white mix-blend-difference sm:hidden">
-            Begin Analysis
-          </span>
+    <>
+      {/* Desktop: Top Bar */}
+      <motion.div
+        className="fixed top-0 left-0 right-0 z-40 hidden md:block pointer-events-none"
+        initial={{ y: -100 }}
+        animate={{ y: isVisible ? 0 : -100 }}
+        transition={{ duration: 0.3 }}
+      >
+        <div className="bg-white/95 backdrop-blur-md border-b border-[#233F64]/10 py-3 px-6">
+          <div className="max-w-[1400px] mx-auto flex items-center justify-between pointer-events-auto">
+            <div className="flex items-center gap-4">
+              <div className="w-32 h-1.5 bg-[#233F64]/10 rounded-full overflow-hidden">
+                <div className="w-0 h-full bg-[#233F64] rounded-full" />
+              </div>
+              <span className="text-xs text-[#402525]/60">{t('landing.sticky.progress', { percent: 0 })}</span>
+            </div>
+            <Link
+              href="/survey"
+              className="bg-[#233F64] text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-[#182339] transition-colors flex items-center gap-2"
+            >
+              {t('landing.sticky.continue')} <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Mobile: Bottom Sheet */}
+      <motion.div
+        className="fixed bottom-0 left-0 right-0 z-40 md:hidden pointer-events-none"
+        initial={{ y: 100 }}
+        animate={{ y: isVisible ? 0 : 100 }}
+        transition={{ duration: 0.3 }}
+      >
+        <div className="bg-white/95 backdrop-blur-md border-t border-[#233F64]/10 p-4 pb-6 pointer-events-auto">
+          <div className="flex items-center gap-4 mb-3">
+            <div className="flex-1 h-1.5 bg-[#233F64]/10 rounded-full overflow-hidden">
+              <div className="w-0 h-full bg-[#233F64] rounded-full" />
+            </div>
+            <span className="text-xs text-[#402525]/60">0%</span>
+          </div>
           <Link
             href="/survey"
-            className="bg-white text-black px-6 py-3 rounded-full text-sm font-bold hover:scale-105 transition-transform flex items-center gap-2"
+            className="w-full bg-[#233F64] text-white py-3 rounded-full text-sm font-medium hover:bg-[#182339] transition-colors flex items-center justify-center gap-2"
           >
-            Start Analysis <ArrowRight className="w-4 h-4" />
+            {t('landing.sticky.continue.mobile')} <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
-      </div>
-    </motion.div>
+      </motion.div>
+    </>
   );
 }
 
-// Interactive Section Component
-function FocusSection({ children, className = "", threshold = 0.5 }: { children: React.ReactNode; className?: string; threshold?: number }) {
+// Focus Section Component for scroll-based reveal
+function FocusSection({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { margin: "-20% 0px -20% 0px", amount: threshold });
+  const isInView = useInView(ref, { margin: "-20% 0px -20% 0px", amount: 0.3 });
 
   return (
     <motion.div
       ref={ref}
-      className={`transition-opacity duration-700 ${className}`}
+      className={`transition-all duration-700 ${className}`}
       style={{
-        opacity: isInView ? 1 : 0.2,
+        opacity: isInView ? 1 : 0.15,
         filter: isInView ? "blur(0px)" : "blur(4px)",
-        transform: isInView ? "scale(1)" : "scale(0.97)",
+        transform: isInView ? "translateY(0)" : "translateY(20px)",
       }}
     >
       {children}
@@ -91,188 +123,153 @@ function FocusSection({ children, className = "", threshold = 0.5 }: { children:
   );
 }
 
-function HeroSection() {
+// --- Sections ---
+
+function HeroSection({ t }: { t: TranslateFn }) {
   const { scrollY } = useScroll();
-  const y1 = useTransform(scrollY, [0, 500], [0, 200]);
-  const opacity = useTransform(scrollY, [0, 300], [1, 0]);
+  const opacity = useTransform(scrollY, [0, 400], [1, 0]);
+  const y = useTransform(scrollY, [0, 400], [0, 100]);
+
+  const rollingPhrases = [
+    t('landing.hero.rolling1'),
+    t('landing.hero.rolling2'),
+    t('landing.hero.rolling3'),
+  ];
 
   return (
-    <section className="relative h-screen flex flex-col justify-center px-6">
-      <motion.div 
-        className="max-w-[1400px] mx-auto w-full"
-        style={{ y: y1, opacity }}
+    <section className="relative min-h-screen flex items-center px-6 py-20 md:py-0">
+      <motion.div
+        className="max-w-[1400px] mx-auto w-full grid lg:grid-cols-2 gap-12 lg:gap-20 items-center"
+        style={{ opacity, y }}
       >
-        <p className="text-sm font-mono mb-6 text-white/60">BADA SELF-ALIGNMENT SYSTEM</p>
-        <h1 className="text-6xl md:text-8xl font-display font-medium leading-[1.1] mb-8 text-white">
-          Working hard,<br />
-          <span className="italic">but feeling empty?</span>
-        </h1>
-        <p className="text-xl md:text-2xl text-white/70 max-w-2xl leading-relaxed">
-          It's not you, it's a system mismatch. In a world of uncertainty, just being busy is not the answer.
-        </p>
+        {/* Left: The Message */}
+        <div className="order-2 lg:order-1">
+          <motion.p
+            className="text-xs font-mono mb-4 text-white/50 uppercase tracking-widest"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            {t('landing.hero.tag')}
+          </motion.p>
+
+          <motion.h1
+            className="text-5xl md:text-7xl font-display font-medium leading-[1.1] mb-6 text-white"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            {t('landing.hero.title')}
+          </motion.h1>
+
+          <motion.div
+            className="text-2xl md:text-3xl text-white/70 font-light mb-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+          >
+            <TypewriterText
+              phrases={rollingPhrases}
+              typingSpeed={60}
+              deletingSpeed={30}
+              pauseDuration={2500}
+              className="text-white/80"
+            />
+          </motion.div>
+
+          <motion.p
+            className="text-lg text-white/50 max-w-md hidden lg:block"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7 }}
+          >
+            {t('landing.hero.subtitle')}
+          </motion.p>
+        </div>
+
+        {/* Right: Embedded Q1 Card */}
+        <div className="order-1 lg:order-2 flex justify-center lg:justify-end">
+          <EmbeddedDiagnosticCard t={t} />
+        </div>
       </motion.div>
 
+      {/* Scroll Indicator */}
       <motion.div
-        className="absolute bottom-12 left-1/2 -translate-x-1/2 text-white/40"
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/30 hidden lg:block"
         style={{ opacity }}
-        animate={{ y: [0, 10, 0] }}
+        animate={{ y: [0, 8, 0] }}
         transition={{ duration: 2, repeat: Infinity }}
       >
-        <span className="text-xs font-mono tracking-widest uppercase mb-2 block text-center">Discover Why</span>
-        <ArrowDown className="w-5 h-5 mx-auto" />
+        <span className="text-[10px] font-mono tracking-widest uppercase mb-2 block text-center">
+          {t('landing.hero.scroll')}
+        </span>
+        <ArrowDown className="w-4 h-4 mx-auto" />
       </motion.div>
     </section>
   );
 }
 
-function AnalysisSection() {
+function ProblemSection({ t }: { t: TranslateFn }) {
+  const cards = [
+    { title: t('landing.problem.card1.title'), desc: t('landing.problem.card1.desc') },
+    { title: t('landing.problem.card2.title'), desc: t('landing.problem.card2.desc') },
+    { title: t('landing.problem.card3.title'), desc: t('landing.problem.card3.desc') },
+  ];
+
   return (
-    <div className="relative z-10">
-      {/* Zone 1: The Solution */}
-      <section className="h-screen flex items-center px-6">
-        <div className="max-w-[1400px] mx-auto w-full grid lg:grid-cols-2 gap-20 items-center">
-          <FocusSection>
-             <h2 className="text-4xl md:text-6xl font-display font-medium mb-6 text-white/90">
-              The Secret to a Happy Life<br />
-              <span className="italic text-white/60">Isn't Just Achievement.</span>
-             </h2>
-          </FocusSection>
-          
-          <div className="space-y-32">
-             <FocusSection>
-               <p className="text-xl md:text-2xl text-white/80 leading-relaxed font-light">
-                 A landmark 85-year Harvard study found a clear answer: a life aligned with *who you are* is the key to lasting happiness.
-               </p>
-             </FocusSection>
-             
-             <FocusSection>
-               <div className="border-l-2 border-white/20 pl-8">
-                 <p className="text-lg text-white/60 mb-4">We call this</p>
-                 <div className="text-3xl text-white font-medium">Self-Alignment</div>
-               </div>
-             </FocusSection>
-          </div>
-        </div>
-      </section>
-
-      {/* Zone 2: The Pain */}
-      <section id="system" className="h-screen flex items-center px-6">
-        <div className="max-w-[1400px] mx-auto w-full">
-           <FocusSection className="mb-20">
-             <span className="inline-block py-1 px-3 rounded-full border border-white/30 text-white/80 text-xs font-mono mb-6">
-               WHY WE FEEL LOST
-             </span>
-             <h2 className="text-4xl md:text-6xl font-display font-medium text-white">
-               Why does the "right path" feel wrong?
-             </h2>
-           </FocusSection>
-
-           <div className="grid md:grid-cols-3 gap-8">
-             {[
-               { title: "Uncertainty", val: "The Future", desc: `The world is changing fast. Is my career future-proof?` },
-               { title: "Burnout", val: "The Routine", desc: `Following self-help gurus and 'proven' routines leaves me tired, not inspired.` },
-               { title: "Mismatch", val: "The System", desc: `Am I lazy, or just running on the wrong operating system?` }
-             ].map((item, i) => (
-               <FocusSection key={i} className="bg-white/5 backdrop-blur-sm border border-white/10 p-8 rounded-2xl">
-                 <h3 className="text-sm font-mono text-white/50 uppercase tracking-widest mb-4">{item.title}</h3>
-                 <div className="text-4xl font-display text-white mb-4">{item.val}</div>
-                 <p className="text-white/60">{item.desc}</p>
-               </FocusSection>
-             ))}
-           </div>
-        </div>
-      </section>
-
-      {/* Zone 3: The How */}
-      <section id="analysis" className="h-screen flex items-center px-6">
-         <div className="max-w-4xl mx-auto w-full">
-           <FocusSection>
-             <h2 className="text-5xl md:text-7xl font-display font-medium text-white mb-12">
-               Your Personal<br />Instruction Manual
-             </h2>
-             <p className="text-xl text-white/70 mb-12 leading-relaxed">
-              BADA offers a new kind of analysis. We blend ancient eastern wisdom about <strong>your natural rhythm</strong> with modern neuroscience. The result is a clear picture of <strong>how your mind works</strong> — revealing how you're wired to think, act, and connect.
-             </p>
-             <p className="text-xl text-white/70 leading-relaxed">
-              We don't give you a simple label. We show you your nature, your patterns, and what drains you.
-             </p>
-           </FocusSection>
-         </div>
-      </section>
-
-      {/* Zone 4: The Report Preview - realfood.gov style list */}
-      <section id="report-preview" className="min-h-screen flex items-center px-6 py-20">
-         <div className="max-w-4xl mx-auto w-full">
-           <FocusSection>
-             <h2 className="text-4xl md:text-6xl lg:text-7xl font-display font-medium text-white mb-6 md:mb-12">
-               See What's Inside<br />Your Report
-             </h2>
-             <p className="text-lg md:text-xl text-white/70 mb-10 md:mb-16 leading-relaxed max-w-2xl">
-               Get a glimpse of the insights waiting for you. Your report is a comprehensive guide to your inner world.
-             </p>
-
-             {/* realfood.gov style list */}
-             <div className="space-y-0">
-               {[
-                 { title: "Who You Are", desc: "Your core identity and natural strengths" },
-                 { title: "Your Nature", desc: "How you're wired to think and act" },
-                 { title: "Your Mind", desc: "Your patterns and how they shape you" },
-                 { title: "Your Friction", desc: "What's blocking your natural flow" },
-                 { title: "Your Guide", desc: "Personalized steps for alignment" }
-               ].map((item, i) => (
-                 <div
-                   key={i}
-                   className="group flex items-center justify-between py-5 md:py-6 border-b border-white/10 cursor-default hover:bg-white/5 transition-colors -mx-4 px-4 rounded-lg"
-                 >
-                   <div className="flex-1 pr-4">
-                     <h3 className="text-white text-base md:text-lg font-medium underline underline-offset-4 decoration-white/40 group-hover:decoration-white/80 transition-colors">
-                       {item.title}
-                     </h3>
-                     <p className="text-white/50 text-sm mt-1 hidden md:block">
-                       {item.desc}
-                     </p>
-                   </div>
-                   <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/10 group-hover:bg-white/20 flex items-center justify-center transition-colors shrink-0">
-                     <ArrowRight className="w-4 h-4 md:w-5 md:h-5 text-white/70 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
-                   </div>
-                 </div>
-               ))}
-             </div>
-           </FocusSection>
-         </div>
-      </section>
-    </div>
-  );
-}
-
-function FinalCTA() {
-  return (
-    <section id="method" className="h-screen flex items-center justify-center px-6 relative overflow-hidden">
-      {/* Abyssal Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-orange-500/20 rounded-full blur-[120px] pointer-events-none" />
-      
-      {/* Background overlay for better text contrast */}
-      <div className="absolute inset-0 bg-black/30 pointer-events-none" />
-
-      <div className="relative z-10 max-w-3xl w-full">
+    <section id="problem" className="min-h-screen flex items-center px-6 py-20">
+      <div className="max-w-4xl mx-auto w-full">
         <FocusSection>
-          <div className="bg-black/40 backdrop-blur-sm border border-white/10 rounded-3xl p-12">
-            <p className="font-mono text-xs text-orange-400 mb-6 tracking-[0.2em] uppercase">
-              Stop Guessing. Start Aligning.
-            </p>
-            
-            <h2 className="text-5xl md:text-7xl font-display font-medium text-white mb-10 drop-shadow-lg">
-              In the age of AI, be<br />more human.
+          <div className="text-center mb-16">
+            {/* Battery Visual */}
+            <motion.div
+              className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-white/5 border border-white/10 mb-8"
+              initial={{ scale: 0.8 }}
+              whileInView={{ scale: 1 }}
+              viewport={{ once: true }}
+            >
+              <div className="relative">
+                <div className="w-12 h-6 border-2 border-white/40 rounded-sm">
+                  <div className="absolute right-[-4px] top-1/2 -translate-y-1/2 w-1 h-3 bg-white/40 rounded-r-sm" />
+                  <motion.div
+                    className="h-full bg-gradient-to-r from-red-500/60 to-red-500/20"
+                    initial={{ width: "80%" }}
+                    whileInView={{ width: "15%" }}
+                    transition={{ duration: 2, delay: 0.5 }}
+                  />
+                </div>
+              </div>
+            </motion.div>
+
+            <h2 className="text-4xl md:text-6xl font-display font-medium text-white mb-6">
+              {t('landing.problem.title')}<br />
+              <span className="text-white/60 italic">{t('landing.problem.title2')}</span>
             </h2>
+          </div>
+        </FocusSection>
 
-            <p className="text-white/90 mb-12 text-lg">
-              The analysis takes 5 minutes. The clarity lasts a lifetime.
-            </p>
+        <FocusSection className="max-w-2xl mx-auto text-center">
+          <p className="text-xl md:text-2xl text-white/70 font-light leading-relaxed mb-8">
+            {t('landing.problem.lead')}
+          </p>
+          <p className="text-lg text-white/50 leading-relaxed" dangerouslySetInnerHTML={{ __html: t('landing.problem.desc').replace('<em>', '<span class="text-white/80 font-medium">').replace('</em>', '</span>') }} />
+        </FocusSection>
 
-            <Link href="/survey" className="group relative inline-flex items-center gap-4 px-12 py-6 bg-white text-black rounded-full font-bold text-lg hover:scale-105 transition-transform">
-              Start My Analysis
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </Link>
+        <FocusSection className="mt-20">
+          <div className="grid md:grid-cols-3 gap-6">
+            {cards.map((item, i) => (
+              <motion.div
+                key={i}
+                className="bg-white/5 backdrop-blur-sm border border-white/10 p-6 rounded-xl"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                viewport={{ once: true }}
+              >
+                <h3 className="text-lg font-medium text-white mb-2">{item.title}</h3>
+                <p className="text-sm text-white/50">{item.desc}</p>
+              </motion.div>
+            ))}
           </div>
         </FocusSection>
       </div>
@@ -280,34 +277,263 @@ function FinalCTA() {
   );
 }
 
+function SolutionSection({ t }: { t: TranslateFn }) {
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  const steps = [
+    { step: "01", title: t('landing.solution.step1'), desc: t('landing.solution.step1.desc') },
+    { step: "02", title: t('landing.solution.step2'), desc: t('landing.solution.step2.desc') },
+    { step: "03", title: t('landing.solution.step3'), desc: t('landing.solution.step3.desc') },
+  ];
+
+  return (
+    <section id="solution" className="min-h-screen flex items-center px-6 py-20">
+      <div className="max-w-4xl mx-auto w-full">
+        <FocusSection>
+          <div className="mb-16">
+            <span className="inline-block text-xs font-mono text-white/40 uppercase tracking-widest mb-4">
+              {t('landing.solution.tag')}
+            </span>
+            <h2 className="text-4xl md:text-6xl font-display font-medium text-white mb-6">
+              {t('landing.solution.title')}<br />{t('landing.solution.title2')}
+            </h2>
+            <p className="text-2xl md:text-3xl text-white/60 font-light" dangerouslySetInnerHTML={{ __html: t('landing.solution.subtitle').replace('<em>', '<span class="text-white/90">').replace('</em>', '</span>') }} />
+          </div>
+        </FocusSection>
+
+        <FocusSection>
+          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 md:p-12">
+            <p className="text-lg md:text-xl text-white/80 leading-relaxed mb-6">
+              {t('landing.solution.desc').split('"The 60-Year Cycle"')[0]}
+              <span
+                className="relative inline-block border-b border-dashed border-white/40 cursor-help"
+                onMouseEnter={() => setShowTooltip(true)}
+                onMouseLeave={() => setShowTooltip(false)}
+                onTouchStart={() => setShowTooltip(!showTooltip)}
+              >
+                "The 60-Year Cycle"
+                {showTooltip && (
+                  <motion.span
+                    className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-[#182339] text-white text-sm rounded-lg whitespace-nowrap z-10"
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    {t('landing.solution.tooltip')}
+                  </motion.span>
+                )}
+              </span>
+              {t('landing.solution.desc').split('"The 60-Year Cycle"')[1]}
+            </p>
+            <p className="text-xl md:text-2xl text-white font-medium">
+              {t('landing.solution.tagline')}
+            </p>
+          </div>
+        </FocusSection>
+
+        <FocusSection className="mt-16">
+          <div className="grid md:grid-cols-3 gap-8 text-center">
+            {steps.map((item, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.15 }}
+                viewport={{ once: true }}
+              >
+                <div className="text-4xl font-display text-white/20 mb-3">{item.step}</div>
+                <h3 className="text-xl font-medium text-white mb-2">{item.title}</h3>
+                <p className="text-sm text-white/50">{item.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </FocusSection>
+      </div>
+    </section>
+  );
+}
+
+function VibeCheckSection({ t }: { t: TranslateFn }) {
+  // Static Instagram images (manual update)
+  const instagramPosts = [
+    { id: 1, placeholder: true },
+    { id: 2, placeholder: true },
+    { id: 3, placeholder: true },
+    { id: 4, placeholder: true },
+    { id: 5, placeholder: true },
+    { id: 6, placeholder: true },
+  ];
+
+  return (
+    <section id="community" className="min-h-screen flex items-center px-6 py-20">
+      <div className="max-w-5xl mx-auto w-full">
+        <FocusSection>
+          <div className="text-center mb-12">
+            <span className="inline-block text-xs font-mono text-white/40 uppercase tracking-widest mb-4">
+              {t('landing.community.tag')}
+            </span>
+            <h2 className="text-4xl md:text-5xl font-display font-medium text-white">
+              {t('landing.community.title')}
+            </h2>
+          </div>
+        </FocusSection>
+
+        <FocusSection>
+          {/* Moodboard Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+            {instagramPosts.map((post, i) => (
+              <motion.div
+                key={post.id}
+                className={`aspect-square bg-gradient-to-br from-[#ABBBD5]/20 to-[#233F64]/20 rounded-xl overflow-hidden border border-white/10 ${
+                  i === 1 || i === 3 ? "md:row-span-2 md:aspect-auto" : ""
+                }`}
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ delay: i * 0.1 }}
+                viewport={{ once: true }}
+              >
+                {/* Placeholder - replace with actual images */}
+                <div className="w-full h-full flex items-center justify-center text-white/20">
+                  <span className="text-xs font-mono">@badathebrand</span>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Instagram Link */}
+          <motion.a
+            href="https://www.instagram.com/badathebrand"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 mt-8 text-white/60 hover:text-white transition-colors"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+          >
+            <span className="text-sm">@badathebrand</span>
+            <ExternalLink className="w-3 h-3" />
+          </motion.a>
+        </FocusSection>
+      </div>
+    </section>
+  );
+}
+
+function FinalCTA({ t }: { t: TranslateFn }) {
+  return (
+    <section className="min-h-screen flex items-center justify-center px-6 py-20 relative overflow-hidden">
+      {/* Glow Effect */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#ABBBD5]/10 rounded-full blur-[120px] pointer-events-none" />
+
+      <div className="relative z-10 max-w-2xl w-full text-center">
+        <FocusSection>
+          <motion.p
+            className="font-mono text-xs text-[#ABBBD5] mb-6 tracking-[0.2em] uppercase"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+          >
+            {t('landing.cta.tag')}
+          </motion.p>
+
+          <h2 className="text-5xl md:text-7xl font-display font-medium text-white mb-8">
+            {t('landing.cta.title')}<br />
+            <span className="italic text-white/70">{t('landing.cta.title2')}</span>
+          </h2>
+
+          <p className="text-lg text-white/60 mb-12">
+            {t('landing.cta.desc')}<br />
+            {t('landing.cta.desc2')}
+          </p>
+
+          <Link
+            href="/survey"
+            className="group inline-flex items-center gap-4 px-10 py-5 bg-white text-[#182339] rounded-full font-bold text-lg hover:scale-105 transition-transform"
+          >
+            {t('landing.cta.button')}
+            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          </Link>
+        </FocusSection>
+      </div>
+    </section>
+  );
+}
+
+function Footer({ language, setLanguage }: { language: UILanguage; setLanguage: (lang: UILanguage) => void }) {
+  const languages: { code: UILanguage; label: string }[] = [
+    { code: 'en', label: 'EN' },
+    { code: 'ko', label: '한' },
+    { code: 'id', label: 'ID' },
+  ];
+
+  return (
+    <footer className="relative z-10 border-t border-white/10 py-8 px-6">
+      <div className="max-w-[1400px] mx-auto flex items-center justify-between">
+        <div className="text-white/40 text-sm">
+          BADA © {new Date().getFullYear()}
+        </div>
+
+        {/* Language Toggle - Right Side */}
+        <div className="flex items-center gap-1 bg-white/5 rounded-full p-1">
+          {languages.map((lang) => (
+            <button
+              key={lang.code}
+              onClick={() => setLanguage(lang.code)}
+              className={`px-3 py-1.5 text-sm rounded-full transition-all ${
+                language === lang.code
+                  ? 'bg-white text-[#182339] font-medium'
+                  : 'text-white/60 hover:text-white'
+              }`}
+            >
+              {lang.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+// --- Main ---
+
 export default function Landing() {
+  const { t, language, setLanguage } = useTranslation();
   return (
     <main className="relative w-full">
-      {/* Long gradient background that scrolls with content */}
-      <div 
-        className="absolute top-0 left-0 right-0 z-[-1] min-h-[500vh] w-full"
+      {/* Gradient Background */}
+      <div
+        className="fixed inset-0 z-[-1]"
         style={{
           background: `linear-gradient(
             to bottom,
-            hsl(210, 20%, 98%) 0%,
-            hsl(200, 60%, 90%) 15%,
-            hsl(205, 60%, 50%) 30%,
-            hsl(215, 70%, 25%) 50%,
-            hsl(222, 50%, 10%) 75%,
-            hsl(240, 30%, 4%) 100%
-          )`
+            #ABBBD5 0%,
+            #879DC6 25%,
+            #233F64 50%,
+            #182339 75%,
+            #402525 100%
+          )`,
         }}
       />
 
-      <Header />
-      
+      {/* Noise Texture */}
+      <div
+        className="fixed inset-0 pointer-events-none opacity-[0.03] z-[-1]"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+        }}
+      />
+
+      <Header t={t} />
+
       <div className="relative">
-        <HeroSection />
-        <AnalysisSection />
-        <FinalCTA />
+        <HeroSection t={t} />
+        <ProblemSection t={t} />
+        <SolutionSection t={t} />
+        <VibeCheckSection t={t} />
+        <FinalCTA t={t} />
       </div>
 
-      <StickyBottomNav />
+      <Footer language={language} setLanguage={setLanguage} />
+      <StickyProgressBar t={t} />
     </main>
   );
 }

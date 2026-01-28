@@ -96,6 +96,35 @@ export interface SurveyScores {
   typeName: string;
 }
 
+// Language support helpers
+const LANGUAGE_NAMES: Record<string, string> = {
+  en: 'English',
+  ko: 'Korean (한국어)',
+  id: 'Indonesian (Bahasa Indonesia)',
+  ja: 'Japanese (日本語)',
+  zh: 'Chinese (中文)',
+  es: 'Spanish (Español)',
+  fr: 'French (Français)',
+  de: 'German (Deutsch)',
+  pt: 'Portuguese (Português)',
+  ar: 'Arabic (العربية)',
+  th: 'Thai (ภาษาไทย)',
+  vi: 'Vietnamese (Tiếng Việt)',
+};
+
+function getLanguageInstruction(language: string): string {
+  if (language === 'en') {
+    return `LANGUAGE: Simple, evocative English (B1-B2 level). No jargon.`;
+  }
+
+  const langName = LANGUAGE_NAMES[language] || language;
+  return `LANGUAGE: Write ALL content in ${langName}.
+- Use natural, conversational tone (equivalent to B1-B2 level)
+- Keep it warm, specific, and relatable
+- For technical terms (neuroscience), keep English term + explain in target language
+  e.g., "Amygdala (뇌의 경보 시스템)" or "Amygdala (sistem alarm otak)"`;
+}
+
 /**
  * Main Orchestrator
  */
@@ -103,28 +132,30 @@ export async function generateLifeBlueprintReport(
   sajuResult: SajuResult,
   surveyScores: SurveyScores,
   userName: string = "Friend",
-  archetype?: ContentArchetype
+  archetype?: ContentArchetype,
+  language: string = "en"
 ): Promise<LifeBlueprintReport> {
   if (!client) {
     return generateMockReport(sajuResult, surveyScores);
   }
 
   try {
-    console.log(`[Gemini] Starting Enhanced Report Generation for ${userName}...`);
+    console.log(`[Gemini] Starting Report Generation for ${userName} in ${language}...`);
+    const langInstruction = getLanguageInstruction(language);
 
-    const page1 = await generatePage1(sajuResult, surveyScores, userName, archetype);
+    const page1 = await generatePage1(sajuResult, surveyScores, userName, archetype, langInstruction);
     console.log("[Gemini] Page 1 Generated");
 
-    const page2 = await generatePage2(sajuResult, page1.title, userName, archetype);
+    const page2 = await generatePage2(sajuResult, page1.title, userName, archetype, langInstruction);
     console.log("[Gemini] Page 2 Generated");
 
-    const page3 = await generatePage3(surveyScores, userName);
+    const page3 = await generatePage3(surveyScores, userName, langInstruction);
     console.log("[Gemini] Page 3 Generated");
 
-    const page4 = await generatePage4(page2, page3, userName);
+    const page4 = await generatePage4(page2, page3, userName, langInstruction);
     console.log("[Gemini] Page 4 Generated");
 
-    const page5 = await generatePage5(sajuResult, page3, page4, surveyScores, userName);
+    const page5 = await generatePage5(sajuResult, page3, page4, surveyScores, userName, langInstruction);
     console.log("[Gemini] Page 5 Generated");
 
     console.log("[Gemini] Report Generation Complete!");
@@ -145,7 +176,7 @@ export async function generateLifeBlueprintReport(
 // ==========================================
 // PAGE 1: Identity (Nature Landscape Theme)
 // ==========================================
-async function generatePage1(sajuResult: SajuResult, surveyScores: SurveyScores, userName: string, archetype?: ContentArchetype) {
+async function generatePage1(sajuResult: SajuResult, surveyScores: SurveyScores, userName: string, archetype?: ContentArchetype, langInstruction?: string) {
   const model = client!.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   const dayMasterGan = sajuResult.fourPillars.day.gan;
@@ -176,7 +207,7 @@ ${opAnalysis ? `- State Description: ${opAnalysis.levelDescription}` : ''}
 ${opAnalysis ? `- Guidance: ${opAnalysis.guidance.join(', ')}` : ''}
 
 CRITICAL RULES:
-1. LANGUAGE: Simple, evocative English (B1-B2 level). No jargon.
+1. ${langInstruction || 'LANGUAGE: Simple, evocative English (B1-B2 level). No jargon.'}
 2. NATURE LANDSCAPE ONLY: Describe the user as a NATURAL PHENOMENON or LANDSCAPE.
    - GOOD: "A Silent Volcano", "The Midnight Ocean", "A Forest Fire in Winter", "The Dormant Glacier"
    - BAD: "The Warrior", "The King", "The Leader" (these are people, not landscapes!)
@@ -229,7 +260,7 @@ OUTPUT (JSON Only):
 // ==========================================
 // PAGE 2: Hardware (Deep Nature Analysis)
 // ==========================================
-async function generatePage2(sajuResult: SajuResult, identityTitle: string, userName: string, archetype?: ContentArchetype) {
+async function generatePage2(sajuResult: SajuResult, identityTitle: string, userName: string, archetype?: ContentArchetype, langInstruction?: string) {
   const model = client!.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   const dayMasterGan = sajuResult.fourPillars.day.gan;
@@ -249,7 +280,7 @@ USER DATA:
 - Element Tendency: ${elementInfo?.excess || "Adaptability"}
 
 CRITICAL RULES:
-1. LANGUAGE: Simple, warm English (B1-B2 level).
+1. ${langInstruction || 'LANGUAGE: Simple, warm English (B1-B2 level).'}
 2. EXTEND THE METAPHOR: Build on the nature landscape from Page 1.
 3. DEPTH: This is THE deep dive. Each section should be rich and detailed.
 4. BALANCE: Show both the beauty AND the danger of their nature.
@@ -263,6 +294,7 @@ OUTPUT (JSON Only):
 {
   "section_name": "Your Natural Blueprint",
   "nature_title": "A poetic title for their inner landscape (8-12 words)",
+  "core_drive": "ONE SHARP SENTENCE describing their fundamental operating condition. Start with 'You flourish when... but rot when...'. (20-30 words)",
   "nature_description": "4-5 sentences describing their core nature using the landscape metaphor. Start with 'Imagine...' or 'Picture...' to draw them in. Describe the colors, textures, and energy of this landscape. Connect it to how they move through the world.",
   "shadow_title": "A compassionate title for their shadow side (6-10 words)",
   "shadow_description": "3-4 sentences explaining how this beautiful nature can sometimes work against them. Use the same landscape metaphor - what happens when the volcano erupts? When the ocean storms? Be gentle but honest.",
@@ -295,7 +327,7 @@ OUTPUT (JSON Only):
 // ==========================================
 // PAGE 3: Operating System (Neuroscience)
 // ==========================================
-async function generatePage3(surveyScores: SurveyScores, userName: string) {
+async function generatePage3(surveyScores: SurveyScores, userName: string, langInstruction?: string) {
   const model = client!.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   // No sajuResult passed here in original signature, but we need OpAnalysis
@@ -314,7 +346,7 @@ USER DATA:
 - OS Type: ${surveyScores.typeName}
 
 CRITICAL RULES:
-1. LANGUAGE: Simple English (B1-B2 level). Explain like talking to a smart friend, not a scientist.
+1. ${langInstruction || 'LANGUAGE: Simple English (B1-B2 level). Explain like talking to a smart friend, not a scientist.'}
 2. NEUROSCIENCE MADE SIMPLE: Use brain terms but ALWAYS explain them simply.
    - Amygdala = "your brain's alarm system"
    - Prefrontal Cortex = "your brain's CEO" or "decision-making center"
@@ -331,6 +363,7 @@ OUTPUT (JSON Only):
 {
   "section_name": "Your Operating System",
   "os_title": "A title describing how their brain currently operates (8-12 words)",
+  "os_anchor": "ONE SHARP SENTENCE diagnosis of their current system state. E.g., 'System Overheated: High Drive entangled with Low Maintenance.' (15-20 words)",
   "threat_axis": {
     "title": "Your Alarm System",
     "level": "${surveyScores.threatClarity === 1 ? 'Highly Tuned' : 'Relaxed'}",
@@ -360,7 +393,7 @@ OUTPUT (JSON Only):
 // ==========================================
 // PAGE 4: Friction Map (Life Application)
 // ==========================================
-async function generatePage4(page2: any, page3: any, userName: string) {
+async function generatePage4(page2: any, page3: any, userName: string, langInstruction?: string) {
   const model = client!.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   const systemPrompt = `You are the "Life Architect" creating Page 4: The Friction Map.
@@ -371,7 +404,7 @@ CONTEXT FROM PREVIOUS PAGES:
 - Operating System: ${page3.os_summary}
 
 CRITICAL RULES:
-1. LANGUAGE: Simple, relatable English (B1-B2 level).
+1. ${langInstruction || 'LANGUAGE: Simple, relatable English (B1-B2 level).'}
 2. SPECIFICITY: Paint SPECIFIC scenarios, not vague statements.
    - BAD: "You might struggle at work"
    - GOOD: "In meetings, you probably have brilliant ideas but hold back, worrying 'what if I's wrong?'"
@@ -387,6 +420,7 @@ OUTPUT (JSON Only):
 {
   "section_name": "Where You Get Stuck",
   "friction_title": "A catchy title capturing their main life tension (8-15 words)",
+  "friction_anchor": "ONE SHARP SENTENCE defining their core Loop. E.g., 'You stall when perfectionism masks your fear of starting.' (15-25 words)",
   "career_friction": {
     "title": "At Work",
     "description": "3-4 sentences describing a SPECIFIC workplace scenario where their nature creates friction. Paint a scene they'll recognize. End with a hint about the brain mechanism causing this.",
@@ -415,7 +449,7 @@ OUTPUT (JSON Only):
 // ==========================================
 // PAGE 5: Action Protocol (Science-Backed)
 // ==========================================
-async function generatePage5(sajuResult: SajuResult, page3: any, page4: any, surveyScores: SurveyScores, userName: string) {
+async function generatePage5(sajuResult: SajuResult, page3: any, page4: any, surveyScores: SurveyScores, userName: string, langInstruction?: string) {
   const model = client!.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   const elementCounts = sajuResult.elementCounts;
@@ -467,7 +501,7 @@ STANDARDIZED PROTOCOL STRATEGY (MUST USE):
 - KEY RITUAL: "${protocolStrategy.keyRitual}" (Must be included as one of the rituals)
 
 CRITICAL RULES:
-1. LANGUAGE: Simple, encouraging English (B1-B2 level).
+1. ${langInstruction || 'LANGUAGE: Simple, encouraging English (B1-B2 level).'}
 2. SCIENCE-BACKED ONLY: Every ritual MUST be based on real neuroscience or psychology.
 3. LEVEL-APPROPRIATE: Since they are at ${levelInfo}, make rituals aligned with "${guidance}".
 4. EXPLAIN WHY: For EACH ritual, explain the brain mechanism in simple terms.
@@ -483,6 +517,7 @@ OUTPUT (JSON Only):
   "section_name": "Your Action Protocol",
   "transformation_goal": "A powerful one-sentence vision of who they can become (15-25 words)",
   "protocol_name": "${protocolStrategy.name}",
+  "protocol_anchor": "ONE SHARP ACTION COMMAND summary. E.g. 'Stop planning. Start moving.' (5-10 words)",
   "daily_rituals": [
     {
       "name": "${protocolStrategy.keyRitual}",

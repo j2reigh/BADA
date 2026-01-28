@@ -24,7 +24,7 @@ export interface IStorage {
   getSurveyResult(id: number): Promise<SurveyResult | undefined>;
   createBirthPattern(pattern: InsertBirthPattern): Promise<BirthPattern>;
   getBirthPatternBySurveyId(surveyResultId: number): Promise<BirthPattern | undefined>;
-  
+
   // New methods for leads and saju results
   upsertLead(email: string, marketingConsent: boolean): Promise<Lead>;
   getLeadById(id: string): Promise<Lead | undefined>;
@@ -33,7 +33,7 @@ export interface IStorage {
   verifyLead(id: string): Promise<Lead | undefined>;
   updateLeadEmail(id: string, newEmail: string): Promise<Lead | undefined>;
   regenerateVerificationToken(id: string): Promise<Lead | undefined>;
-  
+
   createSajuResult(data: InsertSajuResult): Promise<SajuResult>;
   getSajuResultById(id: string): Promise<SajuResult | undefined>;
   getSajuResultsByLeadId(leadId: string): Promise<SajuResult[]>;
@@ -87,7 +87,7 @@ export class DatabaseStorage implements IStorage {
   async upsertLead(email: string, marketingConsent: boolean): Promise<Lead> {
     if (!db) throw new Error("Database not initialized");
     const existing = await this.getLeadByEmail(email);
-    
+
     if (existing) {
       // If already verified, just return existing lead
       if (existing.isVerified) {
@@ -96,7 +96,7 @@ export class DatabaseStorage implements IStorage {
       // For unverified leads, update marketing consent and regenerate token
       const [updated] = await db
         .update(leads)
-        .set({ 
+        .set({
           marketingConsent,
           verificationToken: sql`gen_random_uuid()`,
         })
@@ -104,7 +104,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return updated;
     }
-    
+
     // Create new lead
     const [newLead] = await db
       .insert(leads)
@@ -157,10 +157,10 @@ export class DatabaseStorage implements IStorage {
     if (!lead || lead.isVerified) {
       return undefined;
     }
-    
+
     const [result] = await db
       .update(leads)
-      .set({ 
+      .set({
         email: newEmail,
         verificationToken: sql`gen_random_uuid()`,
       })
@@ -285,7 +285,7 @@ export class MemStorage implements IStorage {
   private birthPatterns: Map<number, BirthPattern> = new Map();
   private leads: Map<string, Lead> = new Map();
   private sajuResults: Map<string, SajuResult> = new Map();
-  
+
   private surveyIdCounter = 1;
   private birthPatternIdCounter = 1;
 
@@ -302,20 +302,20 @@ export class MemStorage implements IStorage {
 
   async createBirthPattern(insertPattern: InsertBirthPattern): Promise<BirthPattern> {
     const id = this.birthPatternIdCounter++;
-    const result: BirthPattern = { 
-        ...insertPattern, 
-        id, 
-        createdAt: new Date(),
-        birthTimeUnknown: insertPattern.birthTimeUnknown ?? false,
-        email: insertPattern.email ?? null, // Added email default handling
-        birthHour: insertPattern.birthHour ?? null, // Added birthHour default handling
-        birthMinute: insertPattern.birthMinute ?? null, // Added birthMinute default handling
-        birthCountry: insertPattern.birthCountry ?? null, // Added birthCountry default handling
-        originalUtcOffset: insertPattern.originalUtcOffset ?? null, // Added originalUtcOffset default handling
-        latitude: insertPattern.latitude ?? null, // Added latitude default handling
-        longitude: insertPattern.longitude ?? null, // Added longitude default handling
-        dstCorrectionApplied: insertPattern.dstCorrectionApplied ?? false, // Added dstCorrectionApplied default handling
-        consentMarketing: insertPattern.consentMarketing ?? false, // Added consentMarketing default handling
+    const result: BirthPattern = {
+      ...insertPattern,
+      id,
+      createdAt: new Date(),
+      birthTimeUnknown: insertPattern.birthTimeUnknown ?? false,
+      email: insertPattern.email ?? null, // Added email default handling
+      birthHour: insertPattern.birthHour ?? null, // Added birthHour default handling
+      birthMinute: insertPattern.birthMinute ?? null, // Added birthMinute default handling
+      birthCountry: insertPattern.birthCountry ?? null, // Added birthCountry default handling
+      originalUtcOffset: insertPattern.originalUtcOffset ?? null, // Added originalUtcOffset default handling
+      latitude: insertPattern.latitude ?? null, // Added latitude default handling
+      longitude: insertPattern.longitude ?? null, // Added longitude default handling
+      dstCorrectionApplied: insertPattern.dstCorrectionApplied ?? false, // Added dstCorrectionApplied default handling
+      consentMarketing: insertPattern.consentMarketing ?? false, // Added consentMarketing default handling
     };
     this.birthPatterns.set(id, result);
     return result;
@@ -328,10 +328,10 @@ export class MemStorage implements IStorage {
   async upsertLead(email: string, marketingConsent: boolean): Promise<Lead> {
     let lead = await this.getLeadByEmail(email);
     if (lead) {
-       if (lead.isVerified) return lead;
-       lead.marketingConsent = marketingConsent;
-       lead.verificationToken = nanoid(); // regenerate
-       return lead;
+      if (lead.isVerified) return lead;
+      lead.marketingConsent = marketingConsent;
+      lead.verificationToken = nanoid(); // regenerate
+      return lead;
     }
     const id = nanoid();
     const newLead: Lead = {
@@ -387,11 +387,12 @@ export class MemStorage implements IStorage {
 
   async createSajuResult(data: InsertSajuResult): Promise<SajuResult> {
     const id = nanoid();
-    const result: SajuResult = { 
-        ...data, 
-        id, 
-        isPaid: false, 
-        createdAt: new Date() 
+    const result: SajuResult = {
+      ...data,
+      id,
+      isPaid: false,
+      language: data.language || "en",
+      createdAt: new Date()
     };
     this.sajuResults.set(id, result);
     return result;

@@ -21,6 +21,7 @@ export const sajuResults = pgTable("saju_results", {
   sajuData: jsonb("saju_data").notNull(), // Four Pillars calculation results
   reportData: jsonb("report_data").notNull(), // AI-generated report (5-page JSON)
   isPaid: boolean("is_paid").notNull().default(false), // Payment gate for full report
+  language: varchar("language", { length: 10 }).notNull().default("en"), // Report language (e.g., "en", "ko", "id")
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -33,6 +34,25 @@ export const validCodes = pgTable("valid_codes", {
   usedAt: timestamp("used_at"),
   createdAt: timestamp("created_at").defaultNow(),
   memo: text("memo"), // Optional: who received this code
+});
+
+// Content Archetypes table - stores deterministic content for 60 Gapja x 8 OS Types
+export const contentArchetypes = pgTable("content_archetypes", {
+  id: text("id").primaryKey(), // Format: "{GapJa}_{OSType}" e.g. "甲子_StateArchitect"
+
+  // Metadata
+  dayPillar: text("day_pillar").notNull(),   // e.g. "甲子"
+  osType: text("os_type").notNull(),         // e.g. "State Architect"
+
+  // Identity (Act I)
+  identityTitle: text("identity_title").notNull(),      // e.g. "The Calculated Pine"
+  natureMetaphor: text("nature_metaphor").notNull(),    // Short definition
+
+  // Narrative (Act II)
+  natureDescription: text("nature_description").notNull(),
+  shadowDescription: text("shadow_description").notNull(),
+
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Relations
@@ -65,6 +85,7 @@ export type InsertLead = z.infer<typeof insertLeadSchema>;
 export type SajuResult = typeof sajuResults.$inferSelect;
 export type InsertSajuResult = z.infer<typeof insertSajuResultSchema>;
 export type ValidCode = typeof validCodes.$inferSelect;
+export type ContentArchetype = typeof contentArchetypes.$inferSelect;
 
 // Legacy types for backward compatibility (to be removed after migration)
 export const surveyResults = pgTable("survey_results", {
