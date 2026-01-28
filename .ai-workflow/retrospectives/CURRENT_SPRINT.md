@@ -13,6 +13,52 @@
 
 ## 🔄 최근 회고 (최신순)
 
+### 2026-01-28 - Survey i18n 완료 & Landing Q1 동기화
+**Agent:** Claude
+
+#### 👍 Keep (계속 할 것)
+- **일관성 유지:** Landing Q1과 Survey Q1이 불일치하는 문제를 발견하고 즉시 수정 (2개 → 4개 옵션)
+- **구조적 번역:** scoring.ts의 QUESTIONS 구조를 그대로 유지하면서 번역만 교체하는 방식으로 안정적 구현
+- **3개 언어 완성:** EN/KO/ID 모두 Q1-Q8 × A/B/C/D 형식으로 통일
+
+#### 🤔 Problem (문제점)
+- **이전 세션 불일치:** 이전에 Landing용으로 별도 Q1을 만들어놓은 것이 혼란 유발 (landing.q1 vs survey.q1)
+- **컨텍스트 복구 비용:** 세션 요약에서 재구성하는 데 시간 소요
+
+#### 💡 Try (시도할 것)
+- **단일 소스 원칙:** 같은 데이터는 하나의 소스에서만 관리 (survey.q* 키만 사용)
+- **번역 키 네이밍 컨벤션:** `{페이지}.{컴포넌트}.{필드}` 형식 일관 유지
+
+#### 📦 산출물
+- `client/src/lib/simple-i18n.ts`: ID Survey Q1-Q8 추가, 3개 언어 완전 통일
+- `client/src/pages/Survey.tsx`: 번역 함수 사용으로 변경
+- `client/src/components/landing/EmbeddedDiagnosticCard.tsx`: survey.q1.* 키 사용, 4개 옵션으로 수정
+
+---
+
+### 2026-01-28 - 리포트 페이지 고도화 (BADA Report V2)
+**Agent:** Gemini
+
+#### 👍 Keep (계속 할 것)
+- **사용자 의도 파악:** "깨졌다"는 피드백에서 PDF 인코딩 및 레이아웃 문제를 신속하게 진단하고 해결.
+- **적극적 제안:** 사용자의 목차 아이디어를 "Floating TOC & Scroll Spy"로 구체화하여 제안 및 구현.
+- **디테일 완성도:** PDF 마진, 커서 색상, 문구 짤림, 이모지 깨짐 등 완성도를 저해하는 요소들을 꼼꼼하게 수정.
+
+#### 🤔 Problem (문제점)
+- **PDF 라이브러리 한계:** `jsPDF`의 기본 폰트가 이모지를 지원하지 않아 초기에 깨짐 현상 발생 (텍스트 라벨링 변경으로 해결).
+- **컴포넌트 주입 오류:** `Results.tsx` 수정 시 `TableOfContents` 컴포넌트 주입 위치를 잘못 파악하여 한 번 실패함.
+
+#### 💡 Try (시도할 것)
+- **PDF 생성 고도화:** 레이아웃이 복잡해질 경우 `html2canvas`나 서버 사이드 PDF 생성 방식 고려.
+- **코드 수정 신중함:** 대규모 파일 수정 시 `view_file`로 최신 컨텍스트를 확실히 파악 후 작업.
+
+#### 📦 산출물
+- `client/src/lib/pdfExport.ts`: PDF 레이아웃 전면 수정 (표지 분리, 통합 레이아웃, 텍스트 래핑)
+- `client/src/components/report-v2/TableOfContents.tsx`: 신규 플로팅 목차 컴포넌트
+- `client/src/pages/Results.tsx`: 목차 기능 통합 및 여백 최적화
+
+---
+
 ### 2026-01-16 - Unlock Code Feature 구현
 **Agent:** Claude
 
