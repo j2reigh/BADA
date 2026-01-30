@@ -13,6 +13,52 @@
 
 ## 🔄 최근 회고 (최신순)
 
+### 2026-01-30 - PDF Export 전면 재작성
+**Agent:** Claude
+
+#### 👍 Keep (계속 할 것)
+- **기획 → 구현 직결:** 플랜 모드에서 컬러 팔레트, 타이포그래피 스케일, 페이지 구조를 사전 정의하고 그대로 구현하여 재작업 없이 완료
+- **Helper 함수 설계:** `writeText`, `writeParagraph`, `ensureSpace`, `measureTextHeight` 등 재사용 가능한 함수로 구성하여 300줄 → 460줄이지만 가독성과 유지보수성 대폭 향상
+- **Atomic block 패턴:** friction area, axis, ritual 등을 pre-measure 후 ensureSpace로 감싸서 페이지 중간 잘림 방지
+
+#### 🤔 Problem (문제점)
+- **브라우저 전용 API:** `doc.save()`가 Node에서 동작하지 않아 검증용 스크립트를 별도로 작성 (`doc.output('arraybuffer')` + `fs.writeFileSync` 사용)
+- **jsPDF 라인 높이 계산:** `setLineHeightFactor(1.6)` 설정과 수동 `lh()` 계산이 정확히 일치하는지 확인이 필요했음
+
+#### 💡 Try (시도할 것)
+- **PDF 검증 자동화:** 향후 test script를 CI에 포함시켜 PDF 페이지 수, 텍스트 존재 여부 자동 검증 고려
+- **한글 폰트 지원:** 현재 helvetica/times만 사용 — 한글 리포트가 필요해지면 커스텀 폰트 임베딩 필요
+
+#### 📦 산출물
+- `client/src/lib/pdfExport.ts`: 전면 재작성 (브랜드 컬러 6색, 타이포 11단계, Cover + 5 Parts, 페이지 번호, atomic block pagination)
+- `scripts/test_pdf.ts`: Node 환경 PDF 생성 검증 스크립트
+- `test_BADA_Report.pdf`: 검증용 출력 (8페이지)
+
+---
+
+### 2026-01-30 - Location Search 안정화 (Photon 제거)
+**Agent:** Gemini
+
+#### 👍 Keep (계속 할 것)
+- **과감한 결단:** 불안정한 외부 API(Photon)를 제거하고 "국가 선택 -> Timezone 자동화"라는 더 안정적인 대안으로 신속하게 선회.
+- **사용자 피드백 즉시 반영:** "Birth City 입력 불필요" 및 "기본 언어 설정 오류" 피드백을 받고 `Survey.tsx`를 실시간으로 수정하여 반영.
+- **안정성 확보:** `birthCity` 필드를 백엔드 스키마 변경 없이 "국가명 자동 주입"으로 처리하여 데이터 무결성 유지.
+
+#### 🤔 Problem (문제점)
+- **초기 기획의 복잡성:** 처음에는 검색 기능을 살리려고 했으나, Photon API의 신뢰성 문제로 시간을 소모함. (처음부터 수동 입력을 고려했으면 좋았을 것)
+- **기본값 로직 누락:** UI 언어와 리포트 언어의 기본값 동기화를 초기에 놓침.
+
+#### 💡 Try (시도할 것)
+- **외부 의존성 최소화:** 핵심 기능(가입, 서베이)에는 SLA가 보장되지 않는 외부 API 사용을 지양.
+- **타입 체크 생활화:** `npm run check`를 통해 리팩토링 후 사이드 이펙트를 확실하게 잡고 넘어가는 습관 유지.
+
+#### 📦 산출물
+- `client/src/pages/Survey.tsx`: 수동 입력 UI (City Input 제거, Country/Timezone Dropdown)
+- `server/routes.ts`: `/api/cities/search` 엔드포인트 제거 및 클린업
+- `client/src/lib/simple-i18n.ts`: UI 언어 기반 Default Language 선택 로직 개선
+
+---
+
 ### 2026-01-28 - Survey i18n 완료 & Landing Q1 동기화
 **Agent:** Claude
 
