@@ -46,6 +46,11 @@ try {
   ];
 
   for (const pillar of pillars) {
+    if (!pillar.data) {
+      console.log(`    ✓ ${pillar.name}: (not available — birth time unknown)`);
+      continue;
+    }
+
     const tenGod = pillar.data.ganGod;
     const tenGodInfo = TEN_GODS_MAP[tenGod];
 
@@ -80,7 +85,7 @@ try {
   console.log("\n[4] Ten Gods Across All Pillars:");
   const tenGodsInChart = new Set<string>();
   for (const pillar of pillars) {
-    tenGodsInChart.add(pillar.data.ganGod);
+    if (pillar.data) tenGodsInChart.add(pillar.data.ganGod);
   }
 
   for (const tenGod of Array.from(tenGodsInChart)) {

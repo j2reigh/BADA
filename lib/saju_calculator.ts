@@ -38,7 +38,7 @@ export interface SajuResult {
     year: PillarData;
     month: PillarData;
     day: PillarData;
-    hour: PillarData;
+    hour: PillarData | null;
   };
   elementCounts: {
     wood: number; fire: number; earth: number; metal: number; water: number;
@@ -97,7 +97,7 @@ function getInteractionPenalty(
   return penalty;
 }
 
-export const calculateSaju = (dateStr: string, timeStr: string, timezone?: string): SajuResult => {
+export const calculateSaju = (dateStr: string, timeStr: string, timezone?: string, birthTimeUnknown?: boolean): SajuResult => {
   try {
     let year: number, month: number, day: number, hour: number, minute: number;
 
@@ -182,7 +182,7 @@ export const calculateSaju = (dateStr: string, timeStr: string, timezone?: strin
           "비견", // Day Master is always Self
           eightChar.getDayShiShenZhi()
         ),
-        hour: getPillarData(
+        hour: birthTimeUnknown ? null : getPillarData(
           eightChar.getTimeGan(),
           eightChar.getTimeZhi(),
           eightChar.getTimeShiShenGan(),
@@ -205,12 +205,12 @@ export const calculateSaju = (dateStr: string, timeStr: string, timezone?: strin
       }
     };
 
-    // 4. Calculate Element Counts
+    // 4. Calculate Element Counts (6 or 8 elements depending on hour pillar)
     const allElements = [
       result.fourPillars.year.ganElement, result.fourPillars.year.zhiElement,
       result.fourPillars.month.ganElement, result.fourPillars.month.zhiElement,
       result.fourPillars.day.ganElement, result.fourPillars.day.zhiElement,
-      result.fourPillars.hour.ganElement, result.fourPillars.hour.zhiElement,
+      ...(result.fourPillars.hour ? [result.fourPillars.hour.ganElement, result.fourPillars.hour.zhiElement] : []),
     ];
 
     allElements.forEach(el => {
@@ -219,28 +219,14 @@ export const calculateSaju = (dateStr: string, timeStr: string, timezone?: strin
       }
     });
 
-    // 5. Calculate Ten Gods Distribution
+    // 5. Calculate Ten Gods Distribution (5 or 7 gods depending on hour pillar)
     const tenGodsCount: Record<string, number> = {};
-    const relevantGods = [
-      result.fourPillars.year.ganGod, result.fourPillars.year.zhiGod,
-      result.fourPillars.month.ganGod, result.fourPillars.month.zhiGod,
-      result.fourPillars.day.zhiGod, // Day Gan is Self (not counted in distribution usually, but context matters)
-      result.fourPillars.hour.ganGod, result.fourPillars.hour.zhiGod
-    ];
-    // Note: Previous logic only counted GANs + Hour Zhi? Let's verify standard distribution.
-    // Standard approach: Count all 7 elements (excluding Day Gan).
-    // Let's stick to the visible gods used in pillar data for now.
-
-    // Previous logic was stricter:
-    // [result.fourPillars.year.ganGod, result.fourPillars.month.ganGod, 
-    //  result.fourPillars.day.ganGod, result.fourPillars.hour.ganGod]
-    // Let's use ALL gods available in the pillars (Gan + Zhi) for better accuracy on tendencies.
 
     [
       result.fourPillars.year.ganGod, result.fourPillars.year.zhiGod,
       result.fourPillars.month.ganGod, result.fourPillars.month.zhiGod,
       result.fourPillars.day.zhiGod,
-      result.fourPillars.hour.ganGod, result.fourPillars.hour.zhiGod
+      ...(result.fourPillars.hour ? [result.fourPillars.hour.ganGod, result.fourPillars.hour.zhiGod] : []),
     ].forEach(god => {
       if (god && god !== "비견") { // Typically exclude Day Master's own self-element? No, 비견/겁재 are valid gods
         tenGodsCount[god] = (tenGodsCount[god] || 0) + 1;
