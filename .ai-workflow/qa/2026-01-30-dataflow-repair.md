@@ -1,9 +1,9 @@
-# QA Report: Data Flow Repair & Operating Constants English Migration
+# QA Report: Data Flow Repair, English Migration & birthTimeUnknown 3-Pillar
 
 **Date:** 2026-01-30
 **Tester:** Claude
-**Commits:** `5bc1bcd`, `297dfdf`, `c15007a`
-**QA Status:** [x] Pass with Issues
+**Commits:** `5bc1bcd`, `297dfdf`, `c15007a`, `fca2a27`, `151ddc9`
+**QA Status:** [x] Pass
 
 ---
 
@@ -16,15 +16,19 @@ M client/src/pages/Results.tsx
 M shared/operating_types.ts
 M client/src/lib/simple-i18n.ts
 M client/src/components/landing/EmbeddedDiagnosticCard.tsx
+M lib/saju_calculator.ts
+M scripts/test_integration.ts
 ```
 
 **Changes:**
-- `server/routes.ts`: Assessment returns `isVerified`, skips email for verified leads, db null guard for archetype, dev mode wait bypass
+- `server/routes.ts`: Assessment returns `isVerified`, skips email for verified leads, db null guard for archetype, dev mode wait bypass, birthTimeUnknown always runs saju+report generation
 - `client/src/pages/Survey.tsx`: Verified leads go to `/results` directly (skip `/wait`), survey questions use i18n
 - `client/src/pages/Results.tsx`: Fallback UI when `page1_identity` is null
 - `shared/operating_types.ts`: Korean constants converted to English
 - `client/src/lib/simple-i18n.ts`: Indonesian Q1-Q8 translations added
 - `client/src/components/landing/EmbeddedDiagnosticCard.tsx`: Uses actual Survey Q1 (4 options)
+- `lib/saju_calculator.ts`: `fourPillars.hour` nullable, element/tenGods calc adapts to 3-pillar (6 chars) when birthTimeUnknown
+- `scripts/test_integration.ts`: Null-safe hour pillar handling
 
 ---
 
@@ -66,10 +70,22 @@ M client/src/components/landing/EmbeddedDiagnosticCard.tsx
 - **Actual:** `levelDescription: "System running normally. Optimal for routine."`, `guidance: ["Maintain current pace", ...]`
 - **Status:** [x] Pass
 
-### 7. birthTimeUnknown: fallback UI
+### 7. birthTimeUnknown: 3-pillar report generation
 - **Input:** POST submit with `birthTimeUnknown: true`, then GET results
-- **Expected:** `page1_identity: null` (no report generated)
-- **Actual:** `page1_identity: null`, Results page would render fallback UI with "Retake Assessment" button
+- **Expected:** `fourPillars.hour: null`, 6 elements total, `page1_identity` populated with full report
+- **Actual:** `hour: null`, elementCounts total=6 (wood:2,earth:2,fire:1,metal:1,water:0), `page1_identity.title: "The Watchful Pine on the Hill"`, full 5-page report generated
+- **Status:** [x] Pass
+
+### 8. birthTimeUnknown: no contaminated hour data
+- **Input:** Same report from test 7
+- **Expected:** `sajuData.fourPillars.hour` is `null` (not estimated/dummy data)
+- **Actual:** `hour: null` — no 12:00 default leaking into pillar data
+- **Status:** [x] Pass
+
+### 9. Regression: normal submission still uses 8 elements
+- **Input:** POST submit with `birthTime: "14:30"`, `birthTimeUnknown: false`
+- **Expected:** `fourPillars.hour` populated, 8 elements total
+- **Actual:** `hour: {gan:"己",zhi:"未",...}`, elementCounts total=8, full report generated
 - **Status:** [x] Pass
 
 ---
@@ -101,7 +117,7 @@ M client/src/components/landing/EmbeddedDiagnosticCard.tsx
 ### Warning
 - [ ] **Stale DB data**: Existing reports in DB still have Korean `operatingAnalysis`. Only new reports will have English. No migration script for old data.
 - [ ] **`_internal` field exposed in API**: `sajuData.operatingAnalysis._internal` (hardwareScore, rawRate, alignmentType etc.) is visible to anyone inspecting network requests. Consider filtering before production deploy.
-- [ ] **birthTimeUnknown UX gap**: When birth time is unknown, no report is generated at all. User goes through full survey + birth info form only to get "Report Unavailable". Consider warning earlier or generating a limited report.
+- [x] **~~birthTimeUnknown UX gap~~**: Resolved — reports are now generated using 3 pillars (6 chars). Hour pillar is null, not estimated.
 
 ### Info
 - [ ] TypeScript strict: Two pre-existing `db possibly null` errors in routes.ts are now resolved (archetype lookup + debug endpoint).
@@ -113,10 +129,10 @@ M client/src/components/landing/EmbeddedDiagnosticCard.tsx
 
 | Category | Pass | Fail | Total |
 |----------|------|------|-------|
-| API flow (curl) | 7 | 0 | 7 |
+| API flow (curl) | 9 | 0 | 9 |
 | UI flow (browser) | - | - | 8 (untested) |
 | Production flow | - | - | 6 (untested) |
-| **Total** | **7** | **0** | **21** |
+| **Total** | **9** | **0** | **23** |
 
 ---
 
@@ -128,4 +144,3 @@ M client/src/components/landing/EmbeddedDiagnosticCard.tsx
 1. Browser QA for UI flows (Landing Q1 card, survey translations, Results fallback)
 2. Production mode test before deploy (email verification must NOT be bypassed)
 3. Decide on `_internal` field stripping from API response
-4. Decide on birthTimeUnknown UX (warn earlier vs generate limited report)
