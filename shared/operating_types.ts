@@ -3,7 +3,7 @@ export type OSMode = 'active' | 'reactive' | 'passive';
 export type ThreatMode = 'forward' | 'emotional' | 'freeze';
 
 export type AlignmentType =
-    | 'aligned'        // 최적 궁합
+    | 'aligned'        // Optimal match
     | 'underutilized'  // Dynamic + Passive
     | 'overdriven'     // Static + Active
     | 'scattered'      // Dynamic + Reactive (v2.1)
@@ -19,7 +19,7 @@ export interface ValidityResult {
 }
 
 export interface OperatingResult {
-    // User-facing (외부 노출)
+    // User-facing
     level: OperatingLevel;
     levelName: string;
     levelDescription: string;
@@ -28,7 +28,7 @@ export interface OperatingResult {
     // Validity Info (v2.3)
     validity: ValidityResult;
 
-    // System-facing (내부 전용 - 디버깅/로그용)
+    // System-facing (internal only - for debugging/logging)
     _internal: {
         hardwareType: 'dynamic' | 'static';
         hardwareScore: number;
@@ -44,51 +44,51 @@ export interface OperatingResult {
     };
 }
 
-// Level별 정보 상수
+// Operating Level constants
 export const OPERATING_LEVELS: Record<OperatingLevel, { name: string; description: string; guidance: string[] }> = {
     1: {
         name: "Survival",
-        description: "에너지 누수 중. 시스템 과부하 상태.",
+        description: "Energy leaking. System overloaded.",
         guidance: [
-            "회복 우선, 확장 금지",
-            "의사결정 최소화",
-            "기본 루틴만 유지"
+            "Prioritize recovery, no expansion",
+            "Minimize decision-making",
+            "Maintain basic routines only"
         ]
     },
     2: {
         name: "Recovery",
-        description: "기본 기능 복구 중. 방향 전환 가능.",
+        description: "Restoring core functions. Pivot possible.",
         guidance: [
-            "무리한 목표 설정 금지",
-            "작은 성공 경험 쌓기",
-            "에너지 충전 루틴 필수"
+            "Avoid overambitious goals",
+            "Stack small wins",
+            "Energy recharge routine essential"
         ]
     },
     3: {
         name: "Stable",
-        description: "시스템 정상 작동. 루틴 유지 최적.",
+        description: "System running normally. Optimal for routine.",
         guidance: [
-            "현재 페이스 유지",
-            "소규모 확장 가능",
-            "큰 변화는 신중히"
+            "Maintain current pace",
+            "Small-scale expansion possible",
+            "Approach big changes carefully"
         ]
     },
     4: {
         name: "Aligned",
-        description: "엔진과 OS 정렬. 효율 높은 생산 가능.",
+        description: "Engine and OS aligned. High-efficiency output possible.",
         guidance: [
-            "중요한 결정에 적합",
-            "장기 프로젝트 시작 가능",
-            "관계 확장 최적기"
+            "Good timing for important decisions",
+            "Long-term projects can begin",
+            "Optimal period for expanding relationships"
         ]
     },
     5: {
         name: "Flow",
-        description: "에너지 활용 극대화. 창조/확장 최적 구간.",
+        description: "Peak energy utilization. Optimal zone for creation and expansion.",
         guidance: [
-            "단기 성과 폭발 가능",
-            "도전적 목표 설정 가능",
-            "지속 불가 - 충전 계획 필수"
+            "Short-term breakthroughs possible",
+            "Set ambitious goals",
+            "Not sustainable — plan recharge cycles"
         ]
     }
 };

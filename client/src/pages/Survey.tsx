@@ -204,7 +204,12 @@ export default function Survey() {
       if (response.ok) {
         const result = await response.json();
         console.log("Assessment submitted:", result);
-        setLocation(`/wait/${result.reportId}`);
+        // Already verified → skip Wait, go directly to Results
+        if (result.isVerified) {
+          setLocation(`/results/${result.reportId}`);
+        } else {
+          setLocation(`/wait/${result.reportId}`);
+        }
       } else {
         const error = await response.json();
         throw new Error(error.message || "Submission failed");

@@ -185,9 +185,9 @@ export async function registerRoutes(
 
           console.log(`[Content Standard] Looking up archetype: ${archetypeId}`);
 
-          const archetype = await db.query.contentArchetypes.findFirst({
+          const archetype = db ? await db.query.contentArchetypes.findFirst({
             where: eq(contentArchetypes.id, archetypeId),
-          });
+          }) : undefined;
 
           if (archetype) {
             console.log(`[Content Standard] Found archetype: ${archetype.identityTitle}`);
@@ -232,18 +232,24 @@ export async function registerRoutes(
       });
       console.log("[Assessment] Saju result saved:", sajuResult.id);
 
-      // 6. Send verification email
-      console.log("[Assessment] Sending verification email...");
-      const emailResult = await sendVerificationEmail(
-        lead.email,
-        lead.verificationToken,
-        lead.id
-      );
+      // 6. Send verification email (only if not already verified)
+      let emailSent = false;
+      if (!lead.isVerified) {
+        console.log("[Assessment] Sending verification email...");
+        const emailResult = await sendVerificationEmail(
+          lead.email,
+          lead.verificationToken,
+          lead.id
+        );
 
-      if (!emailResult.success) {
-        console.error("[Assessment] Failed to send verification email:", emailResult.error);
+        if (!emailResult.success) {
+          console.error("[Assessment] Failed to send verification email:", emailResult.error);
+        } else {
+          console.log("[Assessment] Verification email sent successfully");
+          emailSent = emailResult.success;
+        }
       } else {
-        console.log("[Assessment] Verification email sent successfully");
+        console.log("[Assessment] Lead already verified, skipping verification email");
       }
 
       console.log("[Assessment] Submission complete!");
@@ -252,7 +258,8 @@ export async function registerRoutes(
         reportId: sajuResult.id,
         leadId: lead.id,
         email: lead.email,
-        emailSent: emailResult.success,
+        isVerified: lead.isVerified,
+        emailSent,
       });
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -407,11 +414,19 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Lead not found" });
       }
 
+      // In development mode, treat all leads as verified
+      const isDevelopment = process.env.NODE_ENV === 'development';
+      const isVerified = isDevelopment ? true : lead.isVerified;
+
+      if (isDevelopment && !lead.isVerified) {
+        console.log(`[DEV MODE] Bypassing email verification in wait page for report ${reportId}`);
+      }
+
       res.json({
         reportId: sajuResult.id,
         leadId: lead.id,
         email: lead.email,
-        isVerified: lead.isVerified,
+        isVerified,
       });
     } catch (err) {
       console.error("Wait page data error:", err);
@@ -651,6 +666,7 @@ export async function registerRoutes(
         const { sajuResults } = await import("@shared/schema");
         const { desc } = await import("drizzle-orm");
 
+        if (!db) return res.status(500).json({ message: "Database not available" });
         const reports = await db.select().from(sajuResults).orderBy(desc(sajuResults.createdAt)).limit(10);
         res.json({
           count: reports.length,
