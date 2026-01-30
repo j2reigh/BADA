@@ -9,8 +9,8 @@ export default function BlueprintSection({ data }: { data: ResultsData }) {
     const isLocked = data.page2_hardware.locked;
 
     return (
-        <section className="relative w-full py-24 px-6 md:px-20 z-20">
-            <div className="max-w-4xl mx-auto space-y-24">
+        <section className="relative w-full py-12 px-6 md:px-20 z-20">
+            <div className="max-w-4xl mx-auto space-y-12">
 
                 {/* Part 2: Your Nature */}
                 <motion.div

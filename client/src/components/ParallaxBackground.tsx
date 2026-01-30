@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
+import { OVERLAY_EMOJIS } from "./report-v2/SymbolRenderer";
 
 interface ParallaxBackgroundProps {
   elementOverlay: string;
@@ -14,14 +15,6 @@ const ELEMENT_GRADIENTS: Record<string, string> = {
   overlay_water: "from-blue-600/30 via-indigo-500/20 to-purple-400/10",
 };
 
-const OVERLAY_IMAGES: Record<string, string> = {
-  overlay_fire: "/overlays/overlay_fire_1768551210595.png",
-  overlay_water: "/overlays/overlay_water_1768551230367.png",
-  overlay_wood: "/overlays/overlay_wood_1768551247466.png",
-  overlay_metal: "/overlays/overlay_metal_1768551265004.png",
-  overlay_earth: "/overlays/overlay_earth_1768551282633.png",
-};
-
 export default function ParallaxBackground({ elementOverlay }: ParallaxBackgroundProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -31,7 +24,7 @@ export default function ParallaxBackground({ elementOverlay }: ParallaxBackgroun
   const y = useTransform(scrollYProgress, [0, 1], ["-15%", "15%"]);
   const scale = useTransform(scrollYProgress, [0, 0.5, 1], [1.1, 1.15, 1.1]);
 
-  const imagePath = OVERLAY_IMAGES[elementOverlay] || OVERLAY_IMAGES.overlay_water;
+  const emoji = OVERLAY_EMOJIS[elementOverlay] || "🔥";
   const gradientClass = ELEMENT_GRADIENTS[elementOverlay] || ELEMENT_GRADIENTS.overlay_water;
 
   return (
@@ -40,20 +33,14 @@ export default function ParallaxBackground({ elementOverlay }: ParallaxBackgroun
       className="hidden md:block fixed right-0 top-0 w-[40%] h-screen overflow-hidden"
       style={{ clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%)" }}
     >
-      {/* 배경 이미지 with parallax */}
+      {/* 배경 Emoji Ambient */}
       <motion.div
         style={{ y, scale }}
-        className="absolute inset-0 w-full h-full"
+        className="absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none select-none"
       >
-        <img
-          src={imagePath}
-          alt="Element Background"
-          className="w-full h-full object-cover"
-          style={{
-            filter: "blur(1px) saturate(1.2)",
-            opacity: 0.85,
-          }}
-        />
+        <span style={{ fontSize: "30vw", filter: "blur(60px)", opacity: 0.3 }}>
+          {emoji}
+        </span>
       </motion.div>
 
       {/* 오행별 그라디언트 오버레이 */}

@@ -45,7 +45,17 @@
       "WebFetch(domain:blog.olivierlarose.com)",
       "Bash(git checkout:*)",
       "Bash(source .env)",
-      "WebFetch(domain:kr.pinterest.com)"
+      "WebFetch(domain:kr.pinterest.com)",
+      "WebFetch(domain:www.socialworkportal.com)",
+      "WebFetch(domain:www.mentalyc.com)",
+      "WebFetch(domain:allintherapyclinic.com)",
+      "WebFetch(domain:positivepsychology.com)",
+      "WebFetch(domain:heyberries.com)",
+      "WebFetch(domain:arcteryx.com)",
+      "WebFetch(domain:satisfyrunning.com)",
+      "Bash(ls:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx vite build:*)"
     ]
   }
 }

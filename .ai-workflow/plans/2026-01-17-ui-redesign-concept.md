@@ -55,7 +55,7 @@ To achieve the "Arcteryx" vibe without existing assets, we need **one high-quali
 - **Background:** User's Element Image (Full screen).
 - **Content:** 
   - Large Typography: "{NAME}'S BLUEPRINT".
-  - Subtitle: "BADA Rate: Aligned (Level 4)".
+  - Subtitle: "OS Level: Aligned (Level 4)".
   - Scroll Hint: A subtle animated arrow or line at bottom.
 
 ### II. Identity Layer (Identity Section)

@@ -1,22 +1,22 @@
 {
   "page1_identity": {
     "title": "The Dreaming Pine on the Hill",
-    "sub_headline": "Beyond the rooted certainty, a gentle sway awaits, holding boundless grace.",
+    "sub_headline": "Uncover the quiet strength waiting to root deeper within you.",
     "nature_snapshot": {
       "title": "Your Birth Pattern",
       "definition": "The Dreaming Pine on the Hill is the soul that, though rooted, allows the currents of life to pass through its boughs, finding profound peace in quiet observation and effortless surrender.",
-      "explanation": "Like the steadfast pine, you possess an unyielding spirit and a clear vision for new paths. Your roots run deep, providing remarkable resilience and independence."
+      "explanation": "Like this pine, your soul stands tall, resolute and clear-sighted. You initiate with unwavering vision, yet a deep longing for freedom anchors your spirit."
     },
     "brain_snapshot": {
       "title": "Your Current Mind State",
-      "definition": "A morning mist, partially obscuring the distant mountains yet to be explored.",
-      "explanation": "Your mind holds ample energy, yet moments of scattered focus might veil your full potential. Clarity waits just beyond the rising sun."
+      "definition": "A mountain lake, clear and still, reflecting the quiet vastness of the sky.",
+      "explanation": "Your mind naturally seeks moments of profound calm, observing life's currents without resistance. This brings clarity, allowing effortless focus and inner peace."
     },
     "efficiency_snapshot": {
       "level": 1,
       "level_name": "Survival",
       "label": "Current Operating State",
-      "metaphor": "A sturdy river, flowing at a steady, consistent pace, but not yet swollen by the spring rains, capable of more powerful currents."
+      "metaphor": "A mighty cedar, half its branches still reaching for the sun, conserving energy, waiting for the full embrace of spring."
     },
     "visual_concept": {
       "background_id": "bg_type_07",
@@ -26,83 +26,87 @@
   "page2_hardware": {
     "section_name": "Your Natural Blueprint",
     "nature_title": "The Dreaming Pine on the Hill",
+    "core_drive": "You flourish when leading with clear vision and independent action, but rot when confined, controlled, or forced to bend your true nature.",
     "nature_description": "Like the venerable pine, you possess an inner stillness, a deep-rooted wisdom that allows you to stand firm while the world rushes by. Your strength lies not in force, but in your ability to observe, absorb, and gently adapt, finding effortless flow in every situation. You are a natural visionary, receiving insights and navigating complexities with an intuitive grace that appears almost ethereal.",
-    "shadow_title": "The Whispers of the Unyielding Pine",
+    "shadow_title": "The Unbending Heart's Hidden Strain",
     "shadow_description": "Yet, the quietude that defines you can sometimes lead to a detachment, a tendency to observe rather than engage when action is truly required. There may be moments when your dreams remain just that—unrealized visions, as the impetus to actively shape your environment feels too burdensome. Remember to discern when to root deeper and when to extend a branch, lest the currents carry you too far from your own intentional shores.",
     "core_insights": [
-      "Your deepest drive is to pioneer new paths, planting seeds of innovation with unwavering determination.",
-      "You effortlessly stand tall, possessing remarkable resilience and a clear vision that fiercely resists external control.",
-      "Your hidden need is a safe space to gently sway with life's changes, rather than always standing unyielding."
+      "Your fundamental drive is to pioneer, initiating new growth and forging clear paths with unwavering purpose.",
+      "Your natural strength lies in your remarkable resilience and distinct vision, standing firm against life's changing tides.",
+      "Your hidden need is for unencumbered freedom to grow and express your pioneering spirit without external control or constraint."
     ]
   },
   "page3_os": {
     "section_name": "Your Operating System",
-    "os_title": "Your Brain's Gentle Current: Calm, Steady, and Thoughtful Flow",
+    "os_title": "The Calm Observer: Navigating Life with Gentle Flow",
+    "os_anchor": "Your system operates with low urgency, calmly observing surroundings with a gentle, unforced approach.",
     "threat_axis": {
       "title": "Your Alarm System",
       "level": "Relaxed",
-      "description": "Your brain's alarm system, the Amygdala, stays quite relaxed. This means you generally don't feel easily stressed or anxious about potential threats. You might feel calm even in situations that make others jumpy, like a sudden loud noise or a tight deadline. While this can bring a peaceful daily life, it might also mean you sometimes overlook subtle warning signs or risks."
+      "description": "Your Amygdala, your brain's alarm system, is quite relaxed. This means you don't often feel highly stressed or anxious about potential threats, keeping you feeling calm in most situations. For example, a sudden loud noise might not make you jump, or you might not worry much about 'what-ifs.' While this reduces daily anxiety, it sometimes means you might not quickly spot subtle warning signs or risks."
     },
     "environment_axis": {
       "title": "Your Processing Power",
       "level": "Steady",
-      "description": "You process information from your surroundings in a very stable way. Your senses take in what's happening around you without getting overwhelmed or shutting down too much. This means you can typically handle busy environments or complex tasks without feeling too frazzled or losing focus. Your brain keeps a good balance, letting you notice what's important without getting bogged down by every little detail."
+      "description": "You have a steady way of processing the world around you. Your brain doesn't easily get overwhelmed by too much information, like busy places or lots of sounds. For instance, you can likely stay calm and focused in a crowded shopping mall or a noisy cafe without feeling overloaded. This stable processing helps you stay grounded and clear-headed in various situations."
     },
     "agency_axis": {
       "title": "Your Drive Engine",
       "level": "Conservation Mode",
-      "description": "Your motivation fuel (Dopamine) and your brain's CEO (Prefrontal Cortex) are currently set to conserve energy. You tend to make careful, low-energy choices rather than seeking out big challenges or quick changes. This means you avoid unnecessary risks and spend your energy wisely, but it can sometimes lead to a feeling of 'floating' or not actively pursuing new goals. Initiating new projects or pushing yourself out of your comfort zone might feel like a significant effort."
+      "description": "Your drive engine operates in a conservation mode. Your brain's reward chemical, Dopamine (your motivation fuel), isn't constantly pushing you to chase big rewards. Your Prefrontal Cortex, your brain's CEO, tends to make careful choices, favoring comfort over intense effort. This means you often wait for opportunities instead of actively seeking them, which can sometimes make it harder to start new things."
     },
-    "os_summary": "You operate with a unique blend of calm and steady processing, making your daily experience generally peaceful. Your relaxed alarm system means you rarely feel the grip of stress or anxiety, and your steady processing lets you navigate the world without getting overwhelmed. However, your drive engine being in conservation mode means you tend to 'float' through life, often waiting for things to happen rather than actively steering your course. This operating style allows for a serene existence, but it can also mean missed opportunities for growth or a slower pace towards achieving your desires. Your brain is perfectly tuned for observation and gentle progress."
+    "os_summary": "Your Operating System is like a calm observer, allowing you to move through life with a gentle flow. With a relaxed alarm system and steady processing power, you generally experience less stress and feel grounded in your surroundings. Your conservation mode drive means you don't feel intense pressure to constantly pursue goals, leading to a peaceful, unhurried daily experience. This unique combination allows you to maintain a sense of calm, providing a solid foundation from which you can choose to explore new paths at your own gentle pace."
   },
   "page4_mismatch": {
     "section_name": "Where You Get Stuck",
-    "friction_title": "The Quiet Pull: Why Your Brilliant Dreams Don't Always Take Root",
+    "friction_title": "The Quiet Drift: When Vision Remains a Whisper, Not a Roar",
+    "friction_anchor": "Your inner calm can lead to a gentle drift, where brilliant visions fade without the active push to bring them to life.",
     "career_friction": {
       "title": "At Work",
-      "description": "In meetings, you probably have brilliant ideas or see the perfect solution, but often hold back. You might worry 'what if I'm wrong?' or simply wait for someone else to speak up, feeling no urgency to contribute your insights. This happens because your brain's 'drive engine' tends to stay in conservation mode, making proactive engagement feel less natural than observing.",
-      "quick_tip": "Before your next meeting, pick one small point or question you'll share, even if it feels minor. This tiny act of 'leaning in' activates different brain pathways related to action, slowly shifting your default from observing to participating."
+      "description": "You likely see creative solutions and better ways of doing things at work, but often keep them to yourself. During team meetings, you might quietly listen, nodding along, even when you have a groundbreaking idea that could truly help. This 'observer mode' (linked to a less active 'doing' circuit in your brain) makes it hard to speak up and make your impact known.",
+      "quick_tip": "Next time you have an idea, try writing it down before the meeting. Just knowing you have it helps. Then, aim to share one small thought – even a question. This gently activates your brain's 'action' pathways."
     },
     "relationship_friction": {
       "title": "In Relationships",
-      "description": "You're a wonderful, calm presence, offering deep empathy and listening. However, in moments of conflict or when big decisions arise, you might subtly retreat, observing rather than actively engaging to shape the outcome. Your loved ones might occasionally wish you’d lean in more, feeling a subtle distance even when you’re physically present. This often stems from your brain's 'drive engine' conserving energy, making active emotional navigation feel like extra effort.",
-      "quick_tip": "Make a point to initiate one conversation or plan one activity with a loved one this week. This small step helps strengthen the neural connections for proactive relationship building, showing your care more visibly and gently."
+      "description": "In personal relationships, your quiet, observant nature can sometimes be misinterpreted as a lack of interest or emotional distance. During a disagreement, you might retreat into thought to process things, leaving your partner feeling unheard or ignored, as your brain's 'calm observer' mode takes over. This can unintentionally create a gap between you and loved ones.",
+      "quick_tip": "When someone is sharing, practice active listening by repeating a key phrase they said. Then, share one small feeling you have in that moment. This simple 'mirroring' activates empathy circuits, helping you connect more deeply."
     },
     "money_friction": {
       "title": "With Money",
-      "description": "You might find yourself floating through your finances, comfortable with your current situation but rarely digging into the details or actively planning for future growth. Big financial goals, like saving for a dream trip or retirement, often remain just wonderful visions rather than actionable plans. This pattern comes from your brain's 'drive engine' preferring to conserve energy over the active 'steering' of financial management, leading to missed opportunities.",
-      "quick_tip": "Spend just 15 minutes today reviewing your bank balance and one recent transaction. This simple act of 'observing with intent' activates your frontal lobe, helping you gently nudge your financial awareness without feeling overwhelmed."
+      "description": "When it comes to money, your relaxed, unhurried approach means you might not feel a strong urge to aggressively pursue financial goals. You might save consistently but rarely review investments or explore new ways to grow wealth. This 'conservation mode' (driven by a brain that prefers stability over high-stakes action) keeps you comfortable but can slow your financial progress.",
+      "quick_tip": "Set up a monthly 'Money Check-in' in your calendar. Spend just 15 minutes reviewing bank statements or checking one investment. This creates a gentle, consistent habit without overwhelming your brain's 'conservation' drive, making it easier to stick to."
     }
   },
   "page5_solution": {
     "section_name": "Your Action Protocol",
-    "transformation_goal": "Ignite your inner drive to transform gentle progress into purposeful action, planting your brilliant dreams firmly into reality.",
+    "transformation_goal": "Ignite your inner spark, transforming whispered visions into clear, actionable paths, gently guiding your calm toward purposeful creation.",
     "protocol_name": "The Ignition Protocol",
+    "protocol_anchor": "Whisper your vision. Light your small spark.",
     "daily_rituals": [
       {
         "name": "Morning Sunlight Exposure",
-        "description": "Step outside within the first hour of waking and expose your eyes to natural daylight for 10-20 minutes, ideally without sunglasses. This practice signals to your brain that it's time to be awake and active, helping regulate your sleep-wake cycle. It naturally boosts serotonin, a 'feel-good' brain chemical, gently shifting your drive engine from conservation mode towards a state of balanced engagement and preparing you to plant seeds for your dreams.",
-        "when": "Within 1 hour of waking"
+        "description": "Right after waking, within 30 minutes, step outside or sit by a bright window for 10-15 minutes, allowing natural light to reach your eyes. This simple act activates your brain's suprachiasmatic nucleus, which regulates your body's internal clock and boosts alertness. For you, it's a gentle, natural cue to shift from your peaceful 'Quiet Drift' to a state of gentle readiness, helping you ease into conscious engagement with your day without feeling rushed or stressed.",
+        "when": "Right after waking, within 30 minutes."
       },
       {
-        "name": "The Tiny Task Triumphs",
-        "description": "Each morning, choose one *very small* task that takes 5-10 minutes to complete, like watering a plant or tidying one surface. Finish this small task as your first active accomplishment of the day. Completing even tiny tasks releases dopamine in your brain, a chemical that fuels motivation and reward. This builds a gentle feedback loop, helping you overcome inertia and softly shift from floating to actively steering your course, making your brilliant dreams feel more accessible.",
-        "when": "Early morning, after sunlight exposure"
+        "name": "Micro-Win Momentum",
+        "description": "Choose one tiny, easy task related to a 'whispered vision' or a small goal you have. This could be writing one sentence of an idea, finding one inspiring image, or sending one short email. Completing this small task releases dopamine in your brain, a chemical linked to motivation and reward. This creates a positive feedback loop, gently encouraging more action and helping you overcome inertia, turning your quiet inspirations into tangible, manageable steps.",
+        "when": "Mid-morning, before main tasks."
       },
       {
-        "name": "Curiosity Connection",
-        "description": "Spend 10-15 minutes exploring a topic you're genuinely curious about, or reach out to connect with someone whose perspective you admire. This could be reading an article, listening to an interesting podcast, or sending a quick message to a friend. Engaging your curiosity stimulates brain areas linked to learning and reward, while social connection boosts oxytocin, promoting well-being. This gently nurtures your brilliant dreams, helping them root by actively feeding your mind with inspiration and valuable connections, moving beyond just observation.",
-        "when": "Mid-day or early evening"
+        "name": "Reflective Gratitude & Future Spark",
+        "description": "Before bed, take a few moments to quietly list 1-3 things you're genuinely grateful for from your day. Then, gently imagine yourself having completed one small, desired action towards a future vision, feeling the positive emotions. This practice activates your brain's reward system and strengthens neural pathways associated with positive thinking and future goal achievement. It helps your peaceful nature gently connect with aspirations, turning 'whispers' into warm, encouraging thoughts for tomorrow.",
+        "when": "Evening, before sleep."
       }
     ],
     "environment_boost": {
       "element_needed": "fire",
       "tips": [
-        "Introduce bright, warm lighting in your main living areas for alertness.",
-        "Schedule a casual chat or activity with an inspiring friend or group.",
-        "Dedicate short, consistent time to a personal interest or passion project."
+        "Introduce bright, warm lighting in your main living spaces to energize.",
+        "Plan a gentle social catch-up or light activity with a friend each week.",
+        "Dedicate a short, protected time each day to a creative passion project."
       ]
     },
-    "closing_message": "My dear Life Architect, your unique operating system blesses you with serene calm and gentle progress. This Ignition Protocol is not about forcing change, but about gently stoking the internal flame that already resides within you. By sparking these micro-wins and consciously engaging with your environment, you'll feel that quiet pull transform into a powerful, purposeful current. Embrace this journey with your characteristic calm, knowing that each small step is steering your brilliant dreams towards vibrant reality. You are building something wonderful, one gentle spark at a time."
+    "closing_message": "As a Life Architect, you possess a unique calm and a deep well of grounded energy. The 'Quiet Drift' is not a flaw, but a gentle invitation to explore your inner landscape. These gentle sparks from The Ignition Protocol are designed to honor your natural pace, gradually warming your quiet visions into vibrant, actionable plans. Embrace this journey at your own beautiful pace, knowing that even the smallest flame can illuminate the grandest paths. Your peaceful power is ready to guide you."
   }
 }

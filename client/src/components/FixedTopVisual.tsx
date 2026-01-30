@@ -1,3 +1,5 @@
+import { OVERLAY_EMOJIS } from "./report-v2/SymbolRenderer";
+
 interface FixedTopVisualProps {
   elementOverlay: string;
   title: string;
@@ -12,29 +14,18 @@ const ELEMENT_GRADIENTS: Record<string, string> = {
   overlay_water: "from-blue-900/60 via-indigo-800/40 to-transparent",
 };
 
-const OVERLAY_IMAGES: Record<string, string> = {
-  overlay_fire: "/overlays/overlay_fire_1768551210595.png",
-  overlay_water: "/overlays/overlay_water_1768551230367.png",
-  overlay_wood: "/overlays/overlay_wood_1768551247466.png",
-  overlay_metal: "/overlays/overlay_metal_1768551265004.png",
-  overlay_earth: "/overlays/overlay_earth_1768551282633.png",
-};
-
 export default function FixedTopVisual({ elementOverlay, title, userName }: FixedTopVisualProps & { userName: string }) {
-  const imagePath = OVERLAY_IMAGES[elementOverlay] || OVERLAY_IMAGES.overlay_water;
+  const emoji = OVERLAY_EMOJIS[elementOverlay] || "🔥";
   const gradientClass = ELEMENT_GRADIENTS[elementOverlay] || ELEMENT_GRADIENTS.overlay_water;
 
   return (
     <div className="md:hidden fixed top-0 left-0 w-full h-[28vh] z-10 overflow-hidden">
-      {/* 배경 이미지 */}
-      <img
-        src={imagePath}
-        alt="Element Background"
-        className="absolute inset-0 w-full h-full object-cover"
-        style={{
-          filter: "saturate(1.3) brightness(0.9)",
-        }}
-      />
+      {/* 배경 Emoji Ambient */}
+      <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+        <span style={{ fontSize: "50vw", filter: "blur(40px)", opacity: 0.4, transform: "translateY(-10%)" }}>
+          {emoji}
+        </span>
+      </div>
 
       {/* 하단 그라디언트 (텍스트 가독성) */}
       <div className={`absolute inset-0 bg-gradient-to-t ${gradientClass}`} />

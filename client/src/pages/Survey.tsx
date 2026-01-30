@@ -1,25 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import { QUESTIONS, calculateScore } from "@/lib/scoring";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, ArrowLeft, CheckCircle2, MapPin, Calendar, Clock, Mail, User, Loader2, Globe, ChevronDown } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ArrowRight, CheckCircle2, MapPin, Calendar, Clock, Mail, Globe, ChevronDown, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { REPORT_LANGUAGES, detectUILanguage, getDefaultReportLanguage, useTranslation, type ReportLanguage } from "@/lib/simple-i18n";
-
-interface CityResult {
-  id: string;
-  name: string;
-  displayName: string;
-  city: string;
-  state?: string;
-  country: string;
-  countryCode: string;
-  lat: number;
-  lon: number;
-  timezone: string;
-  utcOffset: string;
-}
+import { Country } from "country-state-city";
 
 interface BirthPatternData {
   name: string;
@@ -27,8 +13,8 @@ interface BirthPatternData {
   birthDate: string;
   birthTime: string;
   birthTimeUnknown: boolean;
-  placeOfBirth: string;
-  placeOfBirthCity: CityResult | null;
+  birthCountryCode: string;  // ISO Code for Dropdown
+  birthTimezone: string;     // Selected Timezone
   email: string;
   consent: boolean;
   notificationConsent: boolean;
@@ -36,7 +22,12 @@ interface BirthPatternData {
 }
 
 export default function Survey() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+
+  // All Countries Data (Memoized)
+  const allCountries = useMemo(() => Country.getAllCountries(), []);
 
   // Check if coming from landing page with first answer
   const [currentStep, setCurrentStep] = useState(() => {
@@ -59,67 +50,46 @@ export default function Survey() {
     }
     return {};
   });
+
   const [birthData, setBirthData] = useState<BirthPatternData>(() => {
-    const defaultLang = getDefaultReportLanguage(detectUILanguage());
+    const defaultLang = getDefaultReportLanguage(language);
     return {
       name: "",
       gender: "",
       birthDate: "",
       birthTime: "",
       birthTimeUnknown: false,
-      placeOfBirth: "",
-      placeOfBirthCity: null,
+      birthCountryCode: "",
+      birthTimezone: "",
       email: "",
       consent: false,
       notificationConsent: true,
       reportLanguage: defaultLang,
     };
   });
-  const [placeSearchOpen, setPlaceSearchOpen] = useState(false);
-  const [cityResults, setCityResults] = useState<CityResult[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [, setLocation] = useLocation();
-  const { toast } = useToast();
 
-  const searchCities = useCallback(async (query: string) => {
-    if (query.trim().length < 2) {
-      setCityResults([]);
-      return;
-    }
-    
-    setIsSearching(true);
-    try {
-      const response = await fetch(`/api/cities/search?q=${encodeURIComponent(query)}`);
-      if (response.ok) {
-        const results = await response.json();
-        setCityResults(results);
-      }
-    } catch (error) {
-      console.error("City search error:", error);
-    } finally {
-      setIsSearching(false);
-    }
-  }, []);
+  // Derived State for Timezones based on selected Country
+  const availableTimezones = useMemo(() => {
+    if (!birthData.birthCountryCode) return [];
+    const country = allCountries.find(c => c.isoCode === birthData.birthCountryCode);
+    return country?.timezones || [];
+  }, [birthData.birthCountryCode, allCountries]);
 
+  // Auto-select Timezone if only 1 exists
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (birthData.placeOfBirth && !birthData.placeOfBirthCity) {
-        searchCities(birthData.placeOfBirth);
-      }
-    }, 300);
-    
-    return () => clearTimeout(timeoutId);
-  }, [birthData.placeOfBirth, birthData.placeOfBirthCity, searchCities]);
-  
+    if (availableTimezones.length === 1 && !birthData.birthTimezone) {
+      setBirthData(prev => ({ ...prev, birthTimezone: availableTimezones[0].zoneName }));
+    }
+  }, [availableTimezones, birthData.birthTimezone]);
+
   const isBirthPatternStep = currentStep === QUESTIONS.length;
   const totalSteps = QUESTIONS.length + 1;
 
   const question = !isBirthPatternStep ? QUESTIONS[currentStep] : null;
-  const isLastQuestion = currentStep === QUESTIONS.length - 1;
-  const currentAnswer = question ? answers[question.id] : null;
-  
-  const isBirthFormValid = birthData.name.trim() && birthData.gender && birthData.birthDate && 
-    (birthData.birthTimeUnknown || birthData.birthTime) && birthData.placeOfBirthCity && 
+
+  const isBirthFormValid = birthData.name.trim() && birthData.gender && birthData.birthDate &&
+    (birthData.birthTimeUnknown || birthData.birthTime) &&
+    birthData.birthCountryCode && birthData.birthTimezone &&
     birthData.email.trim() && birthData.consent;
 
   const handleOptionSelect = (value: string) => {
@@ -142,31 +112,36 @@ export default function Survey() {
     }
   };
 
-  const handleBack = () => {
-    if (currentStep > 0) {
-      setCurrentStep((prev) => prev - 1);
-    }
-  };
-
   const handleBirthPatternChange = (field: keyof BirthPatternData, value: any) => {
-    setBirthData((prev) => ({ ...prev, [field]: value }));
+    setBirthData((prev) => {
+      // If country changes, clear timezone (unless auto-selected by effect)
+      if (field === 'birthCountryCode' && value !== prev.birthCountryCode) {
+        return { ...prev, [field]: value, birthTimezone: "" };
+      }
+      return { ...prev, [field]: value };
+    });
   };
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleBirthPatternSubmit = async () => {
-    if (!birthData.placeOfBirthCity) return;
-    
+    if (!isBirthFormValid) return;
+
     setIsSubmitting(true);
     try {
       const result = calculateScore(answers);
-      
+
       const genderMap: Record<string, "male" | "female" | "other"> = {
         "Male": "male",
         "Female": "female",
         "Rather not to say": "other",
       };
-      
+
+      // Get Country Details for Lat/Lon fallback
+      const selectedCountry = allCountries.find(c => c.isoCode === birthData.birthCountryCode);
+      const selectedTimezoneObj = availableTimezones.find(tz => tz.zoneName === birthData.birthTimezone);
+      const countryName = selectedCountry?.name || "Unknown";
+
       const assessmentPayload = {
         answers,
         surveyScores: {
@@ -186,12 +161,15 @@ export default function Survey() {
         birthDate: birthData.birthDate,
         birthTime: birthData.birthTimeUnknown ? undefined : birthData.birthTime,
         birthTimeUnknown: birthData.birthTimeUnknown,
-        birthCity: birthData.placeOfBirthCity.city,
-        birthCountry: birthData.placeOfBirthCity.country,
-        timezone: birthData.placeOfBirthCity.timezone,
-        utcOffset: birthData.placeOfBirthCity.utcOffset,
-        latitude: birthData.placeOfBirthCity.lat,
-        longitude: birthData.placeOfBirthCity.lon,
+
+        // Revised Manual Location Data (City input removed -> use Country Name)
+        birthCity: countryName,
+        birthCountry: countryName,
+        timezone: birthData.birthTimezone,
+        utcOffset: selectedTimezoneObj?.gmtOffsetName || "UTC", // e.g. UTC+09:00
+        latitude: selectedCountry ? Number(selectedCountry.latitude) : 0,
+        longitude: selectedCountry ? Number(selectedCountry.longitude) : 0,
+
         language: birthData.reportLanguage,
       };
 
@@ -240,18 +218,18 @@ export default function Survey() {
 
   return (
     <div className="min-h-screen w-full relative overflow-hidden flex flex-col items-center justify-center transition-colors duration-1000"
-         style={{ backgroundColor: `rgb(${currentBg.r}, ${currentBg.g}, ${currentBg.b})` }}>
-      
+      style={{ backgroundColor: `rgb(${currentBg.r}, ${currentBg.g}, ${currentBg.b})` }}>
+
       {/* Dynamic Background Noise/Texture */}
-      <div 
-        className="fixed inset-0 pointer-events-none opacity-10 mix-blend-overlay" 
+      <div
+        className="fixed inset-0 pointer-events-none opacity-10 mix-blend-overlay"
         style={{
-           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
         }}
       />
-      
+
       {/* Background Gradient Overlay */}
-      <div 
+      <div
         className="fixed inset-0 pointer-events-none transition-opacity duration-1000"
         style={{
           background: `radial-gradient(circle at 50% 50%, transparent 0%, rgba(0,0,0, ${currentStep * 0.05}) 100%)`
@@ -265,8 +243,8 @@ export default function Survey() {
       </header>
 
       {/* Exit button moved to bottom left */}
-      <button 
-        onClick={() => setLocation("/")} 
+      <button
+        onClick={() => setLocation("/")}
         className="fixed bottom-6 left-6 text-sm text-white/60 hover:text-white/100 transition-colors z-50 px-4 py-2 rounded-full bg-black/20 backdrop-blur-sm border border-white/10 hover:bg-black/30"
       >
         Exit
@@ -310,7 +288,7 @@ export default function Survey() {
                 <span className="inline-block text-xs font-mono border border-white/20 text-white/60 px-3 py-1 mb-8 rounded-full">
                   Q{currentStep + 1}
                 </span>
-                
+
                 <h2 className="text-4xl md:text-6xl font-display font-medium text-white mb-16 leading-tight">
                   {t(`survey.q${currentStep + 1}.text`)}
                 </h2>
@@ -432,65 +410,44 @@ export default function Survey() {
                     <label className="text-white/80 flex items-center gap-2 mb-4">
                       <MapPin className="w-4 h-4" /> {t('birth.location')} *
                     </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={birthData.placeOfBirth}
-                        onChange={(e) => {
-                          handleBirthPatternChange("placeOfBirth", e.target.value);
-                          handleBirthPatternChange("placeOfBirthCity", null);
-                          setPlaceSearchOpen(true);
-                        }}
-                        onFocus={() => setPlaceSearchOpen(true)}
-                        onBlur={() => setTimeout(() => setPlaceSearchOpen(false), 200)}
-                        placeholder={t('birth.location.placeholder')}
-                        className="w-full bg-transparent border-0 border-b border-white/20 rounded-none px-0 py-6 text-xl text-white focus:outline-none focus:border-white placeholder:text-white/20 transition-colors"
-                        data-testid="input-birth-city"
-                      />
-                      {isSearching && (
-                        <div className="absolute right-0 top-1/2 -translate-y-1/2">
-                          <Loader2 className="w-4 h-4 animate-spin text-white" />
-                        </div>
-                      )}
-                    </div>
-                    
-                    {birthData.placeOfBirthCity && (
-                      <div className="flex items-center gap-2 text-sm text-white/90 bg-white/10 px-3 py-2 mt-2 rounded">
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span>{birthData.placeOfBirthCity.displayName}</span>
-                        <span className="text-white/60">({birthData.placeOfBirthCity.utcOffset})</span>
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Country Dropdown */}
+                      <div className="relative">
+                        <select
+                          value={birthData.birthCountryCode}
+                          onChange={(e) => handleBirthPatternChange("birthCountryCode", e.target.value)}
+                          className="w-full bg-transparent border-0 border-b border-white/20 rounded-none px-0 py-4 text-lg text-white focus:outline-none focus:border-white transition-colors appearance-none cursor-pointer"
+                        >
+                          <option value="" className="bg-[#182339] text-white/50">Select Country</option>
+                          {allCountries.map((country) => (
+                            <option key={country.isoCode} value={country.isoCode} className="bg-[#182339] text-white my-1">
+                              {country.flag} {country.name}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60 pointer-events-none" />
                       </div>
-                    )}
-                    
-                    {placeSearchOpen && cityResults.length > 0 && !birthData.placeOfBirthCity && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="absolute top-full left-0 right-0 mt-1 bg-black/80 border border-white/20 shadow-lg z-50 max-h-64 overflow-y-auto backdrop-blur-sm"
-                      >
-                        {cityResults.map((result) => (
-                          <button
-                            key={result.id}
-                            type="button"
-                            onClick={() => {
-                              handleBirthPatternChange("placeOfBirth", result.displayName);
-                              handleBirthPatternChange("placeOfBirthCity", result);
-                              setPlaceSearchOpen(false);
-                              setCityResults([]);
-                            }}
-                            className="w-full text-left px-3 py-2.5 hover:bg-white/10 transition-colors border-b border-white/10 last:border-b-0 text-white/80 hover:text-white"
-                            data-testid={`city-result-${result.id}`}
-                          >
-                            <div className="font-medium text-sm">{result.city}</div>
-                            <div className="text-xs text-white/50 flex items-center justify-between">
-                              <span>{result.state ? `${result.state}, ${result.country}` : result.country}</span>
-                              <span className="text-white/70 font-medium">{result.utcOffset}</span>
-                            </div>
-                          </button>
-                        ))}
-                      </motion.div>
-                    )}
+
+                      {/* Timezone Dropdown */}
+                      <div className="relative">
+                        <select
+                          value={birthData.birthTimezone}
+                          onChange={(e) => handleBirthPatternChange("birthTimezone", e.target.value)}
+                          disabled={!birthData.birthCountryCode || availableTimezones.length === 0}
+                          className="w-full bg-transparent border-0 border-b border-white/20 rounded-none px-0 py-4 text-lg text-white focus:outline-none focus:border-white transition-colors appearance-none cursor-pointer disabled:opacity-30"
+                        >
+                          <option value="" className="bg-[#182339] text-white/50">
+                            {availableTimezones.length === 0 ? "Timezone" : "Select Timezone"}
+                          </option>
+                          {availableTimezones.map((tz) => (
+                            <option key={tz.zoneName} value={tz.zoneName} className="bg-[#182339] text-white">
+                              {tz.zoneName} ({tz.gmtOffsetName})
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60 pointer-events-none" />
+                      </div>
+                    </div>
                   </div>
 
                   <div>
@@ -567,14 +524,15 @@ export default function Survey() {
           )}
         </AnimatePresence>
       </main>
-      
+
       {/* Decorative Compass/Grid Lines */}
       <div className="fixed inset-0 pointer-events-none z-0 opacity-10">
-         <div className="absolute top-1/2 left-0 w-full h-px bg-white" />
-         <div className="absolute top-0 left-1/2 h-full w-px bg-white" />
-         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vh] h-[80vh] border border-white rounded-full" />
+        <div className="absolute top-1/2 left-0 w-full h-px bg-white" />
+        <div className="absolute top-0 left-1/2 h-full w-px bg-white" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vh] h-[80vh] border border-white rounded-full" />
       </div>
 
     </div>
   );
 }
+

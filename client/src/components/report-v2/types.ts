@@ -63,3 +63,13 @@ export interface ResultsData {
     page4_mismatch: Page4Mismatch | null;
     page5_solution: Page5Solution | null;
 }
+
+// Change Card Types for Part 6
+export type ChangeTargetType = "alarm" | "processing" | "drive" | "work" | "relationship" | "money";
+
+export interface ChangeTargetOption {
+    type: ChangeTargetType;
+    label: string;
+    summary?: string; // v12: Context/Problem Summary for the card
+    category: "os" | "friction";
+}

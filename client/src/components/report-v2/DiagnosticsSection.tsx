@@ -10,12 +10,12 @@ export default function DiagnosticsSection({ data }: { data: ResultsData }) {
     const isLocked = os.locked;
 
     return (
-        <section className="relative w-full py-24 px-6 md:px-20 border-t border-[#402525]/10 z-20 overflow-hidden">
+        <section className="relative w-full py-12 px-6 md:px-20 border-t border-[#402525]/10 z-20 overflow-hidden">
             <div className="max-w-6xl mx-auto relative z-10">
                 <motion.div
                     initial={{ opacity: 0 }}
                     whileInView={{ opacity: 1 }}
-                    className="mb-16 text-center md:text-left"
+                    className="mb-8 text-center md:text-left"
                 >
                     <span className="block text-[10px] uppercase tracking-[0.3em] text-[#233F64] mb-4">Part 3. Your Mind</span>
                     <h2 className="text-3xl md:text-5xl font-light text-[#402525] tracking-tight">{os.os_title}</h2>

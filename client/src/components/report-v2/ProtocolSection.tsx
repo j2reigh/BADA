@@ -27,8 +27,8 @@ export default function ProtocolSection({ data }: { data: ResultsData }) {
     }
 
     return (
-        <section className="relative w-full py-24 px-6 md:px-20 z-30">
-            <div className="max-w-5xl mx-auto space-y-24">
+        <section className="relative w-full py-12 px-6 md:px-20 z-30">
+            <div className="max-w-5xl mx-auto space-y-12">
                 {/* Header */}
                 <motion.div
                     className="text-center flex flex-col items-center"

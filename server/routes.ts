@@ -3,7 +3,7 @@ import type { Server } from "http";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
-import { searchCities } from "../lib/photon_client";
+
 import { getCorrectedKST } from "../lib/time_utils";
 import { calculateSaju } from "../lib/saju_calculator";
 import { analyzeOperatingState } from "../lib/operating_logic"; // v2.3 Integration
@@ -30,20 +30,7 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  // City search endpoint using Photon API
-  app.get("/api/cities/search", async (req, res) => {
-    try {
-      const query = req.query.q as string;
-      if (!query || query.length < 2) {
-        return res.json([]);
-      }
-      const results = await searchCities(query, 8);
-      res.json(results);
-    } catch (error) {
-      console.error("City search error:", error);
-      res.status(500).json({ message: "Failed to search cities" });
-    }
-  });
+
 
   app.post(api.survey.submit.path, async (req, res) => {
     try {

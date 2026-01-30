@@ -233,7 +233,7 @@ export default function Wait() {
           </div>
           
           <p className="text-xs text-white/60">
-            Click the link in the email to view your personalized BADA report with Saju insights.
+            Click the link in the email to view your personalized BADA report.
           </p>
           
           <div className="space-y-3 pt-4 border-t border-white/20">

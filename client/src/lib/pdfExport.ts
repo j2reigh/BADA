@@ -1,172 +1,466 @@
 import { jsPDF } from "jspdf";
 import { ResultsData } from "@/components/report-v2/types";
 
-// Asset Mapping (Mirrors SymbolRenderer)
-const OVERLAY_IMAGES: Record<string, string> = {
-  overlay_fire: "/overlays/overlay_fire_1768551210595.png",
-  overlay_water: "/overlays/overlay_water_1768551230367.png",
-  overlay_wood: "/overlays/overlay_wood_1768551247466.png",
-  overlay_metal: "/overlays/overlay_metal_1768551265004.png",
-  overlay_earth: "/overlays/overlay_earth_1768551282633.png",
-};
-
 export async function generateReportPDF(data: any) {
   const report = data as ResultsData;
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 20;
+  const margin = 25;
+  const contentWidth = 160; // pageWidth - 2 * margin
+
+  doc.setLineHeightFactor(1.6);
+
+  // --- Color Palette ---
+  const C = {
+    primary: "#402525",
+    navy:    "#233F64",
+    steel:   "#879DC6",
+    muted:   "#6B5050",
+    faint:   "#9A8A8A",
+    divider: "#E8E3E3",
+  };
+
+  // --- State ---
+  let currentY = margin;
+
+  const userName = report.userInput?.name || "USER";
+  const reportId = report.reportId || "--------";
+  const dateStr = new Date().toLocaleDateString("en-US", {
+    year: "numeric", month: "long", day: "numeric",
+  });
 
   // --- Helpers ---
-  const centeredText = (text: string, y: number, size: number, color: string = "#FFFFFF", font: string = "helvetica", style: string = "normal") => {
-    doc.setFont(font, style);
-    doc.setFontSize(size);
-    doc.setTextColor(color);
-    doc.text(text, pageWidth / 2, y, { align: "center" });
-  };
 
-  const leftText = (text: string, x: number, y: number, size: number, color: string = "#FFFFFF", font: string = "helvetica", style: string = "normal", maxWidth?: number) => {
+  function hexRGB(hex: string): [number, number, number] {
+    return [
+      parseInt(hex.slice(1, 3), 16),
+      parseInt(hex.slice(3, 5), 16),
+      parseInt(hex.slice(5, 7), 16),
+    ];
+  }
+
+  function setColor(hex: string) {
+    doc.setTextColor(...hexRGB(hex));
+  }
+
+  /** Line height in mm for a font size in pt */
+  function lh(pt: number): number {
+    return pt * (25.4 / 72) * 1.6;
+  }
+
+  function measureTextHeight(
+    text: string, pt: number, maxW: number,
+    style = "normal", font = "helvetica",
+  ): number {
     doc.setFont(font, style);
-    doc.setFontSize(size);
-    doc.setTextColor(color);
-    if (maxWidth) {
-      doc.text(text, x, y, { maxWidth });
-    } else {
-      doc.text(text, x, y);
+    doc.setFontSize(pt);
+    const lines = doc.splitTextToSize(text, maxW);
+    return lines.length * lh(pt);
+  }
+
+  function ensureSpace(needed: number) {
+    if (currentY + needed > pageHeight - margin) {
+      doc.addPage();
+      currentY = margin;
     }
-  };
+  }
 
-  const drawWrappedText = (text: string, x: number, y: number, w: number, size: number, color: string, lineHeightFactor: number = 1.5): number => {
+  function startNewPart() {
+    doc.addPage();
+    currentY = margin;
+  }
+
+  /** Render text, return height consumed */
+  function writeText(
+    text: string, x: number, y: number,
+    opts: {
+      font?: string; style?: string; size: number; color: string;
+      align?: "left" | "center" | "right"; maxWidth?: number;
+    },
+  ): number {
+    const { font = "helvetica", style = "normal", size, color, align = "left", maxWidth } = opts;
+    doc.setFont(font, style);
     doc.setFontSize(size);
-    doc.setTextColor(color);
-    const lines = doc.splitTextToSize(text, w);
-    doc.text(lines, x, y);
-    return lines.length * (size * 0.3527 * lineHeightFactor); // Returns height consumed
-  };
+    setColor(color);
+    if (maxWidth) {
+      const lines = doc.splitTextToSize(text, maxWidth);
+      doc.text(lines, x, y, { align });
+      return lines.length * lh(size);
+    }
+    doc.text(text, x, y, { align });
+    return lh(size);
+  }
 
-  // ================= PAGE 1: COVER (Identity) =================
-  doc.setFillColor("#050505");
-  doc.rect(0, 0, pageWidth, pageHeight, "F");
+  function writeParagraph(text: string, y: number): number {
+    return writeText(text, margin, y, { size: 10, color: C.muted, maxWidth: contentWidth });
+  }
 
-  // Load Symbol
+  function writePartLabel(label: string, y: number): number {
+    return writeText(label.toUpperCase(), margin, y, { size: 9, color: C.navy });
+  }
+
+  function writeSectionTitle(title: string, y: number): number {
+    return writeText(title, margin, y, { size: 20, style: "bold", color: C.primary, maxWidth: contentWidth });
+  }
+
+  function writeSubheading(text: string, y: number): number {
+    return writeText(text, margin, y, { size: 13, style: "bold", color: C.primary, maxWidth: contentWidth });
+  }
+
+  function writeCategoryLabel(label: string, y: number): number {
+    return writeText(label.toUpperCase(), margin, y, { size: 9, color: C.navy });
+  }
+
+  function drawDivider(y: number, full = true) {
+    doc.setDrawColor(...hexRGB(C.divider));
+    if (full) {
+      doc.line(margin, y, margin + contentWidth, y);
+    } else {
+      doc.line(pageWidth / 2 - 20, y, pageWidth / 2 + 20, y);
+    }
+  }
+
+  // ====================== COVER ======================
+
+  writeText("ANALYSIS COMPLETE", pageWidth / 2, 105, {
+    size: 9, color: C.navy, align: "center",
+  });
+
   const overlayId = report.page1_identity?.visual_concept.overlay_id || "overlay_fire";
-  const imgUrl = OVERLAY_IMAGES[overlayId];
-  if (imgUrl) {
-    try {
-      const img = await loadImage(imgUrl);
-      const imgSize = 100;
-      doc.addImage(img, "PNG", (pageWidth - imgSize) / 2, 60, imgSize, imgSize);
-    } catch (e) { console.warn("PDF Image Load Failed", e); }
-  }
+  const elementName = overlayId.replace("overlay_", "").toUpperCase();
+  writeText(elementName, pageWidth / 2, 115, {
+    size: 9, color: C.steel, align: "center",
+  });
 
-  // Cover Text
-  centeredText("BADA ANALYSIS COMPLETE", 20, 8, "#666666");
-  centeredText(report.userInput.name.toUpperCase(), 180, 40, "#FFFFFF", "helvetica", "bold");
+  writeText(userName.toUpperCase(), pageWidth / 2, 148, {
+    size: 32, color: C.primary, align: "center", maxWidth: contentWidth,
+  });
+
   if (report.page1_identity) {
-    centeredText(`"${report.page1_identity.sub_headline}"`, 195, 12, "#CCCCCC", "helvetica", "italic");
-
-    // Identity Card
-    doc.setDrawColor("#333333");
-    doc.setFillColor("#111111");
-    doc.roundedRect(margin, 220, pageWidth - (margin * 2), 50, 3, 3, "FD");
-
-    leftText("CORE IDENTITY", margin + 10, 232, 8, "#10B981", "helvetica", "bold");
-    leftText(report.page1_identity.title, margin + 10, 242, 20, "#FFFFFF");
-    drawWrappedText(report.page1_identity.nature_snapshot.definition, margin + 10, 252, pageWidth - (margin * 2) - 20, 10, "#AAAAAA");
+    writeText(`"${report.page1_identity.sub_headline}"`, pageWidth / 2, 164, {
+      size: 12, style: "italic", color: C.muted, align: "center", maxWidth: contentWidth,
+    });
   }
 
-  // ================= PAGE 2: BLUEPRINT (Hardware) =================
-  doc.addPage();
-  doc.setFillColor("#050505");
-  doc.rect(0, 0, pageWidth, pageHeight, "F");
+  writeText("BADA REPORT", pageWidth / 2, pageHeight - margin - 6, {
+    size: 8, color: C.faint, align: "center",
+  });
+  writeText(dateStr, pageWidth / 2, pageHeight - margin, {
+    size: 8, color: C.faint, align: "center",
+  });
 
-  leftText("ACT II: THE BLUEPRINT", margin, 30, 8, "#10B981");
+  // ====================== PART 1 — YOUR ESSENCE ======================
+
+  if (report.page1_identity) {
+    startNewPart();
+    const p = report.page1_identity;
+
+    writePartLabel("PART 1", currentY);
+    currentY += lh(9) + 2;
+
+    currentY += writeSectionTitle(p.title, currentY) + 6;
+
+    // nature_snapshot.definition (prose)
+    currentY += writeParagraph(p.nature_snapshot.definition, currentY) + 6;
+
+    drawDivider(currentY);
+    currentY += 6;
+
+    // nature_snapshot.explanation (italic)
+    currentY += writeText(p.nature_snapshot.explanation, margin, currentY, {
+      size: 10, style: "italic", color: C.muted, maxWidth: contentWidth,
+    }) + 10;
+
+    // YOUR MIND STATE
+    ensureSpace(40);
+    writeCategoryLabel("YOUR MIND STATE", currentY);
+    currentY += lh(9) + 3;
+
+    currentY += writeSubheading(p.brain_snapshot.definition, currentY) + 3;
+    currentY += writeParagraph(p.brain_snapshot.explanation, currentY) + 10;
+
+    // OPERATING EFFICIENCY
+    ensureSpace(30);
+    writeCategoryLabel("OPERATING EFFICIENCY", currentY);
+    currentY += lh(9) + 3;
+
+    if (p.efficiency_snapshot.level_name) {
+      currentY += writeSubheading(p.efficiency_snapshot.level_name, currentY) + 3;
+    }
+    writeParagraph(p.efficiency_snapshot.metaphor, currentY);
+  }
+
+  // ====================== PART 2 — YOUR NATURE ======================
+
   if (report.page2_hardware) {
-    const h = report.page2_hardware;
-    leftText(h.nature_title || "", margin, 40, 24, "#FFFFFF", "helvetica", "bold", pageWidth - 40);
+    startNewPart();
+    const p = report.page2_hardware;
 
-    // Nature Desc
-    let currentY = 70;
-    const heightUsed = drawWrappedText(h.nature_description || "", margin, currentY, pageWidth - 40, 10, "#CCCCCC");
-    currentY += heightUsed + 20;
+    writePartLabel("PART 2", currentY);
+    currentY += lh(9) + 2;
 
-    // Shadow Box
-    doc.setFillColor("#111111");
-    doc.roundedRect(margin, currentY, pageWidth - 40, 80, 3, 3, "F");
-    leftText("THE SHADOW SIDE", margin + 10, currentY + 15, 8, "#F43F5E");
-    leftText(h.shadow_title || "", margin + 10, currentY + 25, 16, "#FFFFFF");
-    drawWrappedText(h.shadow_description || "", margin + 10, currentY + 35, pageWidth - 60, 10, "#999999");
+    currentY += writeSectionTitle(p.nature_title || "", currentY) + 6;
+
+    // nature_description (prose)
+    currentY += writeParagraph(p.nature_description || "", currentY) + 8;
+
+    // THE SHADOW SIDE
+    writeCategoryLabel("THE SHADOW SIDE", currentY);
+    currentY += lh(9) + 3;
+
+    currentY += writeSubheading(p.shadow_title || "", currentY) + 3;
+    currentY += writeParagraph(p.shadow_description || "", currentY) + 6;
+
+    drawDivider(currentY);
+    currentY += 6;
+
+    // CORE INSIGHTS — numbered 01, 02, 03
+    writeCategoryLabel("CORE INSIGHTS", currentY);
+    currentY += lh(9) + 4;
+
+    if (p.core_insights) {
+      p.core_insights.forEach((insight, i) => {
+        const num = String(i + 1).padStart(2, "0");
+        const h = measureTextHeight(insight, 10, contentWidth - 12);
+        ensureSpace(h + 4);
+
+        writeText(num, margin, currentY, { size: 10, color: C.steel });
+        const actual = writeText(insight, margin + 12, currentY, {
+          size: 10, color: C.muted, maxWidth: contentWidth - 12,
+        });
+        currentY += actual + 4;
+      });
+    }
   }
 
-  // ================= PAGE 3: DIAGNOSTICS (OS) =================
-  doc.addPage();
-  doc.setFillColor("#050505");
-  doc.rect(0, 0, pageWidth, pageHeight, "F");
+  // ====================== PART 3 — YOUR MIND ======================
 
-  leftText("ACT III: SAJU O.S.", margin, 30, 8, "#3B82F6");
   if (report.page3_os) {
-    const os = report.page3_os;
-    leftText(os.os_title || "", margin, 40, 24, "#FFFFFF", "helvetica", "bold", pageWidth - 40);
+    startNewPart();
+    const p = report.page3_os;
 
-    const drawAxis = (title: string, level: string, desc: string, y: number, color: string) => {
-      doc.setDrawColor("#333333");
-      doc.setFillColor("#0A0A0A");
-      doc.roundedRect(margin, y, pageWidth - 40, 50, 2, 2, "FD");
-      leftText(title.toUpperCase(), margin + 10, y + 10, 8, "#666666");
-      leftText(level, margin + 10, y + 20, 14, "#FFFFFF", "helvetica", "bold");
+    writePartLabel("PART 3", currentY);
+    currentY += lh(9) + 2;
 
-      doc.setFillColor(color);
-      doc.rect(margin + 10, y + 25, 80, 1, "F");
+    currentY += writeSectionTitle(p.os_title || "", currentY) + 8;
 
-      drawWrappedText(desc, margin + 10, y + 35, pageWidth - 60, 9, "#AAAAAA");
-    };
+    // 3 axes — each is an atomic block
+    const axes = [p.threat_axis, p.environment_axis, p.agency_axis];
 
-    if (os.threat_axis) drawAxis(os.threat_axis.title, os.threat_axis.level, os.threat_axis.description, 70, "#F43F5E");
-    if (os.environment_axis) drawAxis(os.environment_axis.title, os.environment_axis.level, os.environment_axis.description, 130, "#10B981");
-    if (os.agency_axis) drawAxis(os.agency_axis.title, os.agency_axis.level, os.agency_axis.description, 190, "#3B82F6");
-  }
+    axes.forEach((axis) => {
+      if (!axis) return;
 
-  // ================= PAGE 4: PROTOCOL (Solution) =================
-  doc.addPage();
-  doc.setFillColor("#FFFFFF");
-  doc.rect(0, 0, pageWidth, pageHeight, "F");
+      const labelH = lh(9) + 3;
+      const levelH = measureTextHeight(axis.level, 13, contentWidth, "bold") + 3;
+      const descH = measureTextHeight(axis.description, 10, contentWidth);
+      const blockH = labelH + levelH + descH + 8;
 
-  leftText("ACT V: SYSTEM PROTOCOL", margin, 30, 8, "#10B981");
-  if (report.page5_solution) {
-    const sol = report.page5_solution;
-    leftText(sol.protocol_name || "", margin, 40, 24, "#000000", "helvetica", "bold");
-    drawWrappedText(`"${sol.transformation_goal}"`, margin, 55, pageWidth - 40, 12, "#666666");
+      ensureSpace(blockH);
 
-    let y = 80;
-    sol.daily_rituals?.forEach((r, i) => {
-      doc.setDrawColor("#EEEEEE");
-      doc.setFillColor("#F9FAFB");
-      doc.roundedRect(margin, y, pageWidth - 40, 40, 2, 2, "FD");
+      writeCategoryLabel(axis.title, currentY);
+      currentY += labelH;
 
-      leftText(`${i + 1}. ${r.name}`, margin + 10, y + 10, 12, "#000000", "helvetica", "bold");
-      leftText(r.when.toUpperCase(), margin + 10, y + 18, 8, "#999999");
-      drawWrappedText(r.description, margin + 10, y + 25, pageWidth - 60, 9, "#444444");
-      y += 45;
+      writeSubheading(axis.level, currentY);
+      currentY += levelH;
+
+      writeParagraph(axis.description, currentY);
+      currentY += descH + 8;
     });
 
-    // Environment
-    y += 10;
-    doc.setFillColor("#064E3B");
-    doc.roundedRect(margin, y, pageWidth - 40, 30, 3, 3, "F");
-    leftText("ENVIRONMENT OPTIMIZATION", margin + 10, y + 10, 8, "#34D399");
-    leftText(`Element Needed: ${sol.environment_boost?.element_needed}`, margin + 10, y + 20, 14, "#FFFFFF", "helvetica", "bold");
+    // Divider + os_summary
+    drawDivider(currentY);
+    currentY += 6;
+
+    if (p.os_summary) {
+      const h = measureTextHeight(p.os_summary, 10, contentWidth - 10, "italic");
+      ensureSpace(h);
+      writeText(p.os_summary, margin + 5, currentY, {
+        size: 10, style: "italic", color: C.muted, maxWidth: contentWidth - 10,
+      });
+    }
   }
 
-  doc.save(`${report.userInput.name}_BADA_Blueprint.pdf`);
-}
+  // ====================== PART 4 — YOUR FRICTION ======================
 
-function loadImage(url: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.src = url;
-    img.crossOrigin = "Anonymous";
-    img.onload = () => resolve(img);
-    img.onerror = (e) => reject(e);
-  });
+  if (report.page4_mismatch) {
+    startNewPart();
+    const p = report.page4_mismatch;
+
+    writePartLabel("PART 4", currentY);
+    currentY += lh(9) + 2;
+
+    currentY += writeSectionTitle(p.friction_title || "", currentY) + 8;
+
+    const areas = [
+      { label: "CAREER", data: p.career_friction },
+      { label: "RELATIONSHIP", data: p.relationship_friction },
+      { label: "MONEY", data: p.money_friction },
+    ];
+
+    areas.forEach((area, i) => {
+      if (!area.data) return;
+
+      // Pre-measure the entire atomic block
+      const labelH = lh(9) + 3;
+      const titleH = measureTextHeight(area.data.title, 13, contentWidth, "bold") + 3;
+      const descH = measureTextHeight(area.data.description, 10, contentWidth);
+      const tipLabelH = area.data.quick_tip ? lh(9) + 2 : 0;
+      const tipBodyH = area.data.quick_tip
+        ? measureTextHeight(area.data.quick_tip, 9, contentWidth)
+        : 0;
+      const blockH = labelH + titleH + descH + 4 + tipLabelH + tipBodyH + 6;
+
+      ensureSpace(blockH);
+
+      writeCategoryLabel(area.label, currentY);
+      currentY += labelH;
+
+      writeSubheading(area.data.title, currentY);
+      currentY += titleH;
+
+      currentY += writeParagraph(area.data.description, currentY) + 4;
+
+      if (area.data.quick_tip) {
+        writeText("QUICK TIP", margin, currentY, {
+          size: 9, style: "bold", color: C.navy,
+        });
+        currentY += tipLabelH;
+
+        currentY += writeText(area.data.quick_tip, margin, currentY, {
+          size: 9, color: C.muted, maxWidth: contentWidth,
+        });
+      }
+
+      // Divider between friction areas (not after last)
+      if (i < areas.length - 1) {
+        currentY += 6;
+        drawDivider(currentY);
+        currentY += 6;
+      }
+    });
+  }
+
+  // ====================== PART 5 — YOUR GUIDE ======================
+
+  if (report.page5_solution) {
+    startNewPart();
+    const sol = report.page5_solution;
+
+    writePartLabel("PART 5", currentY);
+    currentY += lh(9) + 2;
+
+    currentY += writeSectionTitle(sol.protocol_name || "", currentY) + 4;
+
+    // transformation_goal (italic quote)
+    if (sol.transformation_goal) {
+      currentY += writeText(`"${sol.transformation_goal}"`, margin, currentY, {
+        size: 10, style: "italic", color: C.muted, maxWidth: contentWidth,
+      }) + 8;
+    }
+
+    // DAILY RITUALS label + divider
+    writeCategoryLabel("DAILY RITUALS", currentY);
+    currentY += lh(9) + 3;
+    drawDivider(currentY);
+    currentY += 6;
+
+    // Numbered rituals — each is an atomic block
+    if (sol.daily_rituals) {
+      sol.daily_rituals.forEach((ritual, i) => {
+        const num = String(i + 1).padStart(2, "0");
+
+        const nameH = measureTextHeight(ritual.name, 13, contentWidth - 12, "bold") + 2;
+        const whenH = lh(9) + 3;
+        const descH = measureTextHeight(ritual.description, 10, contentWidth);
+        const blockH = nameH + whenH + descH + 6;
+
+        ensureSpace(blockH);
+
+        // Number prefix (steel) + name heading (primary bold)
+        writeText(num, margin, currentY, { size: 13, color: C.steel });
+        writeText(ritual.name, margin + 12, currentY, {
+          size: 13, style: "bold", color: C.primary, maxWidth: contentWidth - 12,
+        });
+        currentY += nameH;
+
+        writeText(ritual.when.toUpperCase(), margin, currentY, {
+          size: 9, color: C.navy,
+        });
+        currentY += whenH;
+
+        currentY += writeParagraph(ritual.description, currentY) + 6;
+      });
+    }
+
+    // Divider
+    drawDivider(currentY);
+    currentY += 8;
+
+    // YOUR ENVIRONMENT
+    ensureSpace(40);
+    writeCategoryLabel("YOUR ENVIRONMENT", currentY);
+    currentY += lh(9) + 3;
+
+    if (sol.environment_boost) {
+      const elName = sol.environment_boost.element_needed;
+      writeSubheading(elName.charAt(0).toUpperCase() + elName.slice(1), currentY);
+      currentY += lh(13) + 3;
+
+      if (sol.environment_boost.tips) {
+        sol.environment_boost.tips.forEach((tip) => {
+          const tipText = `>  ${tip}`;
+          const tipH = measureTextHeight(tipText, 10, contentWidth - 5);
+          ensureSpace(tipH + 4);
+
+          writeText(tipText, margin + 5, currentY, {
+            size: 10, color: C.muted, maxWidth: contentWidth - 5,
+          });
+          currentY += tipH + 4;
+        });
+      }
+    }
+
+    // Centered short divider
+    currentY += 8;
+    ensureSpace(60);
+    drawDivider(currentY, false);
+    currentY += 10;
+
+    // Closing message — Times italic, centered
+    if (sol.closing_message) {
+      const msgH = measureTextHeight(
+        `"${sol.closing_message}"`, 13, contentWidth - 20, "italic", "times",
+      );
+      ensureSpace(msgH + 20);
+
+      writeText(`"${sol.closing_message}"`, pageWidth / 2, currentY, {
+        font: "times", style: "italic", size: 13, color: C.primary,
+        align: "center", maxWidth: contentWidth - 20,
+      });
+      currentY += msgH + 15;
+    }
+
+    // Report ID + date footer
+    const footer = `BADA REPORT  \u00B7  ${reportId.slice(0, 8).toUpperCase()}  \u00B7  ${dateStr}`;
+    writeText(footer, pageWidth / 2, currentY + 5, {
+      size: 8, color: C.faint, align: "center",
+    });
+  }
+
+  // ====================== PAGE NUMBERS (cover excluded) ======================
+
+  const totalPages = doc.getNumberOfPages();
+  for (let p = 2; p <= totalPages; p++) {
+    doc.setPage(p);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    setColor(C.faint);
+    doc.text(String(p - 1), pageWidth / 2, pageHeight - 12, { align: "center" });
+  }
+
+  // ====================== SAVE ======================
+
+  doc.save(`${userName}_BADA_Report.pdf`);
 }

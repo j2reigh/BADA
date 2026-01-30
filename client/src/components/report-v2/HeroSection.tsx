@@ -14,25 +14,21 @@ export default function HeroSection({ data }: { data: ResultsData }) {
 
     return (
         <section className="relative min-h-screen w-full flex flex-col items-center overflow-hidden py-20">
-            {/* Background Symbol (Parallax) */}
-            <motion.div style={{ y: y1, scale }} className="absolute inset-0 flex items-center justify-center z-0 opacity-10">
-                <SymbolRenderer overlayId={overlayId} className="w-[90vw] h-[90vw] md:w-[50vw] md:h-[50vw]" />
+            <motion.div className="text-center px-6" style={{ opacity: textOpacity }}>
+                <p className="text-xs md:text-sm text-[#879DC6] tracking-[0.3em] uppercase mb-4">
+                    Analysis Complete
+                </p>
+                <div className="text-6xl mb-6">
+                    <SymbolRenderer overlayId={overlayId} className="w-auto h-auto" />
+                </div>
+                <h1 className="text-5xl md:text-8xl font-thin text-[#402525] mb-4 tracking-tighter">
+                    {data.userInput?.name || "User"}
+                </h1>
+                <h2 className="text-lg md:text-xl text-[#402525]/70 font-light tracking-wide italic max-w-2xl mx-auto">
+                    "{identity.sub_headline}"
+                </h2>
             </motion.div>
 
-            {/* Foreground Content */}
-            <div className="relative z-10 w-full flex flex-col items-center justify-center pt-20 md:pt-32">
-                <motion.div className="text-center px-6" style={{ opacity: textOpacity }}>
-                    <p className="text-xs md:text-sm text-[#879DC6] tracking-[0.3em] uppercase mb-4">
-                        Analysis Complete
-                    </p>
-                    <h1 className="text-5xl md:text-8xl font-thin text-[#402525] mb-4 tracking-tighter">
-                        {data.userInput?.name || "User"}
-                    </h1>
-                    <h2 className="text-lg md:text-xl text-[#402525]/70 font-light tracking-wide italic max-w-2xl mx-auto">
-                        "{identity.sub_headline}"
-                    </h2>
-                </motion.div>
-            </div>
 
             {/* Bottom Content Grid */}
             <motion.div
@@ -45,7 +41,7 @@ export default function HeroSection({ data }: { data: ResultsData }) {
                     {/* Part 1: Who You Are */}
                     <div className="relative group overflow-hidden bg-white/40 backdrop-blur-md border border-[#233F64]/10 p-8 md:p-10 rounded-[2rem] hover:shadow-xl transition-all duration-500 hover:border-[#233F64]/20">
                         <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
-                            <SymbolRenderer overlayId="overlay_water" className="w-24 h-24" />
+                            <SymbolRenderer overlayId={overlayId} className="w-24 h-24" />
                         </div>
 
                         <div className="relative z-10">
@@ -87,6 +83,6 @@ export default function HeroSection({ data }: { data: ResultsData }) {
                     </div>
                 </div>
             </motion.div>
-        </section>
+        </section >
     );
 }

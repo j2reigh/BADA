@@ -63,38 +63,15 @@ Abyss Brown:   #402525 (갈색, 심해 바닥/퇴적층)
 
 #### Accent: Functional
 ```
-Signal Green:  #10B981 (긍정, 성공, 강점)
-Alert Rose:    #F43F5E (주의, 마찰, 약점)
+Signal Green:  #52a500ff (긍정, 성공, 강점)
+Alert Rose:    #a50000ff (주의, 마찰, 약점)
 Pure White:    #FFFFFF (텍스트, 포인트)
 ```
 
-#### 적용 방향
-
-**Landing:**
-- 그라데이션: #ABBBD5 → #879DC6 → #233F64 → #182339 (위→아래)
-- 등고선 패턴 오버레이 유지
-
-**Survey (9페이지):**
-- 배경: #879DC6 (Soft Blue) → #182339 (Deep Navy)
-- 텍스트: #FFFFFF (흰색) 유지
-- 등고선 패턴 오버레이 유지
-
-**Results:**
-- 배경: #FFFFFF (흰색) - 깔끔하게
-- 텍스트: #402525 (Abyss Brown)
-- 강조: #233F64 (Mid Ocean), #879DC6 (Soft Blue)
-- 악센트: #10B981 (Green), #F43F5E (Rose)
-- ❌ 등고선 패턴 없음
-
-**PDF:**
-- Results와 동일하게 통일
-- 배경: 흰색
-- 텍스트: #402525 (Abyss Brown)
-- 강조: #233F64 (Mid Ocean)
-
-**Email:**
-- 배경: #FAFBFC (밝은 흰색)
-- 강조: #233F64 (Mid Ocean)
+#### 그라데이션 적용 방향
+- Landing: 위에서 아래로 (#ABBBD5 → #182339 → #402525)
+- Survey: 진행에 따라 #879DC6 → #402525
+- Results: #182339 베이스, 마지막 섹션에서 #ABBBD5로 상승
 
 ### 3.3 그래픽 요소
 
