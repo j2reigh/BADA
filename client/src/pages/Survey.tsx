@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useLocation } from "wouter";
 import { QUESTIONS, calculateScore } from "@/lib/scoring";
 import { motion, AnimatePresence } from "framer-motion";
@@ -6,6 +6,7 @@ import { ArrowRight, CheckCircle2, MapPin, Calendar, Clock, Mail, Globe, Chevron
 import { useToast } from "@/hooks/use-toast";
 import { REPORT_LANGUAGES, detectUILanguage, getDefaultReportLanguage, useTranslation, type ReportLanguage } from "@/lib/simple-i18n";
 import { Country } from "country-state-city";
+import GeneratingScreen from "@/components/GeneratingScreen";
 
 interface BirthPatternData {
   name: string;
@@ -123,11 +124,22 @@ export default function Survey() {
   };
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isApiComplete, setIsApiComplete] = useState(false);
+  const pendingNavRef = useRef<string | null>(null);
+
+  const handleGeneratingFinished = () => {
+    if (pendingNavRef.current) {
+      setLocation(pendingNavRef.current);
+    }
+  };
 
   const handleBirthPatternSubmit = async () => {
     if (!isBirthFormValid) return;
 
     setIsSubmitting(true);
+    setIsApiComplete(false);
+    pendingNavRef.current = null;
+
     try {
       const result = calculateScore(answers);
 
@@ -182,25 +194,26 @@ export default function Survey() {
       if (response.ok) {
         const result = await response.json();
         console.log("Assessment submitted:", result);
-        // Already verified → skip Wait, go directly to Results
+        // Store navigation target, let GeneratingScreen finish animation first
         if (result.isVerified) {
-          setLocation(`/results/${result.reportId}`);
+          pendingNavRef.current = `/results/${result.reportId}`;
         } else {
-          setLocation(`/wait/${result.reportId}`);
+          pendingNavRef.current = `/wait/${result.reportId}`;
         }
+        setIsApiComplete(true);
       } else {
         const error = await response.json();
         throw new Error(error.message || "Submission failed");
       }
     } catch (error) {
       console.error("Error submitting assessment:", error);
+      setIsSubmitting(false);
+      setIsApiComplete(false);
       toast({
         title: "Error submitting information",
         description: "Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -219,6 +232,16 @@ export default function Survey() {
   return (
     <div className="min-h-screen w-full relative overflow-hidden flex flex-col items-center justify-center transition-colors duration-1000"
       style={{ backgroundColor: `rgb(${currentBg.r}, ${currentBg.g}, ${currentBg.b})` }}>
+
+      {/* Generating Screen Overlay */}
+      <AnimatePresence>
+        {isSubmitting && (
+          <GeneratingScreen
+            isComplete={isApiComplete}
+            onFinished={handleGeneratingFinished}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Dynamic Background Noise/Texture */}
       <div

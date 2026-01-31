@@ -13,6 +13,55 @@
 
 ## 🔄 최근 회고 (최신순)
 
+### 2026-01-31 - Gumroad 결제 연결 + 리포트 생성 로딩 화면 + 워크플로우 간소화
+**Agent:** Claude
+
+#### 👍 Keep (계속 할 것)
+- **근본 원인 추적:** "Unlock 버튼이 안 된다" 신고에서 LockedBlurOverlay → onUnlock 미전달 → fallback #pricing 미존재까지 정확하게 역추적
+- **기존 코드 활용:** Gumroad 연동이 Results.backup.tsx에 이미 있었음을 확인하고, 새로 만들지 않고 URL만 연결
+- **기획→구현 원스톱:** 로딩 화면 기획(UX/메시지/프로그레스 로직)부터 컴포넌트 구현까지 한 세션에 완료
+- **즉각적 피드백 반영:** "사주 용어가 어렵다" → 인사이트 문구 즉시 교체, "95%에서 멈춤" → 점근적 프로그레스로 즉시 수정
+
+#### 🤔 Problem (문제점)
+- **프로그레스 시뮬레이션 첫 설계 미흡:** 25초간 90%→95% 하드스톱이라 API 느릴 때 체감이 나빴음. 점근 곡선으로 바로 교체
+- **Vercel 배포 준비가 아직 안 됨:** Express 모놀리스를 Serverless로 분리하는 리팩토링이 필요 (다음 세션)
+
+#### 💡 Try (시도할 것)
+- **프로그레스 바는 항상 점근적으로:** 하드스톱 지점 없이 목표값에 수렴하는 패턴을 기본으로 사용
+- **Vercel Serverless 어댑터 구현:** server/app.ts 분리 + api/index.ts 래퍼 작성
+
+#### 📦 산출물
+- `client/src/components/GeneratingScreen.tsx`: 신규 (5단계 시뮬레이션 + 점근적 프로그레스 + 인사이트 로테이션)
+- `client/src/pages/Survey.tsx`: GeneratingScreen 연동 (isApiComplete + pendingNavRef 패턴)
+- `.ai-workflow/PROMPT_CLAUDE.md`, `START_CLAUDE.md`: Claude 역할을 기획+구현+QA 전담으로 변경, Gemini 역할 분리 삭제
+- `.ai-workflow/plans/2026-01-31-deployment-environment-strategy.md`: Vercel 배포 + 환경 관리 전략
+- `.ai-workflow/plans/2026-01-31-report-generating-screen.md`: 로딩 화면 기획서
+
+---
+
+### 2026-01-31 - FAQ 페이지 신규 구현
+**Agent:** Claude
+
+#### 👍 Keep (계속 할 것)
+- **플랜 → 구현 직결:** 플랜 모드에서 콘텐츠(11개 Q&A), 디자인 스펙, 파일 목록까지 확정한 후 구현하여 재작업 없이 한 번에 완료
+- **기존 패턴 재사용:** Landing.tsx의 배경 그라디언트, 노이즈 텍스처, Footer 언어 토글 패턴을 그대로 가져와 일관성 유지
+- **3개 언어 동시 작업:** EN/KO/ID 번역을 i18n 키 추가 시점에 함께 완료하여 별도 번역 패스 불필요
+
+#### 🤔 Problem (문제점)
+- **Landing Footer 시그니처 변경:** FAQ 링크 추가를 위해 Footer에 `t` prop을 추가해야 했음 — 기존 Footer가 번역 함수를 받지 않는 설계였기 때문. 컴포넌트 시그니처 변경이 필요했지만 Landing 내부 컴포넌트이므로 영향 범위가 제한적
+
+#### 💡 Try (시도할 것)
+- **공통 컴포넌트 추출:** Header/Footer가 Landing과 FAQ에서 중복됨 — 다음 페이지 추가 시 공통 Layout 컴포넌트로 추출 고려
+- **FAQ 콘텐츠 CMS화:** 현재 i18n 키에 하드코딩된 콘텐츠를 향후 CMS나 마크다운 파일로 분리하면 비개발자도 수정 가능
+
+#### 📦 산출물
+- `client/src/pages/FAQ.tsx`: FAQ 페이지 (11개 Q&A + Contact + CTA)
+- `client/src/App.tsx`: `/faq` 라우트 등록
+- `client/src/pages/Landing.tsx`: 헤더 nav + 푸터에 FAQ 링크 추가
+- `client/src/lib/simple-i18n.ts`: EN/KO/ID 각 ~30개 FAQ 번역 키 추가
+
+---
+
 ### 2026-01-31 - i18n 품질 개선 + 언락 모달 + 재사용 코드
 **Agent:** Claude
 
