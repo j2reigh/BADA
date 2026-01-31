@@ -13,6 +13,32 @@
 
 ## 🔄 최근 회고 (최신순)
 
+### 2026-01-31 - i18n 품질 개선 + 언락 모달 + 재사용 코드
+**Agent:** Claude
+
+#### 👍 Keep (계속 할 것)
+- **근본 원인 추적:** 한국어 리포트에서 영어 제목이 섞이는 문제를 UI → Gemini prompt → archetype override 로직까지 역추적하여 정확한 원인 파악 (영어 하드코딩 덮어쓰기)
+- **범용 해결책:** 한국어만이 아닌 모든 비영어 언어에 적용되는 anti-translationese 프롬프트로 설계하여 i18n 전체 품질 향상
+- **기존 인프라 활용:** 코드 리딤 백엔드가 이미 완성되어 있음을 확인하고, 프론트엔드 UI만 추가하여 빠르게 기능 복원
+
+#### 🤔 Problem (문제점)
+- **Gumroad overlay 호환성:** `gumroad.js`가 React 동적 DOM을 감지하지 못하는 문제 — overlay 시도 후 `window.open` 새 탭 방식으로 전환 (시간 소요)
+- **drizzle-kit generate 첫 마이그레이션:** 기존 DB에 이미 테이블이 있는 상태에서 `0000` full-schema 마이그레이션이 생성됨 — `drizzle-kit push`로 우회
+
+#### 💡 Try (시도할 것)
+- **외부 스크립트 호환성 사전 조사:** 서드파티 JS(Gumroad 등)가 SPA 동적 렌더링과 호환되는지 먼저 확인 후 도입
+- **Gumroad 결제 후 자동 unlock:** 현재 Gumroad 결제 완료 후 수동으로 코드를 입력해야 함 — webhook 연동으로 자동화 필요
+
+#### 📦 산출물
+- `lib/gemini_client.ts`: anti-translationese 프롬프트 + 비영어 archetype 참조 방식
+- `config/I18N_STRATEGY.md`: Phase 2 진단 및 구현 스펙 업데이트
+- `client/src/components/report-v2/LockedBlurOverlay.tsx`: Purchase + Code 이중 경로 모달
+- `client/src/components/report-v2/{Blueprint,Diagnostics,Glitch,Protocol}Section.tsx`: reportId prop 전달
+- `shared/schema.ts` + `server/storage.ts`: `is_reusable` 컬럼 추가, 무한 사용 코드 지원
+- DB: `BADA-DEV` 테스트 코드 등록 (무한 재사용)
+
+---
+
 ### 2026-01-30 - PDF Export 전면 재작성
 **Agent:** Claude
 
