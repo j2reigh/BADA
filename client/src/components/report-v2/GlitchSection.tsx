@@ -34,6 +34,8 @@ export default function GlitchSection({ data }: { data: ResultsData }) {
                             <LockedBlurOverlay
                                 partName="Part 4"
                                 title="Unlock Your Friction Analysis"
+                                reportId={data.reportId}
+                                checkoutUrl={`https://gumroad.com/l/bada-full-report?wanted=true&report_id=${data.reportId}&email=${encodeURIComponent(data.email || "")}`}
                             />
                         </div>
                     ) : (

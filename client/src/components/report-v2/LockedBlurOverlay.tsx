@@ -1,38 +1,69 @@
-import { motion } from "framer-motion";
-import { Lock } from "lucide-react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Lock, X, Loader2, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { queryClient } from "@/lib/queryClient";
 
 interface LockedBlurOverlayProps {
-    partName: string; // e.g., "Part 2"
-    title: string;    // e.g., "Unlock Your Nature"
+    partName: string;
+    title: string;
+    checkoutUrl?: string;
+    reportId?: string;
     onUnlock?: () => void;
 }
 
-export default function LockedBlurOverlay({ partName, title, onUnlock }: LockedBlurOverlayProps) {
-    const handleUnlock = () => {
+export default function LockedBlurOverlay({ partName, title, checkoutUrl, reportId, onUnlock }: LockedBlurOverlayProps) {
+    const [showModal, setShowModal] = useState(false);
+    const [showCodeInput, setShowCodeInput] = useState(false);
+    const [code, setCode] = useState("");
+    const [codeError, setCodeError] = useState("");
+    const [isRedeeming, setIsRedeeming] = useState(false);
+
+    const handleUnlockClick = () => {
         if (onUnlock) {
             onUnlock();
-        } else {
-            // Default behavior: Scroll to pricing or open payment modal
-            // Ideally, this should trigger the same flow as the main CTA
-            const pricingSection = document.getElementById("pricing");
-            if (pricingSection) {
-                pricingSection.scrollIntoView({ behavior: "smooth" });
+            return;
+        }
+        setShowModal(true);
+        setShowCodeInput(false);
+        setCode("");
+        setCodeError("");
+    };
+
+    const handleRedeemCode = async () => {
+        const trimmed = code.trim().toUpperCase();
+        if (!trimmed || !reportId) return;
+
+        setCodeError("");
+        setIsRedeeming(true);
+
+        try {
+            const res = await fetch("/api/codes/redeem", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ code: trimmed, reportId }),
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                setShowModal(false);
+                queryClient.invalidateQueries({ queryKey: [`/api/results/${reportId}`] });
             } else {
-                console.warn("Pricing section not found");
+                setCodeError(data.message || "Invalid code");
             }
+        } catch {
+            setCodeError("Network error. Please try again.");
+        } finally {
+            setIsRedeeming(false);
         }
     };
 
     return (
         <div className="relative w-full overflow-hidden rounded-3xl mt-8">
-            {/* 1. Blurred Backdrop (Fake Content Skeleton) */}
+            {/* 1. Blurred Backdrop */}
             <div className="absolute inset-0 bg-[#402525]/5 blur-sm select-none pointer-events-none" aria-hidden="true">
                 <div className="p-8 md:p-16 space-y-8 opacity-50">
-                    {/* Fake Header */}
                     <div className="h-8 w-1/3 bg-[#402525]/10 rounded mb-12" />
-
-                    {/* Fake Grid */}
                     <div className="grid md:grid-cols-2 gap-12">
                         <div className="space-y-4">
                             <div className="h-4 w-full bg-[#402525]/10 rounded" />
@@ -44,8 +75,6 @@ export default function LockedBlurOverlay({ partName, title, onUnlock }: LockedB
                             <div className="h-20 w-full bg-[#233F64]/5 rounded-xl border border-[#233F64]/10" />
                         </div>
                     </div>
-
-                    {/* Fake Paragraph */}
                     <div className="space-y-3 mt-12">
                         <div className="h-4 w-full bg-[#402525]/10 rounded" />
                         <div className="h-4 w-full bg-[#402525]/10 rounded" />
@@ -54,10 +83,10 @@ export default function LockedBlurOverlay({ partName, title, onUnlock }: LockedB
                 </div>
             </div>
 
-            {/* 2. Gradient Fade Overlay (Top to Bottom) */}
+            {/* 2. Gradient Fade */}
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/80 to-white z-10" />
 
-            {/* 3. Lock Card (Centered) */}
+            {/* 3. Lock Card */}
             <div className="relative z-20 py-32 px-6 flex flex-col items-center justify-center text-center">
                 <motion.div
                     initial={{ scale: 0.9, opacity: 0 }}
@@ -82,13 +111,100 @@ export default function LockedBlurOverlay({ partName, title, onUnlock }: LockedB
                     </p>
 
                     <Button
-                        onClick={handleUnlock}
+                        onClick={handleUnlockClick}
                         className="w-full bg-[#233F64] hover:bg-[#182339] text-white rounded-full py-6 text-xs uppercase tracking-widest shadow-lg hover:shadow-xl transition-all"
                     >
                         Unlock Full Analysis
                     </Button>
                 </motion.div>
             </div>
+
+            {/* 4. Unlock Modal */}
+            <AnimatePresence>
+                {showModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+                        onClick={() => setShowModal(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 relative"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <button
+                                onClick={() => setShowModal(false)}
+                                className="absolute top-4 right-4 text-[#402525]/40 hover:text-[#402525] transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+
+                            <h3 className="text-lg font-medium text-[#402525] mb-6 text-center">
+                                Unlock Full Report
+                            </h3>
+
+                            {/* Purchase button — opens Gumroad in new tab so report page stays */}
+                            {checkoutUrl && (
+                                <Button
+                                    onClick={() => window.open(checkoutUrl, '_blank', 'noopener')}
+                                    className="w-full bg-[#233F64] hover:bg-[#182339] text-white rounded-full py-5 text-xs uppercase tracking-widest mb-6"
+                                >
+                                    Purchase Full Report
+                                </Button>
+                            )}
+
+                            {/* Divider */}
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="flex-1 h-px bg-[#E8E3E3]" />
+                                <span className="text-xs text-[#402525]/40 uppercase tracking-wider">or</span>
+                                <div className="flex-1 h-px bg-[#E8E3E3]" />
+                            </div>
+
+                            {/* Code section */}
+                            {!showCodeInput ? (
+                                <button
+                                    onClick={() => setShowCodeInput(true)}
+                                    className="w-full flex items-center justify-center gap-2 text-sm text-[#233F64] hover:text-[#182339] transition-colors py-2"
+                                >
+                                    <Ticket className="w-4 h-4" />
+                                    <span>Have a code?</span>
+                                </button>
+                            ) : (
+                                <div className="space-y-3">
+                                    <div className="flex gap-2">
+                                        <input
+                                            value={code}
+                                            onChange={(e) => {
+                                                setCode(e.target.value.toUpperCase());
+                                                setCodeError("");
+                                            }}
+                                            onKeyDown={(e) => e.key === "Enter" && handleRedeemCode()}
+                                            placeholder="Enter code"
+                                            maxLength={20}
+                                            className="flex-1 px-4 py-2.5 border border-[#E8E3E3] rounded-lg text-center font-mono text-sm uppercase tracking-wider text-[#402525] placeholder:text-[#402525]/30 focus:outline-none focus:border-[#233F64] transition-colors"
+                                        />
+                                        <Button
+                                            onClick={handleRedeemCode}
+                                            disabled={!code.trim() || isRedeeming}
+                                            className="bg-[#233F64] hover:bg-[#182339] text-white rounded-lg px-5 text-sm"
+                                        >
+                                            {isRedeeming ? <Loader2 className="w-4 h-4 animate-spin" /> : "Apply"}
+                                        </Button>
+                                    </div>
+                                    {codeError && (
+                                        <p className="text-xs text-red-500 text-center">{codeError}</p>
+                                    )}
+                                </div>
+                            )}
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

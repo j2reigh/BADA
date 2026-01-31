@@ -38,6 +38,8 @@ export default function BlueprintSection({ data }: { data: ResultsData }) {
                         <LockedBlurOverlay
                             partName="Part 2"
                             title="Unlock Your Natural Blueprint"
+                            reportId={data.reportId}
+                            checkoutUrl={`https://gumroad.com/l/bada-full-report?wanted=true&report_id=${data.reportId}&email=${encodeURIComponent(data.email || "")}`}
                         />
                     ) : (
                         <div className="grid md:grid-cols-2 gap-12 md:gap-20">

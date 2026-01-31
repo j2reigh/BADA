@@ -35,6 +35,8 @@ export default function DiagnosticsSection({ data }: { data: ResultsData }) {
                     <LockedBlurOverlay
                         partName="Part 3"
                         title="Unlock Your Operating System"
+                        reportId={data.reportId}
+                        checkoutUrl={`https://gumroad.com/l/bada-full-report?wanted=true&report_id=${data.reportId}&email=${encodeURIComponent(data.email || "")}`}
                     />
                 ) : (
                     <>

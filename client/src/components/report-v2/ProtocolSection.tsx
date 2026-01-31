@@ -60,6 +60,8 @@ export default function ProtocolSection({ data }: { data: ResultsData }) {
                     <LockedBlurOverlay
                         partName="Part 5"
                         title="Unlock Your Action Protocol"
+                        reportId={data.reportId}
+                        checkoutUrl={`https://gumroad.com/l/bada-full-report?wanted=true&report_id=${data.reportId}&email=${encodeURIComponent(data.email || "")}`}
                     />
                 ) : (
                     <>
