@@ -11,6 +11,7 @@ import DebugResults from "@/pages/DebugResults";
 import ComingSoon from "@/pages/ComingSoon";
 import Wait from "@/pages/Wait";
 import VerificationFailed from "@/pages/VerificationFailed";
+import FAQ from "@/pages/FAQ";
 
 function Router() {
   return (
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/wait/:reportId" component={Wait} />
       <Route path="/verification-failed" component={VerificationFailed} />
       <Route path="/coming-soon" component={ComingSoon} />
+      <Route path="/faq" component={FAQ} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -24,6 +24,7 @@ function Header({ t }: { t: TranslateFn }) {
           <a href="#problem" className="text-sm hover:opacity-70 transition-opacity">{t('landing.nav.problem')}</a>
           <a href="#solution" className="text-sm hover:opacity-70 transition-opacity">{t('landing.nav.solution')}</a>
           <a href="#community" className="text-sm hover:opacity-70 transition-opacity">{t('landing.nav.community')}</a>
+          <Link href="/faq" className="text-sm hover:opacity-70 transition-opacity">{t('faq.title')}</Link>
         </nav>
 
         <div className="flex items-center gap-4">
@@ -458,7 +459,7 @@ function FinalCTA({ t }: { t: TranslateFn }) {
   );
 }
 
-function Footer({ language, setLanguage }: { language: UILanguage; setLanguage: (lang: UILanguage) => void }) {
+function Footer({ language, setLanguage, t }: { language: UILanguage; setLanguage: (lang: UILanguage) => void; t: TranslateFn }) {
   const languages: { code: UILanguage; label: string }[] = [
     { code: 'en', label: 'EN' },
     { code: 'ko', label: '한' },
@@ -468,8 +469,13 @@ function Footer({ language, setLanguage }: { language: UILanguage; setLanguage: 
   return (
     <footer className="relative z-10 border-t border-white/10 py-8 px-6">
       <div className="max-w-[1400px] mx-auto flex items-center justify-between">
-        <div className="text-white/40 text-sm">
-          BADA © {new Date().getFullYear()}
+        <div className="flex items-center gap-4">
+          <span className="text-white/40 text-sm">
+            BADA © {new Date().getFullYear()}
+          </span>
+          <Link href="/faq" className="text-white/40 text-sm hover:text-white/70 transition-colors">
+            {t('faq.title')}
+          </Link>
         </div>
 
         {/* Language Toggle - Right Side */}
@@ -532,7 +538,7 @@ export default function Landing() {
         <FinalCTA t={t} />
       </div>
 
-      <Footer language={language} setLanguage={setLanguage} />
+      <Footer language={language} setLanguage={setLanguage} t={t} />
       <StickyProgressBar t={t} />
     </main>
   );
