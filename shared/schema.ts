@@ -30,6 +30,7 @@ export const validCodes = pgTable("valid_codes", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   code: text("code").notNull().unique(),
   isUsed: boolean("is_used").notNull().default(false),
+  isReusable: boolean("is_reusable").notNull().default(false), // Dev/test codes that never expire
   usedByReportId: uuid("used_by_report_id").references(() => sajuResults.id),
   usedAt: timestamp("used_at"),
   createdAt: timestamp("created_at").defaultNow(),

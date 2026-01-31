@@ -238,8 +238,8 @@ export class DatabaseStorage implements IStorage {
       return { success: false, error: "INVALID_CODE" };
     }
 
-    // Check if already used
-    if (validCode.isUsed) {
+    // Check if already used (skip for reusable dev codes)
+    if (validCode.isUsed && !validCode.isReusable) {
       return { success: false, error: "ALREADY_USED" };
     }
 
@@ -254,7 +254,7 @@ export class DatabaseStorage implements IStorage {
       return { success: false, error: "ALREADY_UNLOCKED" };
     }
 
-    // Mark code as used
+    // Mark code as used (reusable codes keep usedByReportId of last use for logging)
     await db
       .update(validCodes)
       .set({
@@ -429,7 +429,7 @@ export class MemStorage implements IStorage {
     if (!validCode) {
       return { success: false, error: "INVALID_CODE" };
     }
-    if (validCode.isUsed) {
+    if (validCode.isUsed && !validCode.isReusable) {
       return { success: false, error: "ALREADY_USED" };
     }
 
