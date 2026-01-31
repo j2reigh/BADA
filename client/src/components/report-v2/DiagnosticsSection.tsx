@@ -2,8 +2,6 @@ import { motion } from "framer-motion";
 import { ResultsData } from "./types";
 import ScrollRevealText from "../ui/ScrollRevealText";
 
-import LockedBlurOverlay from "./LockedBlurOverlay";
-
 export default function DiagnosticsSection({ data }: { data: ResultsData }) {
     if (!data.page3_os) return null;
     const os = data.page3_os;
@@ -31,14 +29,33 @@ export default function DiagnosticsSection({ data }: { data: ResultsData }) {
                     )}
                 </motion.div>
 
-                {isLocked ? (
-                    <LockedBlurOverlay
-                        partName="Part 3"
-                        title="Unlock Your Operating System"
-                        reportId={data.reportId}
-                        checkoutUrl={`https://gumroad.com/l/bada-full-report?wanted=true&report_id=${data.reportId}&email=${encodeURIComponent(data.email || "")}`}
-                    />
-                ) : (
+                {/* Skeleton hint when locked */}
+                {isLocked && (
+                    <div className="relative overflow-hidden rounded-2xl" aria-hidden="true">
+                        <div className="grid md:grid-cols-3 gap-6 select-none pointer-events-none">
+                            {[
+                                { bg: "bg-[#402525]/8", border: "border-[#402525]/15", dot: "bg-[#402525]/25" },
+                                { bg: "bg-[#233F64]/8", border: "border-[#233F64]/15", dot: "bg-[#233F64]/25" },
+                                { bg: "bg-[#879DC6]/12", border: "border-[#879DC6]/25", dot: "bg-[#879DC6]/30" },
+                            ].map((s, i) => (
+                                <div key={i} className={`${s.bg} ${s.border} border p-6 rounded-2xl space-y-4`}>
+                                    <div className="flex justify-between">
+                                        <div className="h-3 w-20 bg-[#402525]/10 rounded" />
+                                        <div className={`w-2 h-2 rounded-full ${s.dot}`} />
+                                    </div>
+                                    <div className="h-5 w-2/3 bg-[#402525]/12 rounded" />
+                                    <div className="space-y-2">
+                                        <div className="h-3 w-full bg-[#402525]/8 rounded" />
+                                        <div className="h-3 w-4/5 bg-[#402525]/6 rounded" />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-b from-transparent to-white" />
+                    </div>
+                )}
+
+                {!isLocked && (
                     <>
                         <div className="grid md:grid-cols-3 gap-6 md:gap-8">
                             <AxisHUD axis={os.threat_axis} color="rose" index={0} />

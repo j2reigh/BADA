@@ -1,9 +1,6 @@
 import { motion } from "framer-motion";
 import { ResultsData } from "./types";
-import SymbolRenderer from "./SymbolRenderer";
 import ScrollRevealText from "../ui/ScrollRevealText";
-
-import LockedBlurOverlay from "./LockedBlurOverlay";
 
 export default function GlitchSection({ data }: { data: ResultsData }) {
     if (!data.page4_mismatch) return null;
@@ -29,25 +26,34 @@ export default function GlitchSection({ data }: { data: ResultsData }) {
                         </div>
                     )}
 
-                    {isLocked ? (
-                        <div className="w-full">
-                            <LockedBlurOverlay
-                                partName="Part 4"
-                                title="Unlock Your Friction Analysis"
-                                reportId={data.reportId}
-                                checkoutUrl={`https://gumroad.com/l/bada-full-report?wanted=true&report_id=${data.reportId}&email=${encodeURIComponent(data.email || "")}`}
-                            />
-                        </div>
-                    ) : (
-                        <>
-
-
-                            <div className="grid md:grid-cols-2 gap-6 md:gap-8 w-full">
-                                <FrictionCard data={mm.career_friction} title="Career Signal" />
-                                <FrictionCard data={mm.relationship_friction} title="Relationship Signal" />
-                                <FrictionCard data={mm.money_friction} title="Resource Signal" className="md:col-span-2" />
+                    {/* Skeleton hint when locked */}
+                    {isLocked && (
+                        <div className="relative overflow-hidden rounded-2xl w-full" aria-hidden="true">
+                            <div className="grid md:grid-cols-2 gap-6 select-none pointer-events-none">
+                                {["Career Signal", "Relationship Signal"].map((label, i) => (
+                                    <div key={i} className="bg-[#402525]/6 border border-[#402525]/12 p-6 rounded-2xl space-y-4">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2 h-2 bg-[#402525]/20 rounded-full" />
+                                            <div className="h-3 w-24 bg-[#402525]/10 rounded" />
+                                        </div>
+                                        <div className="h-5 w-3/4 bg-[#402525]/12 rounded" />
+                                        <div className="space-y-2">
+                                            <div className="h-3 w-full bg-[#402525]/8 rounded" />
+                                            <div className="h-3 w-5/6 bg-[#402525]/6 rounded" />
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                        </>
+                            <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-b from-transparent to-white" />
+                        </div>
+                    )}
+
+                    {!isLocked && (
+                        <div className="grid md:grid-cols-2 gap-6 md:gap-8 w-full">
+                            <FrictionCard data={mm.career_friction} title="Career Signal" />
+                            <FrictionCard data={mm.relationship_friction} title="Relationship Signal" />
+                            <FrictionCard data={mm.money_friction} title="Resource Signal" className="md:col-span-2" />
+                        </div>
                     )}
                 </div>
             </div>

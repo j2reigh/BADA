@@ -2,8 +2,6 @@ import { motion } from "framer-motion";
 import { ResultsData } from "./types";
 import ScrollRevealText from "../ui/ScrollRevealText";
 
-import LockedBlurOverlay from "./LockedBlurOverlay";
-
 export default function BlueprintSection({ data }: { data: ResultsData }) {
     if (!data.page2_hardware) return null;
     const isLocked = data.page2_hardware.locked;
@@ -34,14 +32,37 @@ export default function BlueprintSection({ data }: { data: ResultsData }) {
                         </div>
                     )}
 
-                    {isLocked ? (
-                        <LockedBlurOverlay
-                            partName="Part 2"
-                            title="Unlock Your Natural Blueprint"
-                            reportId={data.reportId}
-                            checkoutUrl={`https://gumroad.com/l/bada-full-report?wanted=true&report_id=${data.reportId}&email=${encodeURIComponent(data.email || "")}`}
-                        />
-                    ) : (
+                    {/* Skeleton hint when locked */}
+                    {isLocked && (
+                        <div className="relative overflow-hidden rounded-2xl" aria-hidden="true">
+                            <div className="grid md:grid-cols-2 gap-8 select-none pointer-events-none">
+                                <div className="space-y-3">
+                                    <div className="h-4 w-full bg-[#402525]/15 rounded" />
+                                    <div className="h-4 w-full bg-[#402525]/12 rounded" />
+                                    <div className="h-4 w-5/6 bg-[#402525]/10 rounded" />
+                                    <div className="h-4 w-4/6 bg-[#402525]/8 rounded" />
+                                </div>
+                                <div className="space-y-4">
+                                    <div className="h-5 w-1/2 bg-[#233F64]/15 rounded" />
+                                    <div className="flex gap-3 items-start">
+                                        <div className="h-4 w-6 bg-[#879DC6]/20 rounded shrink-0" />
+                                        <div className="h-4 w-full bg-[#402525]/10 rounded" />
+                                    </div>
+                                    <div className="flex gap-3 items-start">
+                                        <div className="h-4 w-6 bg-[#879DC6]/20 rounded shrink-0" />
+                                        <div className="h-4 w-5/6 bg-[#402525]/10 rounded" />
+                                    </div>
+                                    <div className="flex gap-3 items-start">
+                                        <div className="h-4 w-6 bg-[#879DC6]/20 rounded shrink-0" />
+                                        <div className="h-4 w-4/6 bg-[#402525]/10 rounded" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-b from-transparent to-white" />
+                        </div>
+                    )}
+
+                    {!isLocked && (
                         <div className="grid md:grid-cols-2 gap-12 md:gap-20">
                             <div className="text-[#402525]/80 font-light leading-relaxed text-lg">
                                 <p className="whitespace-pre-wrap">{data.page2_hardware.nature_description}</p>

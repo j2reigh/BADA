@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Loader2, Download, AlertTriangle } from "lucide-react";
+import { Loader2, Download, AlertTriangle, Lock } from "lucide-react";
 import { generateReportPDF } from "@/lib/pdfExport";
 import { ResultsData } from "@/components/report-v2/types";
 import { motion, useScroll, useMotionValueEvent, AnimatePresence, useMotionValue, useSpring, useTransform } from "framer-motion";
@@ -137,6 +137,7 @@ import DiagnosticsSection from "@/components/report-v2/DiagnosticsSection";
 import GlitchSection from "@/components/report-v2/GlitchSection";
 import ProtocolSection from "@/components/report-v2/ProtocolSection";
 import ChangeCardSection from "@/components/report-v2/ChangeCardSection";
+import UnlockSection from "@/components/report-v2/UnlockSection";
 import TableOfContents from "@/components/report-v2/TableOfContents";
 
 export default function Results() {
@@ -277,6 +278,12 @@ export default function Results() {
         <ProtocolSection data={resultsData} />
       </div>
 
+      {!resultsData.isPaid && (
+        <div id="unlock-section">
+          <UnlockSection reportId={resultsData.reportId} email={resultsData.email} />
+        </div>
+      )}
+
       <ChangeCardSection data={resultsData} />
 
       {/* Text Along Path Footer */}
@@ -310,6 +317,26 @@ export default function Results() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Sticky Unlock Bar (unpaid only) */}
+      {!resultsData.isPaid && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none">
+          <div className="bg-white/80 backdrop-blur-md border-t border-[#402525]/10 pointer-events-auto">
+            <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2 text-[#402525]/60 text-sm">
+                <Lock className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Parts 2–5 locked</span>
+              </div>
+              <button
+                onClick={() => document.getElementById("unlock-section")?.scrollIntoView({ behavior: "smooth" })}
+                className="bg-[#233F64] hover:bg-[#182339] text-white rounded-full px-6 py-2.5 text-xs uppercase tracking-widest font-medium shadow-lg hover:shadow-xl transition-all"
+              >
+                View Full Report
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
