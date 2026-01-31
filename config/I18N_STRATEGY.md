@@ -109,76 +109,109 @@ function LanguageSelector() {
 
 ---
 
-### ✅ Phase 2: AI 리포트 다국어화 (중요!)
+### ✅ Phase 2: AI 리포트 다국어화 — 네이티브 품질 확보
 
-**비용:** 사용자당 약간 증가
-**시간:** 1-2일
-**효과:** 완전한 국제화
+**비용:** 사용자당 동일 (추가 API 콜 없음)
+**효과:** 직역체 제거, 네이티브 수준 리포트
 
-#### 방법 A: 언어별 System Prompt (추천 ⭐)
+#### 현재 문제 진단 (2026-01-30)
 
-**장점:**
-- 구현 쉬움
-- 품질 높음
-- 비용 거의 동일
+비영어 리포트에서 "영어를 그대로 옮긴 듯한" 직역체가 발생:
 
-**구현:**
+| 원인 | 영향 | 심각도 |
+|------|------|--------|
+| 프롬프트 전체가 영어 | Gemini가 영어로 사고 후 번역 | 높음 |
+| 예시가 전부 영어 (`"A Silent Volcano"`) | 영어식 어순/표현이 출력에 전이 | 높음 |
+| 언어 지시가 1줄뿐 | "Write ALL content in Korean" 만으로는 톤/스타일 제어 불가 | 중간 |
+| Archetype 데이터가 영어 전용 | title/definition이 영어로 덮어써짐 | 높음 |
+| DAY_MASTER_MAP 값이 영어 | 입력 데이터가 영어 → 출력도 영어 패턴 따라감 | 중간 |
+
+#### 해결: `getLanguageInstruction()` 강화
+
+**핵심 원칙:** 프롬프트 구조는 영어로 유지하되, **언어 지시 블록을 풍부하게** 확장하여 Gemini가 해당 언어의 네이티브 화자처럼 쓰도록 유도.
+
 ```typescript
-// lib/gemini_client.ts
-const SYSTEM_PROMPTS = {
-  en: `You are the "Life Architect" for BADA...`,
-  ko: `당신은 BADA의 "인생 설계자"입니다...`,
-  ja: `あなたはBADAの「人生設計者」です...`
-};
+function getLanguageInstruction(language: string): string {
+  if (language === 'en') {
+    return `LANGUAGE: Simple, evocative English (B1-B2 level). No jargon.`;
+  }
 
-export async function generateLifeBlueprintReport(
-  sajuData: any,
-  surveyScores: any,
-  userName: string,
-  language: string = 'en'
-) {
-  const systemPrompt = SYSTEM_PROMPTS[language] || SYSTEM_PROMPTS.en;
+  const langName = LANGUAGE_NAMES[language] || language;
 
-  // ... Gemini API call with localized prompt
+  return `LANGUAGE & WRITING STYLE:
+Write ALL content in ${langName}. You are a native ${langName} writer, NOT a translator.
+
+CRITICAL — ANTI-TRANSLATION RULES:
+- Write as if this content was ORIGINALLY conceived in ${langName}
+- Do NOT translate English phrases in your head — think directly in ${langName}
+- Use sentence structures, idioms, and rhythms natural to ${langName}
+- Avoid calque (loan-translation) patterns from English
+- Metaphors should feel native: adapt cultural references to the target audience
+  e.g., English "A Forest Fire in Winter" → Korean "한겨울 산불" (not "겨울에 있는 숲 화재")
+- Tone: warm, poetic, conversational (equivalent to B1-B2 native reading level)
+- For neuroscience terms only: keep English term + native explanation
+  e.g., "Amygdala(뇌의 경보 시스템)" / "Amygdala(sistem alarm otak)"`;
 }
 ```
 
-**JSON Schema도 언어별로:**
-```typescript
-const REPORT_SCHEMAS = {
-  en: {
-    page1_identity: {
-      title: "string",
-      sub_headline: "string"
-    }
-  },
-  ko: {
-    page1_identity: {
-      제목: "string",
-      부제: "string"
-    }
-  }
-};
-```
+**변경 포인트:**
+1. **"native writer, NOT a translator"** — Gemini의 역할 프레이밍 변경
+2. **"think directly in {language}"** — 영어 거치지 않는 사고 유도
+3. **anti-calque 명시** — 직역 패턴 금지
+4. **네이티브 메타포 예시** — 영어 예시를 번역하지 말고 해당 언어에서 자연스러운 표현 사용
 
-**비용 영향:**
-- Gemini API 비용은 동일 (출력 길이가 비슷함)
-- 한글이 영어보다 토큰 수가 약간 많을 수 있음 (~10-20% 증가)
+#### Archetype 영어 데이터 처리
 
-#### 방법 B: 후처리 번역 (저렴하지만 품질 낮음)
+현재 `archetype.identityTitle` ("The Rooted Volcanic Mountain")과 `archetype.natureMetaphor`가 영어 전용.
+
+**수정 방식:** override 제거, 프롬프트 힌트로 전환
 
 ```typescript
-// 1. 영어로 리포트 생성
-const englishReport = await generateReport(...);
+// AS-IS: 영어로 강제 덮어쓰기
+if (archetype) {
+  data.title = archetype.identityTitle;
+  data.nature_snapshot.definition = archetype.natureMetaphor;
+}
 
-// 2. 번역 (DeepL or Google Translate)
-const translatedReport = await translateReport(englishReport, 'ko');
+// TO-BE: 비영어일 때는 프롬프트에서 번역 지시
+// 프롬프트 내:
+// STANDARDIZED IDENTITY (MUST USE):
+// - IDENTITY TITLE: "The Rooted Volcanic Mountain"
+// - NATURE METAPHOR: "A master builder whose serene permanence..."
+// - TRANSLATE these to {language} naturally. Keep the meaning, adapt the expression.
+
+// 영어일 때만 override 유지
+if (archetype && language === 'en') {
+  data.title = archetype.identityTitle;
+  data.nature_snapshot.definition = archetype.natureMetaphor;
+}
 ```
 
-**단점:**
-- 번역 품질 낮음 (문화적 맥락 상실)
-- 추가 API 호출 (비용 증가)
-- 번역 시간 추가
+**결과:** 같은 archetype 의미를 유지하면서 해당 언어에 맞는 자연스러운 표현 생성.
+- EN: "The Rooted Volcanic Mountain" (archetype 그대로)
+- KO: "뿌리 깊은 화산" (Gemini가 의미 보존하며 한국어로)
+- ID: "Gunung Api yang Berakar" (Gemini가 인도네시아어로)
+
+#### 프롬프트 내 영어 예시 처리
+
+각 페이지 프롬프트에 영어 예시가 하드코딩되어 있음:
+```
+GOOD: "A Silent Volcano", "The Midnight Ocean", "A Forest Fire in Winter"
+BAD: "The Warrior", "The King", "The Leader"
+```
+
+**수정:** 비영어일 때 예시 블록에 번역 지시 추가
+```
+GOOD examples (translate to {language} naturally, do not use these English phrases):
+"A Silent Volcano", "The Midnight Ocean", "A Forest Fire in Winter"
+```
+
+#### 구현 체크리스트
+
+- [ ] `getLanguageInstruction()` 강화 (anti-translation rules)
+- [ ] Archetype override → 비영어일 때 프롬프트 힌트로 전환
+- [ ] Page 1-5 프롬프트의 영어 예시에 번역 지시 추가
+- [ ] QA: 같은 유저 데이터로 EN/KO/ID 3개 리포트 생성, 네이티브 품질 비교
 
 ---
 

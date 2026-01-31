@@ -118,11 +118,19 @@ function getLanguageInstruction(language: string): string {
   }
 
   const langName = LANGUAGE_NAMES[language] || language;
-  return `LANGUAGE: Write ALL content in ${langName}.
-- Use natural, conversational tone (equivalent to B1-B2 level)
-- Keep it warm, specific, and relatable
-- For technical terms (neuroscience), keep English term + explain in target language
-  e.g., "Amygdala (뇌의 경보 시스템)" or "Amygdala (sistem alarm otak)"`;
+  return `LANGUAGE & WRITING STYLE — CRITICAL:
+Write ALL content in ${langName}. You are a native ${langName} writer, NOT a translator.
+
+ANTI-TRANSLATION RULES:
+- Write as if this content was ORIGINALLY conceived in ${langName}
+- Do NOT mentally translate from English — think directly in ${langName}
+- Use sentence structures, idioms, and rhythms natural to ${langName}
+- Avoid calque (loan-translation) from English
+- Metaphors must feel native to ${langName} speakers
+- Tone: warm, poetic, conversational (B1-B2 native reading level)
+- For neuroscience terms ONLY: keep English term + native explanation
+  e.g., "Amygdala(뇌의 경보 시스템)" / "Amygdala(sistem alarm otak)"
+- Any English reference text provided in this prompt is for MEANING only — rewrite it naturally in ${langName}, do not translate word-by-word`;
 }
 
 /**
@@ -143,10 +151,10 @@ export async function generateLifeBlueprintReport(
     console.log(`[Gemini] Starting Report Generation for ${userName} in ${language}...`);
     const langInstruction = getLanguageInstruction(language);
 
-    const page1 = await generatePage1(sajuResult, surveyScores, userName, archetype, langInstruction);
+    const page1 = await generatePage1(sajuResult, surveyScores, userName, archetype, langInstruction, language);
     console.log("[Gemini] Page 1 Generated");
 
-    const page2 = await generatePage2(sajuResult, page1.title, userName, archetype, langInstruction);
+    const page2 = await generatePage2(sajuResult, page1.title, userName, archetype, langInstruction, language);
     console.log("[Gemini] Page 2 Generated");
 
     const page3 = await generatePage3(surveyScores, userName, langInstruction);
@@ -176,7 +184,7 @@ export async function generateLifeBlueprintReport(
 // ==========================================
 // PAGE 1: Identity (Nature Landscape Theme)
 // ==========================================
-async function generatePage1(sajuResult: SajuResult, surveyScores: SurveyScores, userName: string, archetype?: ContentArchetype, langInstruction?: string) {
+async function generatePage1(sajuResult: SajuResult, surveyScores: SurveyScores, userName: string, archetype?: ContentArchetype, langInstruction?: string, language: string = "en") {
   const model = client!.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   const dayMasterGan = sajuResult.fourPillars.day.gan;
@@ -194,6 +202,7 @@ async function generatePage1(sajuResult: SajuResult, surveyScores: SurveyScores,
 ${archetype ? `STANDARDIZED IDENTITY (MUST USE):
 - IDENTITY TITLE: "${archetype.identityTitle}"
 - NATURE METAPHOR: "${archetype.natureMetaphor}"
+${language !== 'en' ? `- TRANSLATE the title and metaphor naturally into the target language. Keep the meaning, adapt the expression to feel native.` : ''}
 ` : ''}
 
 USER DATA:
@@ -247,11 +256,10 @@ OUTPUT (JSON Only):
 
   const data = parseJSON(result.response.text());
 
-  // Enforce Determinism if Archetype exists
-  if (archetype) {
+  // Enforce Determinism — English only (non-English lets Gemini translate naturally)
+  if (archetype && language === 'en') {
     data.title = archetype.identityTitle;
     data.nature_snapshot.definition = archetype.natureMetaphor;
-    // We can also let AI use the description for explanation if we want, or keep AI's explanation
   }
 
   return data;
@@ -260,13 +268,19 @@ OUTPUT (JSON Only):
 // ==========================================
 // PAGE 2: Hardware (Deep Nature Analysis)
 // ==========================================
-async function generatePage2(sajuResult: SajuResult, identityTitle: string, userName: string, archetype?: ContentArchetype, langInstruction?: string) {
+async function generatePage2(sajuResult: SajuResult, identityTitle: string, userName: string, archetype?: ContentArchetype, langInstruction?: string, language: string = "en") {
   const model = client!.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   const dayMasterGan = sajuResult.fourPillars.day.gan;
   const dayMasterInfo = DAY_MASTER_MAP[dayMasterGan];
   const dayMasterElement = ELEMENT_MAP[dayMasterGan] || "wood";
   const elementInfo = FIVE_ELEMENTS_INFO[dayMasterElement as keyof typeof FIVE_ELEMENTS_INFO];
+
+  const archetypeRef = archetype && language !== 'en' ? `
+REFERENCE CONTENT (English original — rewrite naturally in target language, preserving meaning):
+- Nature Description: "${archetype.natureDescription}"
+- Shadow Description: "${archetype.shadowDescription}"
+` : '';
 
   const systemPrompt = `You are the "Life Architect" creating Page 2: The Deep Nature Analysis.
 
@@ -278,7 +292,7 @@ USER DATA:
 - Core Weakness: ${dayMasterInfo.weakness}
 - Element Nature: ${elementInfo?.keyword || "Balanced energy"}
 - Element Tendency: ${elementInfo?.excess || "Adaptability"}
-
+${archetypeRef}
 CRITICAL RULES:
 1. ${langInstruction || 'LANGUAGE: Simple, warm English (B1-B2 level).'}
 2. EXTEND THE METAPHOR: Build on the nature landscape from Page 1.
@@ -312,11 +326,9 @@ OUTPUT (JSON Only):
 
   const data = parseJSON(result.response.text());
 
-  // Enforce Determinism if Archetype exists
-  if (archetype) {
-    data.nature_title = archetype.identityTitle; // Or keep poetic title generated by AI? User wants standardization.
-    // Actually Page 2 has "nature_title" which is often different from "Identity Title" (The Calculated Pine).
-    // But let's verify if we want to replace nature_description.
+  // Enforce Determinism — English only (non-English lets Gemini rewrite naturally)
+  if (archetype && language === 'en') {
+    data.nature_title = archetype.identityTitle;
     data.nature_description = archetype.natureDescription;
     data.shadow_description = archetype.shadowDescription;
   }
