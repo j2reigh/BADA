@@ -7,6 +7,23 @@ import { useToast } from "@/hooks/use-toast";
 import { REPORT_LANGUAGES, detectUILanguage, getDefaultReportLanguage, useTranslation, type ReportLanguage } from "@/lib/simple-i18n";
 import { Country } from "country-state-city";
 import GeneratingScreen from "@/components/GeneratingScreen";
+import TimePickerModal from "@/components/TimePickerModal";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface BirthPatternData {
   name: string;
@@ -121,11 +138,26 @@ export default function Survey() {
       }
       return { ...prev, [field]: value };
     });
+
+    // Auto-open time modal when date is selected (and time not yet set)
+    if (field === 'birthDate' && value && !birthData.birthTime && !birthData.birthTimeUnknown) {
+      setTimeout(() => setShowTimeModal(true), 300);
+    }
+  };
+
+  const handleTimeSelect = (time: string | null, unknown: boolean) => {
+    if (unknown) {
+      setBirthData((prev) => ({ ...prev, birthTime: "", birthTimeUnknown: true }));
+    } else if (time) {
+      setBirthData((prev) => ({ ...prev, birthTime: time, birthTimeUnknown: false }));
+    }
   };
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isApiComplete, setIsApiComplete] = useState(false);
   const pendingNavRef = useRef<string | null>(null);
+  const [showTimeModal, setShowTimeModal] = useState(false);
+  const [open, setOpen] = useState(false);
 
   const handleGeneratingFinished = () => {
     if (pendingNavRef.current) {
@@ -242,6 +274,16 @@ export default function Survey() {
           />
         )}
       </AnimatePresence>
+
+      {/* Time Picker Modal */}
+      <TimePickerModal
+        isOpen={showTimeModal}
+        onClose={() => setShowTimeModal(false)}
+        onSelect={handleTimeSelect}
+        initialTime={birthData.birthTime}
+        initialUnknown={birthData.birthTimeUnknown}
+        t={t}
+      />
 
       {/* Dynamic Background Noise/Texture */}
       <div
@@ -408,24 +450,19 @@ export default function Survey() {
                       <label className="text-white/80 flex items-center gap-2 mb-4">
                         <Clock className="w-4 h-4" /> {t('birth.time')}
                       </label>
-                      <input
-                        type="time"
-                        value={birthData.birthTime}
-                        onChange={(e) => handleBirthPatternChange("birthTime", e.target.value)}
-                        disabled={birthData.birthTimeUnknown}
-                        className="w-full bg-transparent border-0 border-b border-white/20 rounded-none px-0 py-6 text-lg text-white focus:outline-none focus:border-white disabled:opacity-30 transition-colors dark-time-icon"
-                      />
-                      <div className="pt-2">
-                        <label className="flex items-start space-x-3 space-y-0 text-white/50 text-sm cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={birthData.birthTimeUnknown}
-                            onChange={(e) => handleBirthPatternChange("birthTimeUnknown", e.target.checked)}
-                            className="w-4 h-4 accent-white mt-0.5"
-                          />
-                          <span>{t('birth.time_unknown')}</span>
-                        </label>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowTimeModal(true)}
+                        className="w-full bg-transparent border-0 border-b border-white/20 px-0 py-6 text-lg text-left focus:outline-none focus:border-white transition-colors hover:border-white/40"
+                      >
+                        {birthData.birthTimeUnknown ? (
+                          <span className="text-white/50">{t('birth.time_unknown')}</span>
+                        ) : birthData.birthTime ? (
+                          <span className="text-white font-mono">{birthData.birthTime}</span>
+                        ) : (
+                          <span className="text-white/30">{t('birth.time.placeholder') || "Select time"}</span>
+                        )}
+                      </button>
                     </div>
                   </div>
 
@@ -434,21 +471,54 @@ export default function Survey() {
                       <MapPin className="w-4 h-4" /> {t('birth.location')} *
                     </label>
                     <div className="grid grid-cols-2 gap-4">
-                      {/* Country Dropdown */}
+                      {/* Country Dropdown (Combobox) */}
                       <div className="relative">
-                        <select
-                          value={birthData.birthCountryCode}
-                          onChange={(e) => handleBirthPatternChange("birthCountryCode", e.target.value)}
-                          className="w-full bg-transparent border-0 border-b border-white/20 rounded-none px-0 py-4 text-lg text-white focus:outline-none focus:border-white transition-colors appearance-none cursor-pointer"
-                        >
-                          <option value="" className="bg-[#182339] text-white/50">Select Country</option>
-                          {allCountries.map((country) => (
-                            <option key={country.isoCode} value={country.isoCode} className="bg-[#182339] text-white my-1">
-                              {country.flag} {country.name}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60 pointer-events-none" />
+                        <Popover open={open} onOpenChange={setOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              role="combobox"
+                              aria-expanded={open} // Changed to aria-expanded
+                              className="w-full justify-between bg-transparent border-0 border-b border-white/20 rounded-none px-0 py-4 h-auto text-lg text-white hover:bg-transparent hover:text-white hover:border-white/40 font-normal focus:bg-transparent active:bg-transparent data-[state=open]:border-white"
+                            >
+                              {birthData.birthCountryCode
+                                ? allCountries.find((country) => country.isoCode === birthData.birthCountryCode)?.name
+                                : <span className="text-white/50">Select Country</span>}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[300px] p-0 max-h-[300px]" align="start">
+                            <Command>
+                              <CommandInput placeholder="Search country..." className="h-9" />
+                              <CommandList>
+                                <CommandEmpty>No country found.</CommandEmpty>
+                                <CommandGroup>
+                                  {allCountries.map((country) => (
+                                    <CommandItem
+                                      key={country.isoCode}
+                                      value={country.name}
+                                      onSelect={(currentValue) => {
+                                        const selected = allCountries.find(
+                                          (c) => c.name.toLowerCase() === currentValue.toLowerCase()
+                                        );
+                                        handleBirthPatternChange("birthCountryCode", selected?.isoCode || "");
+                                        setOpen(false);
+                                      }}
+                                    >
+                                      {country.name}
+                                      <Check
+                                        className={cn(
+                                          "ml-auto h-4 w-4",
+                                          birthData.birthCountryCode === country.isoCode ? "opacity-100" : "opacity-0"
+                                        )}
+                                      />
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                       </div>
 
                       {/* Timezone Dropdown */}

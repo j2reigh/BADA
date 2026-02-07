@@ -458,6 +458,7 @@ export class MemStorage implements IStorage {
         id: nanoid(),
         code: normalizedCode,
         isUsed: false,
+        isReusable: false,
         usedByReportId: null,
         usedAt: null,
         createdAt: new Date(),

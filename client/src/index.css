@@ -120,7 +120,7 @@
     @apply transition-all duration-100 active:translate-y-0 active:shadow-sm;
   }
 
-  /* Sky to Deep Ocean Gradient System */
+  /* Brand Gradient System */
   .depth-gradient-bg {
     position: fixed;
     top: 0;
@@ -130,11 +130,11 @@
     z-index: -1;
     background: linear-gradient(
       to bottom,
-      #87CEEB 0%,    /* Sky Blue */
-      #4682B4 25%,   /* Steel Blue */
-      #006994 50%,   /* Ocean Surface */
-      #003D5C 75%,   /* Mid Ocean */
-      #001F3F 100%   /* Deep Ocean */
+      #ABBBD5 0%,
+      #879DC6 25%,
+      #233F64 50%,
+      #182339 75%,
+      #402525 100%
     );
     transition: background 0.3s ease;
   }

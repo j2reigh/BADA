@@ -27,6 +27,12 @@ export default function HeroSection({ data }: { data: ResultsData }) {
                 <h2 className="text-lg md:text-xl text-[#402525]/70 font-light tracking-wide italic max-w-2xl mx-auto">
                     "{identity.sub_headline}"
                 </h2>
+
+                {identity.one_line_diagnosis && (
+                    <p className="mt-6 text-sm md:text-base text-[#233F64]/70 font-light max-w-xl mx-auto tracking-wide">
+                        {identity.one_line_diagnosis}
+                    </p>
+                )}
             </motion.div>
 
 

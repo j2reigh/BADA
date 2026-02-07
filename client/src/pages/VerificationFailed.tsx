@@ -1,5 +1,4 @@
 import { useLocation } from "wouter";
-import { Button } from "@/components/Button";
 import { motion } from "framer-motion";
 import { AlertCircle, Home } from "lucide-react";
 
@@ -34,41 +33,61 @@ export default function VerificationFailed() {
   const message = reasonMessages[reason] || reasonMessages.unknown;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-accent to-primary" />
-      
+    <main className="relative w-full min-h-screen flex flex-col items-center justify-center p-6">
+      {/* Brand Gradient Background */}
+      <div
+        className="fixed inset-0 z-[-1]"
+        style={{
+          background: `linear-gradient(to bottom, #ABBBD5 0%, #879DC6 25%, #233F64 50%, #182339 75%, #402525 100%)`,
+        }}
+      />
+
+      {/* Noise Texture */}
+      <div
+        className="fixed inset-0 pointer-events-none opacity-[0.03] z-[-1]"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+        }}
+      />
+
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 p-6 flex justify-center items-center z-50">
+        <a href="/" className="text-xl font-semibold tracking-tight mix-blend-difference text-white">
+          BADA
+        </a>
+      </header>
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="w-full max-w-md"
+        className="w-full max-w-md z-10"
       >
-        <div className="bg-card border border-border p-6 text-center space-y-5">
-          <div className="w-14 h-14 bg-destructive/10 flex items-center justify-center mx-auto">
-            <AlertCircle className="w-7 h-7 text-destructive" />
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 p-8 text-center space-y-6 rounded-2xl">
+          <div className="w-16 h-16 bg-white/10 flex items-center justify-center mx-auto rounded-full">
+            <AlertCircle className="w-8 h-8 text-white/80" />
           </div>
-          
-          <div className="space-y-2">
-            <h1 className="text-xl font-semibold text-foreground">
+
+          <div className="space-y-3">
+            <h1 className="text-xl font-semibold text-white">
               {message.title}
             </h1>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-white/60 text-sm leading-relaxed">
               {message.description}
             </p>
           </div>
-          
+
           <div className="pt-2">
-            <Button
+            <button
               onClick={() => setLocation("/")}
-              className="w-full"
-              data-testid="button-go-home"
+              className="w-full px-6 py-3 bg-white text-[#182339] rounded-full font-semibold hover:scale-105 transition-transform flex items-center justify-center gap-2"
             >
-              <Home className="w-4 h-4 mr-2" />
+              <Home className="w-4 h-4" />
               Go to Homepage
-            </Button>
+            </button>
           </div>
         </div>
       </motion.div>
-    </div>
+    </main>
   );
 }

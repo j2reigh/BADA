@@ -55,7 +55,15 @@
       "WebFetch(domain:satisfyrunning.com)",
       "Bash(ls:*)",
       "Bash(npx tsc:*)",
-      "Bash(npx vite build:*)"
+      "Bash(npx vite build:*)",
+      "Bash(npx drizzle-kit push:*)",
+      "Bash(source /Users/jeanne/BADA-Report/.env)",
+      "Bash(set -a)",
+      "Bash(set +a)",
+      "WebFetch(domain:letters.thedankoe.com)",
+      "Bash(# Check if dev server is actually running lsof -i :5000)",
+      "WebFetch(domain:www.humandesignapi.nl)",
+      "WebFetch(domain:humandesignapi.com)"
     ]
   }
 }

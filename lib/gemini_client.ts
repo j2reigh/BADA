@@ -2,17 +2,25 @@
  * Gemini AI Report Generator
  * Generates personalized Life Blueprint Reports using Google Generative AI
  *
- * UPGRADE v2 (2026-01-16): Enhanced prompts for A4 5-page PDF quality.
- * - Longer, more detailed content
- * - Nature landscape metaphors (not people)
- * - Neuroscience explanations in simple language
- * - Science-backed action protocols
+ * UPGRADE v3 (2026-02-07): 3-Layer Integration (Saju + HD + Survey)
+ * - Plain language output (no HD/saju jargon in output)
+ * - Behavior-first approach (concrete situations, not abstract)
+ * - Age-aware personalization
+ * - Design vs Perception gap analysis
+ * - Minimal em-dashes (avoid AI-generated feel)
+ * - Limited neuroscience terms with explanations
  */
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { DAY_MASTER_MAP, TEN_GODS_MAP, ELEMENT_MAP } from "./saju_constants";
 import { FIVE_ELEMENTS_INFO } from "./saju_knowledge";
 import { OS_TYPE_PROTOCOLS } from "./standardization_dictionaries";
+import {
+  translateToBehaviors,
+  SAMPLE_HD_DATA,
+  type HumanDesignData,
+  type BehaviorPatterns,
+} from "./behavior_translator";
 import type { SajuResult } from "./saju_calculator";
 import type { ContentArchetype } from "../shared/schema";
 
@@ -47,6 +55,7 @@ export interface LifeBlueprintReport {
   page1_identity: {
     title: string;
     sub_headline: string;
+    one_line_diagnosis?: string;
     nature_snapshot: { title: string; definition: string; explanation: string };
     brain_snapshot: { title: string; definition: string; explanation: string };
     efficiency_snapshot: { score: string; label: string; metaphor: string };
@@ -79,7 +88,7 @@ export interface LifeBlueprintReport {
     section_name: string;
     transformation_goal: string;
     protocol_name: string;
-    daily_rituals: Array<{ name: string; description: string; when: string }>;
+    daily_rituals: Array<{ name: string; description: string; when: string; anti_pattern?: string }>;
     environment_boost: { element_needed: string; tips: string[] };
     closing_message: string;
   };
@@ -114,7 +123,7 @@ const LANGUAGE_NAMES: Record<string, string> = {
 
 function getLanguageInstruction(language: string): string {
   if (language === 'en') {
-    return `LANGUAGE: Simple, evocative English (B1-B2 level). No jargon.`;
+    return `LANGUAGE: Direct, diagnostic English (B1-B2 level). No jargon. No hedging ("might", "probably", "perhaps"). Use declarative statements: "You do X. Here's why."`;
   }
 
   const langName = LANGUAGE_NAMES[language] || language;
@@ -126,11 +135,18 @@ ANTI-TRANSLATION RULES:
 - Do NOT mentally translate from English — think directly in ${langName}
 - Use sentence structures, idioms, and rhythms natural to ${langName}
 - Avoid calque (loan-translation) from English
-- Metaphors must feel native to ${langName} speakers
-- Tone: warm, poetic, conversational (B1-B2 native reading level)
+- Tone: direct, diagnostic, conversational (B1-B2 native reading level). NOT warm or poetic.
+- No hedging: never use "might", "probably", "perhaps", "could". Use declarative statements.
 - For neuroscience terms ONLY: keep English term + native explanation
   e.g., "Amygdala(뇌의 경보 시스템)" / "Amygdala(sistem alarm otak)"
-- Any English reference text provided in this prompt is for MEANING only — rewrite it naturally in ${langName}, do not translate word-by-word`;
+- Any English reference text provided in this prompt is for MEANING only — rewrite it naturally in ${langName}, do not translate word-by-word
+
+OUTPUT FORMATTING RULES:
+- Do NOT include square brackets like [pattern] or [term] in the final output. Write actual content.
+- Do NOT keep English words in parentheses (except neuroscience terms above).
+- Do NOT literally translate English type names (e.g., "Passive Floater" → do NOT write "수동적 부유자"). Instead, describe the behavioral pattern in natural ${langName}.
+- All protocol names, ritual names, and section titles must be written natively in ${langName}.
+- Every field value must be a COMPLETE, natural sentence — never a template or fill-in-the-blank.`;
 }
 
 /**
@@ -141,7 +157,8 @@ export async function generateLifeBlueprintReport(
   surveyScores: SurveyScores,
   userName: string = "Friend",
   archetype?: ContentArchetype,
-  language: string = "en"
+  language: string = "en",
+  birthDate?: string
 ): Promise<LifeBlueprintReport> {
   if (!client) {
     return generateMockReport(sajuResult, surveyScores);
@@ -151,19 +168,30 @@ export async function generateLifeBlueprintReport(
     console.log(`[Gemini] Starting Report Generation for ${userName} in ${language}...`);
     const langInstruction = getLanguageInstruction(language);
 
-    const page1 = await generatePage1(sajuResult, surveyScores, userName, archetype, langInstruction, language);
+    // V3: Translate all data to behavioral patterns (plain language)
+    // TODO: Replace SAMPLE_HD_DATA with real HD API data after purchase
+    const hdData: HumanDesignData = SAMPLE_HD_DATA;
+    const behaviors = translateToBehaviors(
+      sajuResult,
+      hdData,
+      surveyScores,
+      birthDate || "1996-09-18"
+    );
+    console.log("[Gemini] Behavior Patterns Translated");
+
+    const page1 = await generatePage1_v3(sajuResult, surveyScores, behaviors, userName, archetype, langInstruction, language);
     console.log("[Gemini] Page 1 Generated");
 
-    const page2 = await generatePage2(sajuResult, page1.title, userName, archetype, langInstruction, language);
+    const page2 = await generatePage2_v3(sajuResult, behaviors, page1.title, userName, archetype, langInstruction, language);
     console.log("[Gemini] Page 2 Generated");
 
-    const page3 = await generatePage3(surveyScores, userName, langInstruction);
+    const page3 = await generatePage3_v3(surveyScores, behaviors, userName, langInstruction);
     console.log("[Gemini] Page 3 Generated");
 
-    const page4 = await generatePage4(page2, page3, userName, langInstruction);
+    const page4 = await generatePage4_v3(sajuResult, behaviors, page2, page3, userName, langInstruction);
     console.log("[Gemini] Page 4 Generated");
 
-    const page5 = await generatePage5(sajuResult, page3, page4, surveyScores, userName, langInstruction);
+    const page5 = await generatePage5_v3(sajuResult, behaviors, page3, page4, surveyScores, userName, langInstruction);
     console.log("[Gemini] Page 5 Generated");
 
     console.log("[Gemini] Report Generation Complete!");
@@ -193,11 +221,11 @@ async function generatePage1(sajuResult: SajuResult, surveyScores: SurveyScores,
   const dominantElementName = dominantElement[0];
 
   const opAnalysis = (sajuResult as any).operatingAnalysis;
-  const levelInfo = opAnalysis
-    ? `Level ${opAnalysis.level}: ${opAnalysis.levelName}`
-    : `${sajuResult.stats.operatingRate.toFixed(1)}%`;
+  const alignmentType = opAnalysis?._internal?.alignmentType || 'unknown';
+  const levelNum = opAnalysis?.level || 1;
+  const levelName = opAnalysis?.levelName || 'Survival';
 
-  const systemPrompt = `You are the "Life Architect" creating a powerful Identity Page.
+  const systemPrompt = `You are a "Life Diagnostician" — direct, precise, no flattery.
 
 ${archetype ? `STANDARDIZED IDENTITY (MUST USE):
 - IDENTITY TITLE: "${archetype.identityTitle}"
@@ -211,37 +239,40 @@ USER DATA:
 - Key Strength: ${dayMasterInfo.strength}
 - Key Weakness: ${dayMasterInfo.weakness}
 - Dominant Element: ${dominantElementName}
-- Operating State: ${levelInfo}
+- Operating Level: Level ${levelNum} (${levelName})
+- Alignment State: ${alignmentType}
 ${opAnalysis ? `- State Description: ${opAnalysis.levelDescription}` : ''}
 ${opAnalysis ? `- Guidance: ${opAnalysis.guidance.join(', ')}` : ''}
 
-CRITICAL RULES:
-1. ${langInstruction || 'LANGUAGE: Simple, evocative English (B1-B2 level). No jargon.'}
-2. NATURE LANDSCAPE ONLY: Describe the user as a NATURAL PHENOMENON or LANDSCAPE.
-   - GOOD: "A Silent Volcano", "The Midnight Ocean", "A Forest Fire in Winter", "The Dormant Glacier"
-   - BAD: "The Warrior", "The King", "The Leader" (these are people, not landscapes!)
-3. METAPHOR DEPTH: Each metaphor should paint a vivid mental picture.
-4. TONE: Mysterious, premium, insightful - like discovering a secret about yourself.
+TONE RULES:
+1. ${langInstruction || 'LANGUAGE: Direct, diagnostic English (B1-B2 level). No jargon. No hedging.'}
+2. NATURE LANDSCAPE for title ONLY: "A Silent Volcano", "The Midnight Ocean", etc. NOT people.
+3. sub_headline is NOT a metaphor — it's a behavioral pattern declaration. "You build systems to feel safe — then suffocate inside them."
+4. one_line_diagnosis: One sentence connecting a specific behavior to its root mechanism.
+5. NO hedging words: "might", "probably", "perhaps", "could" are BANNED.
+6. DIRECT TONE: Not mysterious or poetic. Diagnostic, like a system readout.
+7. Do NOT mention Five Elements, element counts, or element theory. This page is about identity and operating level.
 
 OUTPUT (JSON Only):
 {
   "title": "The [Adjective] [Nature Noun]",
-  "sub_headline": "A teasing phrase about untapped potential (8-12 words)",
+  "sub_headline": "A behavioral pattern statement — what they DO, not a metaphor (10-15 words). E.g. 'You build systems to feel safe — then suffocate inside them.'",
+  "one_line_diagnosis": "One sentence: 'You [specific repeated behavior] because [root mechanism].' Connect a visible pattern to the invisible driver. (15-25 words)",
   "nature_snapshot": {
     "title": "Your Birth Pattern",
-    "definition": "A vivid nature landscape metaphor (10-15 words)",
-    "explanation": "Why this landscape matches them, connecting to their core nature (25-40 words)"
+    "definition": "One nature metaphor sentence (10-15 words)",
+    "explanation": "Connect this to a specific behavioral tendency — not abstract potential. 'This means you [concrete action].' (25-40 words)"
   },
   "brain_snapshot": {
     "title": "Your Current Mind State",
-    "definition": "A metaphor for their current mental operating state (10-15 words)",
-    "explanation": "What this means for their daily energy and focus (25-40 words)"
+    "definition": "A direct statement about their current operating mode (10-15 words)",
+    "explanation": "What this costs them in daily life — energy, decisions, relationships. Be specific. (25-40 words)"
   },
   "efficiency_snapshot": {
-    "level": ${opAnalysis ? opAnalysis.level : 1},
-    "level_name": "${opAnalysis ? opAnalysis.levelName : "Survival"}",
-    "label": "Current Operating State",
-    "metaphor": "A vivid metaphor for this operating level (${levelInfo}) - e.g. 'A submarine in dry dock' or 'A racing car on an open track' (20-30 words)"
+    "level": ${levelNum},
+    "level_name": "${levelName}",
+    "label": "Level ${levelNum} — ${levelName}, ${alignmentType}",
+    "metaphor": "A direct statement about what Level ${levelNum} (${levelName}) + ${alignmentType} means in practice. Not a metaphor — a diagnosis. E.g. 'Your system runs but wastes 40% of energy on internal conflict.' (20-30 words)"
   },
   "visual_concept": {
     "background_id": "${OS_TYPE_BACKGROUNDS[surveyScores.typeName] || "bg_type_01"}",
@@ -282,40 +313,45 @@ REFERENCE CONTENT (English original — rewrite naturally in target language, pr
 - Shadow Description: "${archetype.shadowDescription}"
 ` : '';
 
-  const systemPrompt = `You are the "Life Architect" creating Page 2: The Deep Nature Analysis.
+  const systemPrompt = `You are a "Life Diagnostician" creating Page 2: The Behavioral Blueprint.
 
 USER DATA:
 - Identity Title: ${identityTitle}
 - Day Master: ${dayMasterInfo.name} (${dayMasterInfo.archetype})
-- Element: ${dayMasterElement}
+- Core Element: ${dayMasterElement}
 - Core Strength: ${dayMasterInfo.strength}
 - Core Weakness: ${dayMasterInfo.weakness}
 - Element Nature: ${elementInfo?.keyword || "Balanced energy"}
-- Element Tendency: ${elementInfo?.excess || "Adaptability"}
+- Element Excess Tendency: ${elementInfo?.excess || "Adaptability"}
 ${archetypeRef}
-CRITICAL RULES:
-1. ${langInstruction || 'LANGUAGE: Simple, warm English (B1-B2 level).'}
-2. EXTEND THE METAPHOR: Build on the nature landscape from Page 1.
-3. DEPTH: This is THE deep dive. Each section should be rich and detailed.
-4. BALANCE: Show both the beauty AND the danger of their nature.
 
-CONTENT LENGTH REQUIREMENTS:
-- nature_description: 4-5 sentences (80-120 words). Paint a vivid picture of their inner landscape.
-- shadow_description: 3-4 sentences (60-80 words). Gently explain the dark side.
-- core_insights: Each insight should be 15-25 words.
+TONE RULES:
+1. ${langInstruction || 'LANGUAGE: Direct, diagnostic English (B1-B2 level).'}
+2. BEHAVIORAL EVIDENCE over metaphor: 1 metaphor sentence max, then 3 concrete behavioral examples.
+3. SHADOW = NAMED ANTI-PATTERN: Give the destructive pattern a name. "The Productive Burnout Loop", "The Over-Prepare Trap", "The Control Spiral".
+4. Focus on PERSONALITY and BEHAVIOR from Day Master archetype — NOT element counts or numbers.
+5. NO hedging: "might", "probably", "perhaps" BANNED. Use "You do X. You are Y."
+6. Shadow section opens with: "Here's the part most reports won't tell you." Then hits hard with the anti-pattern.
+7. Shadow section ends with structural reframing: connect the shadow back to the core strength being misdirected.
+8. Do NOT mention element counts, element distribution numbers, or Five Elements theory. This page is about behavioral patterns, not elemental analysis.
+
+CONTENT REQUIREMENTS:
+- nature_description: 1 metaphor sentence + 3 behavioral evidence sentences. Each = "You [specific action]. [Why — from personality archetype]."
+- shadow_description: Open with "Here's the part most reports won't tell you." → Name the anti-pattern → Explain the loop mechanism → End with reframe.
+- core_insights: Each = a specific behavioral marker. NOT abstract. "You check your phone within 3 minutes of waking — not for news, but to confirm you didn't miss something." Keep it about daily behaviors, not element theory.
 
 OUTPUT (JSON Only):
 {
   "section_name": "Your Natural Blueprint",
-  "nature_title": "A poetic title for their inner landscape (8-12 words)",
-  "core_drive": "ONE SHARP SENTENCE describing their fundamental operating condition. Start with 'You flourish when... but rot when...'. (20-30 words)",
-  "nature_description": "4-5 sentences describing their core nature using the landscape metaphor. Start with 'Imagine...' or 'Picture...' to draw them in. Describe the colors, textures, and energy of this landscape. Connect it to how they move through the world.",
-  "shadow_title": "A compassionate title for their shadow side (6-10 words)",
-  "shadow_description": "3-4 sentences explaining how this beautiful nature can sometimes work against them. Use the same landscape metaphor - what happens when the volcano erupts? When the ocean storms? Be gentle but honest.",
+  "nature_title": "A diagnostic title — what their system actually does (8-12 words). Not poetic. E.g. 'The Engine That Never Idles' or 'Built for Intensity, Starved for Rest'",
+  "core_drive": "ONE SHARP SENTENCE: 'You flourish when... but rot when...'. (20-30 words)",
+  "nature_description": "First sentence: one nature metaphor as a hook. Next 3 sentences: concrete behavioral evidence from their personality archetype. E.g. 'You're steady until you're not. In practice: you [behavior 1]. You [behavior 2]. You [behavior 3].' Focus on what they DO, not element theory. (80-100 words)",
+  "shadow_title": "The anti-pattern NAME — diagnostic, not compassionate. E.g. 'The Productive Burnout Loop' or 'The Control Spiral'",
+  "shadow_description": "Start: 'Here's the part most reports won't tell you.' Then: name the pattern, explain the loop mechanism, connect to their core weakness. End with reframe connecting shadow back to strength. (80-100 words)",
   "core_insights": [
-    "First insight about their fundamental drive - what engine runs them (15-25 words)",
-    "Second insight about their natural strength - what they do effortlessly (15-25 words)",
-    "Third insight about their hidden need - what they crave but rarely admit (15-25 words)"
+    "Behavioral marker 1: A specific daily behavior + why it happens (cite element data). (20-30 words)",
+    "Behavioral marker 2: What they do effortlessly + the hidden cost of it. (20-30 words)",
+    "Behavioral marker 3: What they crave but won't admit + the element-level reason. (20-30 words)"
   ]
 }`;
 
@@ -349,49 +385,49 @@ async function generatePage3(surveyScores: SurveyScores, userName: string, langI
   // We need to pass Operating Analysis to generatePage3 if we want to use it.
   // However, changing function signature requires changing the caller in generateLifeBlueprintReport.
 
-  const systemPrompt = `You are the "Life Architect" creating Page 3: The Operating System Analysis.
+  const systemPrompt = `You are a "Life Diagnostician" creating Page 3: The Operating System Diagnosis.
 
 USER DATA:
 - Threat Response: ${surveyScores.threatClarity === 1 ? 'HIGH SENSITIVITY' : 'LOW SENSITIVITY'} (Score: ${surveyScores.threatScore}/3)
 - Environment Processing: ${surveyScores.environmentStable === 1 ? 'STABLE' : 'VOLATILE'} (Score: ${surveyScores.environmentScore}/2)
 - Agency/Drive: ${surveyScores.agencyActive === 1 ? 'HIGH DRIVE' : 'PASSIVE'} (Score: ${surveyScores.agencyScore}/3)
-- OS Type: ${surveyScores.typeName}
+- OS Pattern Type: ${surveyScores.typeName} (INTERNAL REFERENCE ONLY — do NOT include this English name in the output. Describe the behavioral pattern instead.)
 
-CRITICAL RULES:
-1. ${langInstruction || 'LANGUAGE: Simple English (B1-B2 level). Explain like talking to a smart friend, not a scientist.'}
-2. NEUROSCIENCE MADE SIMPLE: Use brain terms but ALWAYS explain them simply.
+TONE RULES:
+1. ${langInstruction || 'LANGUAGE: Direct, diagnostic English (B1-B2 level). No hedging.'}
+2. NEUROSCIENCE TERMS: Use them but ALWAYS explain simply.
    - Amygdala = "your brain's alarm system"
-   - Prefrontal Cortex = "your brain's CEO" or "decision-making center"
-   - Dopamine = "your motivation fuel" or "reward chemical"
-   - Sympathetic Nervous System = "fight-or-flight mode"
-   - Parasympathetic = "rest and digest mode"
-3. RELATABLE EXAMPLES: Connect brain science to everyday situations.
+   - Prefrontal Cortex = "your brain's CEO / decision-making center"
+   - Dopamine = "your motivation fuel / reward chemical"
+3. SCORE DECLARATION first, then 3 SPECIFIC BEHAVIORS, then MECHANISM + ENERGY COST.
+4. NO "might", "probably", "perhaps". State facts: "You do X."
+5. os_summary must show CASCADE EFFECTS: how System A worsens System B, and B drains C.
 
-CONTENT LENGTH REQUIREMENTS:
-- Each axis description: 3-4 sentences (50-70 words)
-- os_summary: 4-5 sentences (70-100 words)
+CONTENT REQUIREMENTS:
+- Each axis: Score declaration → 3 concrete daily behaviors → brain mechanism → energy cost percentage.
+- os_summary: CASCADE format — "Your [System A] exhausts [System B], which leaves [System C] running on fumes."
 
 OUTPUT (JSON Only):
 {
   "section_name": "Your Operating System",
-  "os_title": "A title describing how their brain currently operates (8-12 words)",
-  "os_anchor": "ONE SHARP SENTENCE diagnosis of their current system state. E.g., 'System Overheated: High Drive entangled with Low Maintenance.' (15-20 words)",
+  "os_title": "A diagnostic title for their brain's current state (8-12 words). E.g. 'An Alarm System Running 24/7 With No Off Switch'",
+  "os_anchor": "ONE SHARP SENTENCE system diagnosis. E.g., 'System Overheated: High Drive entangled with Low Maintenance.' (15-20 words)",
   "threat_axis": {
     "title": "Your Alarm System",
-    "level": "${surveyScores.threatClarity === 1 ? 'Highly Tuned' : 'Relaxed'}",
-    "description": "3-4 sentences explaining their threat response. Start by naming the brain part (Amygdala = your brain's alarm system). Then explain what this means for them in daily life. Give a relatable example. ${surveyScores.threatClarity === 1 ? 'Explain how a sensitive alarm catches real dangers but also false alarms.' : 'Explain how a relaxed alarm means less anxiety but might miss warning signs.'}"
+    "level": "${surveyScores.threatClarity === 1 ? 'Highly Tuned' : 'Relaxed'} (${surveyScores.threatScore}/3)",
+    "description": "Start with score: 'Threat sensitivity: ${surveyScores.threatScore}/3.' Then 3 concrete signs: 'You [behavior 1]. You [behavior 2]. You [behavior 3].' Then mechanism: 'This isn't anxiety — it's [brain explanation].' End with cost: 'This burns X% of your energy on [what].' (70-90 words)"
   },
   "environment_axis": {
     "title": "Your Processing Power",
-    "level": "${surveyScores.environmentStable === 1 ? 'Steady' : 'Fluctuating'}",
-    "description": "3-4 sentences about how they process their environment. Reference sensory processing and cognitive load in simple terms. Give an example of how this shows up - at work, in busy places, etc."
+    "level": "${surveyScores.environmentStable === 1 ? 'Steady' : 'Fluctuating'} (${surveyScores.environmentScore}/2)",
+    "description": "Start with score. Then 3 concrete signs of how they process environments. Then mechanism (sensory processing / cognitive load). End with energy cost. (70-90 words)"
   },
   "agency_axis": {
     "title": "Your Drive Engine",
-    "level": "${surveyScores.agencyActive === 1 ? 'High Output' : 'Conservation Mode'}",
-    "description": "3-4 sentences about their action/motivation system. Reference dopamine (motivation fuel) and prefrontal cortex (the CEO making decisions). ${surveyScores.agencyActive === 1 ? 'Explain how high drive means quick action but possible burnout.' : 'Explain how conservation mode means careful choices but possible stagnation.'}"
+    "level": "${surveyScores.agencyActive === 1 ? 'High Output' : 'Conservation Mode'} (${surveyScores.agencyScore}/3)",
+    "description": "Start with score. Then 3 concrete signs of their drive pattern. Reference dopamine and prefrontal cortex. ${surveyScores.agencyActive === 1 ? 'Show how high drive burns resources and leads to specific crash patterns.' : 'Show how conservation mode creates specific stagnation patterns and decision avoidance.'} End with energy cost. (70-90 words)"
   },
-  "os_summary": "4-5 sentences synthesizing all three systems. How do these three parts work together (or against each other)? What's the overall pattern? What does this mean for their daily experience? End with an insight about their unique operating style."
+  "os_summary": "4-5 sentences showing CASCADE EFFECTS between the three systems. Format: 'Your alarm system does X, which forces your processing into Y, which leaves your drive running on Z. The result: [specific daily consequence].' This is a system-level diagnosis showing how the parts interact. End with what this pattern costs them daily. Do NOT include English type names in the output — describe the pattern in plain language."
 }`;
 
   const result = await model.generateContent({
@@ -405,48 +441,51 @@ OUTPUT (JSON Only):
 // ==========================================
 // PAGE 4: Friction Map (Life Application)
 // ==========================================
-async function generatePage4(page2: any, page3: any, userName: string, langInstruction?: string) {
+async function generatePage4(sajuResult: SajuResult, page2: any, page3: any, userName: string, langInstruction?: string) {
   const model = client!.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-  const systemPrompt = `You are the "Life Architect" creating Page 4: The Friction Map.
+  const systemPrompt = `You are a "Life Diagnostician" creating Page 4: The Friction Map.
 
 CONTEXT FROM PREVIOUS PAGES:
 - Natural Blueprint: ${page2.nature_description}
-- Shadow Side: ${page2.shadow_description}
-- Operating System: ${page3.os_summary}
+- Shadow / Anti-Pattern: ${page2.shadow_description}
+- Operating System Diagnosis: ${page3.os_summary}
 
-CRITICAL RULES:
-1. ${langInstruction || 'LANGUAGE: Simple, relatable English (B1-B2 level).'}
-2. SPECIFICITY: Paint SPECIFIC scenarios, not vague statements.
-   - BAD: "You might struggle at work"
-   - GOOD: "In meetings, you probably have brilliant ideas but hold back, worrying 'what if I's wrong?'"
-3. CONNECT TO NEUROSCIENCE: Briefly hint at WHY this friction happens (brain-level).
-4. ACTIONABLE TIPS: Each tip should be something they can do TODAY.
-
-CONTENT LENGTH REQUIREMENTS:
-- friction_title: 8-15 words, emotionally resonant
-- Each friction description: 3-4 sentences (50-70 words)
-- Each quick_tip: 2-3 sentences (25-40 words), specific and actionable
+TONE RULES:
+1. ${langInstruction || 'LANGUAGE: Direct, diagnostic English (B1-B2 level). No hedging.'}
+2. FRICTION TITLES ARE DIAGNOSES — not category labels.
+   - NOT "At Work" → "The 9-to-5 Will Crush You" or "You Need Ownership, Not a Boss"
+   - NOT "In Relationships" → "High Standards, Empty Inbox" or "You Push Away What You Want Most"
+   - NOT "With Money" → "You Earn Big but Keep Nothing" or "Impulse Disguised as Instinct"
+3. PATTERN FORMAT: "Your pattern: [Step 1] → [Step 2] → [Step 3]." Declare the behavioral loop.
+4. BASE EVERYTHING on personality blueprint and OS diagnosis from previous pages. Do NOT mention Five Elements, element counts, or element theory.
+5. COST STATEMENT per friction: End each description with what this pattern costs them.
+6. quick_tip must pass MONDAY TEST: "Can they do this on Monday morning?"
+   - BAD: "Try journaling about it." / "Consider being more open."
+   - GOOD: "Rule: Ship at 70%. Do this Monday: Send one email without re-reading it."
+   - GOOD: "Automate 20% to a locked savings account."
+7. NO "might", "probably", "perhaps", "Try...". Use "You do X. Rule: Do Y."
+8. Do NOT include square brackets in the output. Write actual content, not templates.
 
 OUTPUT (JSON Only):
 {
   "section_name": "Where You Get Stuck",
-  "friction_title": "A catchy title capturing their main life tension (8-15 words)",
-  "friction_anchor": "ONE SHARP SENTENCE defining their core Loop. E.g., 'You stall when perfectionism masks your fear of starting.' (15-25 words)",
+  "friction_title": "A diagnostic title for their core friction — the pattern itself, not a category (8-15 words)",
+  "friction_anchor": "ONE SHARP SENTENCE defining their core destructive loop. (15-25 words)",
   "career_friction": {
-    "title": "At Work",
-    "description": "3-4 sentences describing a SPECIFIC workplace scenario where their nature creates friction. Paint a scene they'll recognize. End with a hint about the brain mechanism causing this.",
-    "quick_tip": "2-3 sentences with a specific, actionable tip. Include WHY it works (simple science)."
+    "title": "DIAGNOSTIC VERDICT — not 'At Work'. What their career friction actually is. (5-10 words)",
+    "description": "Behavioral pattern loop → root cause from personality/OS → cost. (70-90 words)",
+    "quick_tip": "Rule with a number + Monday test action. (30-50 words)"
   },
   "relationship_friction": {
-    "title": "In Relationships",
-    "description": "3-4 sentences describing a SPECIFIC relationship scenario - could be romantic, friendship, or family. Make it relatable. Connect to their operating system.",
-    "quick_tip": "2-3 sentences with a specific tip for better connection. Include the mechanism."
+    "title": "DIAGNOSTIC VERDICT — not 'In Relationships'. (5-10 words)",
+    "description": "Pattern declaration → root cause → cost statement. (70-90 words)",
+    "quick_tip": "Concrete action with a number + Monday test. (30-50 words)"
   },
   "money_friction": {
-    "title": "With Money",
-    "description": "3-4 sentences describing their specific pattern with finances - spending, saving, earning. How does their nature show up here?",
-    "quick_tip": "2-3 sentences with a practical financial habit. Explain why it suits their brain."
+    "title": "DIAGNOSTIC VERDICT — not 'With Money'. (5-10 words)",
+    "description": "Behavioral pattern → root cause → cost. (70-90 words)",
+    "quick_tip": "DO + DON'T with numbers. (30-50 words)"
   }
 }`;
 
@@ -497,65 +536,116 @@ async function generatePage5(sajuResult: SajuResult, page3: any, page4: any, sur
     keyRitual: "Mindful Breathing"
   };
 
-  const systemPrompt = `You are the "Life Architect" creating Page 5: The Action Protocol.
+  const alignmentType = opAnalysis?._internal?.alignmentType || 'unknown';
+  const levelNum = opAnalysis?.level || 1;
+  const levelName = opAnalysis?.levelName || 'Survival';
+  const isMaxLevel = levelNum >= 5;
+  const nextLevelNum = isMaxLevel ? 5 : levelNum + 1;
+  const nextLevelNames: Record<number, string> = { 1: 'Survival', 2: 'Recovery', 3: 'Stable', 4: 'Aligned', 5: 'Flow' };
+  const nextLevelName = nextLevelNames[nextLevelNum] || 'Flow';
+
+  const elementSummary = Object.entries(elementCounts)
+    .map(([el, count]) => `${el}: ${count}`)
+    .join(', ');
+  const excessElements = Object.entries(elementCounts)
+    .filter(([, count]) => (count as number) >= 3)
+    .map(([el, count]) => `${el}(${count})`);
+
+  const elementPrescription: Record<string, { colors: string; activities: string; avoid: string }> = {
+    wood: { colors: "Green, teal, olive — wear as daily anchors", activities: "Morning walks in nature, gardening, hiking, stretching", avoid: "Concrete-only environments, prolonged sitting, isolation from natural light" },
+    fire: { colors: "Red, orange, warm tones — add energy through clothing or accessories", activities: "Social activities, dancing, passion projects, competitive sports", avoid: "Cold isolated environments, monotonous routines, prolonged alone time" },
+    earth: { colors: "Brown, beige, terracotta, mustard — grounding tones", activities: "Cooking, pottery, stable routines, grounding exercises", avoid: "Constant travel, unstable schedules, skipping meals" },
+    metal: { colors: "White, silver, gray, metallic — clean sharp tones", activities: "Decluttering, precision activities, martial arts, organizing", avoid: "Chaotic environments, hoarding, lack of structure" },
+    water: { colors: "Black, navy, dark blue — wear these as daily anchors, not occasionally", activities: "Swimming, surfing, or any water-adjacent activity. Literal water contact", avoid: "Desert climates, overheated rooms, too much caffeine, too many deadlines simultaneously" },
+    balance: { colors: "Varied palette — rotate through all element colors weekly", activities: "Diverse mix of activities, flexible routines", avoid: "Overcommitting to one element's activities" }
+  };
+
+  const prescription = elementPrescription[elementNeeded] || elementPrescription.balance;
+
+  const levelTransitionContext = isMaxLevel
+    ? `- Current State: Level ${levelNum} (${levelName}) — MAXIMUM LEVEL, Alignment: ${alignmentType}
+- Goal: Not "next level" — this is about DEEPENING and SUSTAINING Flow state. The risk at Level 5 is complacency or regression.`
+    : `- Current State: Level ${levelNum} (${levelName}), Alignment: ${alignmentType}
+- Next State: Level ${nextLevelNum} (${nextLevelName})`;
+
+  const transformationGoalInstruction = isMaxLevel
+    ? `transformation_goal = DEEPENING statement, NOT "next level". "You reached Level 5 — Flow. The challenge now isn't climbing higher. It's staying here. ${alignmentType !== 'aligned' ? `Your alignment is ${alignmentType} — that's the gap to close.` : 'Your alignment is solid — maintain it.'} Here's what that requires: [specific behavioral discipline]."`
+    : `transformation_goal = LEVEL TRANSITION statement, NOT a vision. "You are at Level ${levelNum} (${levelName}), ${alignmentType}. Next: ${nextLevelName}. That means: [specific behavioral shift required]."`;
+
+  const systemPrompt = `You are a "Life Diagnostician" creating Page 5: The Action Protocol.
 
 CONTEXT:
-- Operating System Issues: ${page3.os_summary}
-- Main Life Friction: ${page4.friction_title}
-- Operating Level: ${levelInfo}
+- Operating System Diagnosis: ${page3.os_summary}
+- Core Friction Pattern: ${page4.friction_title}
+${levelTransitionContext}
 - Recommended Guidance: ${guidance}
-- Element Needed: ${elementNeeded}
-- Element Tips: ${elementTips[elementNeeded]?.join(", ") || "balanced lifestyle"}
+- Element Distribution: ${elementSummary}
+- Missing/Weak Element: ${elementNeeded}
+${missingElements.length > 0 ? `- Missing Elements (= 0): ${missingElements.join(', ')}` : ''}
+${excessElements.length > 0 ? `- Excess Elements (≥ 3): ${excessElements.join(', ')}` : ''}
 
-STANDARDIZED PROTOCOL STRATEGY (MUST USE):
-- PROTOCOL NAME: "${protocolStrategy.name}"
+STANDARDIZED PROTOCOL STRATEGY:
+- PROTOCOL NAME (English reference): "${protocolStrategy.name}"
 - CORE FOCUS: "${protocolStrategy.focus}"
-- KEY RITUAL: "${protocolStrategy.keyRitual}" (Must be included as one of the rituals)
+- KEY RITUAL (English reference): "${protocolStrategy.keyRitual}" (Must be included as one of the rituals)
+NOTE: If writing in a non-English language, translate the protocol name and ritual names naturally. Do NOT keep them in English.
 
-CRITICAL RULES:
-1. ${langInstruction || 'LANGUAGE: Simple, encouraging English (B1-B2 level).'}
-2. SCIENCE-BACKED ONLY: Every ritual MUST be based on real neuroscience or psychology.
-3. LEVEL-APPROPRIATE: Since they are at ${levelInfo}, make rituals aligned with "${guidance}".
-4. EXPLAIN WHY: For EACH ritual, explain the brain mechanism in simple terms.
-5. PERSONALIZED: Connect each ritual to THIS person's specific friction.
+ELEMENT PRESCRIPTION DATA:
+- Colors to wear: ${prescription.colors}
+- Activities: ${prescription.activities}
+- Avoid: ${prescription.avoid}
 
-CONTENT LENGTH REQUIREMENTS:
-- transformation_goal: 1 powerful sentence (15-25 words)
-- Each ritual description: 3-4 sentences (50-70 words) - HOW to do it + WHY it works for them. One usage MUST be the Key Ritual ("${protocolStrategy.keyRitual}").
-- closing_message: 4-5 sentences (70-100 words), warm and empowering
+TONE RULES:
+1. ${langInstruction || 'LANGUAGE: Direct, diagnostic English (B1-B2 level). No hedging.'}
+2. ${transformationGoalInstruction}
+3. RITUAL NAMES = SPECIFIC ACTION NAMES. Not "Morning Grounding" → "The 5-Minute Threat Audit" or "The 70% Rule".
+4. Each ritual MUST have an anti_pattern: a concrete consequence of skipping.
+5. CONCRETE NUMBERS in every instruction: "3 items", "5 minutes", "70%", "7 days". NEVER "soon", "regularly", "sometimes".
+6. MONDAY TEST: Every instruction must be doable THIS Monday morning.
+7. environment_boost tips: Make them EXTREMELY specific. Not "spend time near water" → "Cold shower for last 30 seconds every morning" or "Wear black/navy as your default, not occasionally."
+8. closing_message: Direct and honest. NOT warm or empowering. 4-5 sentences about their system being miscalibrated (not broken), and that starting one protocol for 7 days is the test.
+9. IMPORTANT — OUTPUT FORMATTING:
+   - Do NOT include square brackets like [pattern] or [consequence] in the output. Write the actual content.
+   - Do NOT include English words in parentheses when writing in another language (except neuroscience terms).
+   - All field values must be COMPLETE sentences, not templates or fill-in-the-blanks.
 
 OUTPUT (JSON Only):
 {
   "section_name": "Your Action Protocol",
-  "transformation_goal": "A powerful one-sentence vision of who they can become (15-25 words)",
-  "protocol_name": "${protocolStrategy.name}",
-  "protocol_anchor": "ONE SHARP ACTION COMMAND summary. E.g. 'Stop planning. Start moving.' (5-10 words)",
+  "transformation_goal": "${isMaxLevel ? 'Deepening statement — what maintaining Level 5 requires. (25-40 words)' : `Level transition: current state → next state → what must change. (25-40 words)`}",
+  "protocol_name": "The protocol name${langInstruction && langInstruction.includes('Write ALL content') ? ' — translated naturally into the target language' : ''}",
+  "protocol_anchor": "ONE SHARP ACTION COMMAND. 5-10 words.",
   "daily_rituals": [
     {
-      "name": "${protocolStrategy.keyRitual}",
-      "description": "3-4 sentences: How to do it step-by-step. Then explain WHY this practice helps THEIR specific pattern (${surveyScores.typeName}). Use simple neuroscience terms.",
-      "when": "Specific timing"
+      "name": "Translated name of key ritual: ${protocolStrategy.keyRitual}",
+      "description": "Step-by-step with numbers + why it works using simple neuroscience. (60-80 words)",
+      "when": "Exact timing — not 'morning' but 'Before first screen. Non-negotiable.'",
+      "anti_pattern": "Concrete consequence of skipping — no brackets, no templates. (15-25 words)"
     },
     {
-      "name": "Second ritual name",
-      "description": "3-4 sentences with how-to and brain science explanation.",
-      "when": "Specific timing"
+      "name": "Specific action name (not generic)",
+      "description": "Step-by-step with numbers + brain science + connection to friction. (60-80 words)",
+      "when": "Exact timing with constraint",
+      "anti_pattern": "Concrete consequence of skipping. (15-25 words)"
     },
     {
-      "name": "Third ritual name",
-      "description": "3-4 sentences with how-to and brain science explanation.",
-      "when": "Specific timing"
+      "name": "Specific action name",
+      "description": "Step-by-step with numbers + brain science. (60-80 words)",
+      "when": "Exact timing with constraint",
+      "anti_pattern": "Concrete consequence of skipping. (15-25 words)"
     }
   ],
   "environment_boost": {
     "element_needed": "${elementNeeded}",
     "tips": [
-      "First practical tip related to ${elementNeeded} element (10-20 words)",
-      "Second practical tip (10-20 words)",
-      "Third practical tip (10-20 words)"
+      "COLORS: ${prescription.colors}. Not a suggestion — make it your default. (15-25 words)",
+      "ACTIVITY: ${prescription.activities}. Needed because ${elementNeeded} is at ${elementCounts[elementNeeded as keyof typeof elementCounts] || 0}. (15-25 words)",
+      "AVOID: ${prescription.avoid}. Amplifies excess ${excessElements.length > 0 ? excessElements[0] : 'energy'}. (15-25 words)",
+      "MICRO-ACTION: One specific daily action to compensate for missing ${elementNeeded}. Include a number. (15-25 words)",
+      "ENVIRONMENT: Literal environmental change based on ${elementNeeded} deficiency. (15-25 words)"
     ]
   },
-  "closing_message": "4-5 sentences. Start by referencing their identity title. Acknowledge their journey. Paint a picture of their potential. End with an encouraging call to action. Make them feel seen and hopeful."
+  "closing_message": "4-5 sentences. Direct, honest, NOT warm. Say their system is miscalibrated not broken. Tell them to start with one protocol for 7 days then decide. Do NOT use bracket notation or template fill-ins — write actual sentences."
 }`;
 
   const result = await model.generateContent({
@@ -574,6 +664,488 @@ function parseJSON(text: string): any {
     console.error("JSON Parse Error:", text);
     throw new Error("Failed to parse Gemini response");
   }
+}
+
+// ==========================================
+// V3 PROMPTS: Plain Language + Behavior-First
+// ==========================================
+
+const WRITING_STYLE_RULES = `
+WRITING STYLE:
+- Direct but warm. Like a wise friend, not a therapist or coach.
+- Conversational. Use contractions (you're, that's, it's, don't).
+- Concrete situations, not abstract concepts.
+- Vary sentence length. Some short. Some longer with natural flow.
+- Occasional fragments are fine. Like this.
+- Start some sentences with "And" or "But"
+- Use "you" more than "your"
+
+ABSOLUTELY FORBIDDEN (will reject output if found):
+- Em-dashes (—). Use periods or commas instead.
+- Semicolons.
+- "might", "probably", "perhaps", "could be" (hedging)
+- Starting multiple sentences with "This is" or "That's"
+- "Here's the thing:" more than once
+- "Let's be clear:" / "Let's be honest:"
+- Ending with "And that changes everything."
+
+NEUROSCIENCE TERMS:
+- Use sparingly. ONE per paragraph max.
+- Always explain in parentheses or next sentence.
+- GOOD: "Your amygdala (the brain's alarm system) runs hot."
+- BAD: "Your amygdala triggers cortisol which activates sympathetic response..."
+
+PUNCTUATION:
+- Periods. Short sentences are powerful.
+- Colons for explanations.
+- Parentheses for brief asides.
+- Question marks for actual questions.
+
+FIX EM-DASH PATTERNS:
+❌ "You're fast — but your clarity needs time."
+✅ "You're fast. But your clarity needs time."
+
+❌ "The truth? Your system — which never turns off — burns energy."
+✅ "The truth? Your system never turns off. That burns energy."
+`;
+
+async function generatePage1_v3(
+  sajuResult: SajuResult,
+  surveyScores: SurveyScores,
+  behaviors: BehaviorPatterns,
+  userName: string,
+  archetype?: ContentArchetype,
+  langInstruction?: string,
+  language: string = "en"
+) {
+  const model = client!.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+  const dayMasterGan = sajuResult.fourPillars.day.gan;
+  const dayMasterInfo = DAY_MASTER_MAP[dayMasterGan];
+  const dominantElement = Object.entries(sajuResult.elementCounts).sort(([, a], [, b]) => (b as number) - (a as number))[0];
+  const dominantElementName = dominantElement[0];
+
+  const opAnalysis = (sajuResult as any).operatingAnalysis;
+  const levelNum = opAnalysis?.level || 1;
+  const levelName = opAnalysis?.levelName || 'Survival';
+
+  const systemPrompt = `You are writing a personal insight report for ${userName}.
+
+${WRITING_STYLE_RULES}
+
+${langInstruction || 'Write in English.'}
+
+USER'S BEHAVIORAL PATTERNS:
+
+DECISION STYLE:
+${behaviors.decisionStyle}
+
+ENERGY PATTERN:
+${behaviors.energyPattern}
+
+NATURAL STRENGTHS:
+${behaviors.strengths.slice(0, 3).join('\n')}
+
+VULNERABLE SPOTS:
+${behaviors.vulnerabilities.slice(0, 2).join('\n')}
+
+WARNING SIGNAL:
+${behaviors.warningSignal}
+
+AGE CONTEXT:
+${behaviors.ageContext}
+
+DESIGN VS PERCEPTION GAPS:
+${behaviors.designVsPerception.join('\n\n') || 'No major gaps detected.'}
+
+${archetype ? `REFERENCE TITLE (adapt naturally): "${archetype.identityTitle}"` : ''}
+
+---
+
+OUTPUT (JSON):
+{
+  "title": "A nature metaphor (5-8 words). Mountains, oceans, storms, seasons. Not people.",
+  "sub_headline": "One sentence describing their core behavioral pattern. What they DO, not what they are. (15-20 words)",
+  "one_line_diagnosis": "Connect a visible behavior to its hidden driver. 'You [do X] because [root reason].' (15-25 words)",
+  "nature_snapshot": {
+    "title": "Your Core Pattern",
+    "definition": "One nature metaphor sentence (10-15 words)",
+    "explanation": "What this means in daily behavior. Be specific. Reference their age. (30-45 words)"
+  },
+  "brain_snapshot": {
+    "title": "Your Current State",
+    "definition": "Direct statement about where they are now (10-15 words)",
+    "explanation": "What is working and what is costing them energy. Specific situations. (30-45 words)"
+  },
+  "efficiency_snapshot": {
+    "score": "${sajuResult.stats.operatingRate.toFixed(0)}%",
+    "label": "Level ${levelNum}: ${levelName}",
+    "metaphor": "What this level means in practice. Not abstract. 'Your system runs but [specific cost].' (20-30 words)"
+  },
+  "visual_concept": {
+    "background_id": "${OS_TYPE_BACKGROUNDS[surveyScores.typeName] || "bg_type_01"}",
+    "overlay_id": "${ELEMENT_OVERLAYS[dominantElementName] || "overlay_water"}"
+  }
+}`;
+
+  const result = await model.generateContent({
+    contents: [{ role: "user", parts: [{ text: "Generate Page 1." }] }],
+    systemInstruction: systemPrompt,
+  });
+
+  const data = parseJSON(result.response.text());
+
+  if (archetype && language === 'en') {
+    data.title = archetype.identityTitle;
+  }
+
+  return data;
+}
+
+async function generatePage2_v3(
+  sajuResult: SajuResult,
+  behaviors: BehaviorPatterns,
+  identityTitle: string,
+  userName: string,
+  archetype?: ContentArchetype,
+  langInstruction?: string,
+  language: string = "en"
+) {
+  const model = client!.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+  const dayMasterGan = sajuResult.fourPillars.day.gan;
+  const dayMasterInfo = DAY_MASTER_MAP[dayMasterGan];
+
+  const systemPrompt = `You are writing Page 2: Natural Blueprint for ${userName}.
+
+${WRITING_STYLE_RULES}
+
+${langInstruction || 'Write in English.'}
+
+THEIR IDENTITY: ${identityTitle}
+
+NATURAL STRENGTHS (use as raw material, rewrite in your voice):
+${behaviors.strengths.join('\n')}
+
+VULNERABLE SPOTS:
+${behaviors.vulnerabilities.join('\n')}
+
+ENERGY PATTERN:
+${behaviors.energyPattern}
+
+AGE CONTEXT:
+${behaviors.ageContext}
+
+CORE PERSONALITY TRAITS (from birth pattern):
+- Archetype: ${dayMasterInfo.archetype}
+- Natural strength: ${dayMasterInfo.strength}
+- Natural weakness: ${dayMasterInfo.weakness}
+
+---
+
+OUTPUT (JSON):
+{
+  "section_name": "Your Natural Blueprint",
+  "nature_title": "A punchy diagnostic title (8-12 words). What their system actually does.",
+  "core_drive": "ONE sentence: 'You thrive when... You suffer when...' (20-30 words)",
+  "nature_description": "Start with one metaphor sentence as hook. Then 3-4 sentences of concrete behavioral evidence. What they actually DO in real situations. Reference specific scenarios like 'In meetings...' or 'When plans change...' (80-100 words)",
+  "shadow_title": "Name their anti-pattern. A memorable phrase. 'The [Noun] Trap' or 'The [Adjective] Loop'",
+  "shadow_description": "Start: 'Here is the uncomfortable part.' Then: Name the pattern. Explain the loop. Connect to their strength (same source, different expression). End with reframe. (80-100 words)",
+  "core_insights": [
+    "Behavioral marker 1: Something specific they do + why. (25-35 words)",
+    "Behavioral marker 2: What they do effortlessly + the hidden cost. (25-35 words)",
+    "Behavioral marker 3: What they crave but avoid admitting + why. (25-35 words)"
+  ]
+}`;
+
+  const result = await model.generateContent({
+    contents: [{ role: "user", parts: [{ text: "Generate Page 2." }] }],
+    systemInstruction: systemPrompt,
+  });
+
+  const data = parseJSON(result.response.text());
+
+  if (archetype && language === 'en') {
+    data.nature_title = archetype.identityTitle;
+  }
+
+  return data;
+}
+
+async function generatePage3_v3(
+  surveyScores: SurveyScores,
+  behaviors: BehaviorPatterns,
+  userName: string,
+  langInstruction?: string
+) {
+  const model = client!.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+  const systemPrompt = `You are writing Page 3: How You Operate for ${userName}.
+
+${WRITING_STYLE_RULES}
+
+${langInstruction || 'Write in English.'}
+
+Use analogies to everyday things (phone battery, car engine, smoke detector).
+Translate brain concepts to plain behavior.
+
+THEIR PATTERNS:
+
+PRESSURE RESPONSE:
+${surveyScores.threatClarity === 1
+    ? "They become hyper-alert under pressure. Notice everything. Tone shifts, micro-expressions, what was not said. This is useful but exhausting."
+    : "They tend to shut down under pressure. The system goes into conservation mode. Useful for not overreacting, but can miss real signals."}
+
+CHANGE PROCESSING:
+${surveyScores.environmentStable === 1
+    ? "They prefer predictability. New situations and chaos drain them faster than most people."
+    : "They are used to instability. Might even create drama when things get too calm."}
+
+ACTION PATTERN:
+${surveyScores.agencyActive === 1
+    ? "High initiative. They believe they can shape their reality. Risk: overcommitting, burnout."
+    : "They tend to wait and see. Adaptable, but risk of passivity and missed opportunities."}
+
+DECISION STYLE:
+${behaviors.decisionStyle}
+
+DECISION WARNING:
+${behaviors.decisionWarning}
+
+AGE CONTEXT:
+${behaviors.ageContext}
+
+DESIGN VS PERCEPTION:
+${behaviors.designVsPerception[0] || 'No major gaps.'}
+
+---
+
+OUTPUT (JSON):
+{
+  "section_name": "How You Operate",
+  "os_title": "A diagnostic title for their internal system (8-12 words)",
+  "os_anchor": "ONE sentence system diagnosis. Direct. (15-20 words)",
+  "threat_axis": {
+    "title": "Your Alarm System",
+    "level": "${surveyScores.threatClarity === 1 ? 'High Alert' : 'Low Alert'}",
+    "description": "How their internal alarm works. Use concrete examples: 'You walk into a room and...' 'Before a meeting, you...' End with what this costs them daily. (70-90 words)"
+  },
+  "environment_axis": {
+    "title": "Your Battery",
+    "level": "${surveyScores.environmentStable === 1 ? 'Needs Stability' : 'Chaos Tolerant'}",
+    "description": "What drains them vs energizes them. Specific situations. (70-90 words)"
+  },
+  "agency_axis": {
+    "title": "Your Accelerator",
+    "level": "${surveyScores.agencyActive === 1 ? 'Heavy Foot' : 'Light Touch'}",
+    "description": "How they take action (or avoid it). The gap between wanting to act and actually acting. Include their decision style. (70-90 words)"
+  },
+  "os_summary": "How these three systems interact. 'Your alarm system [does X], which [affects Y], leaving [Z result].' End with daily cost. Include one insight from Design vs Perception gap. (60-80 words)"
+}`;
+
+  const result = await model.generateContent({
+    contents: [{ role: "user", parts: [{ text: "Generate Page 3." }] }],
+    systemInstruction: systemPrompt,
+  });
+
+  return parseJSON(result.response.text());
+}
+
+async function generatePage4_v3(
+  sajuResult: SajuResult,
+  behaviors: BehaviorPatterns,
+  page2: any,
+  page3: any,
+  userName: string,
+  langInstruction?: string
+) {
+  const model = client!.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+  const systemPrompt = `You are writing Page 4: Where You Get Stuck for ${userName}.
+
+${WRITING_STYLE_RULES}
+
+${langInstruction || 'Write in English.'}
+
+CONTEXT FROM PREVIOUS PAGES:
+- Blueprint: ${page2.nature_description}
+- Shadow Pattern: ${page2.shadow_description}
+- Operating System: ${page3.os_summary}
+
+THEIR PATTERNS:
+${behaviors.vulnerabilities.join('\n')}
+
+WARNING SIGNAL:
+${behaviors.warningSignal}
+
+AGE CONTEXT:
+${behaviors.ageContext}
+
+DESIGN VS PERCEPTION:
+${behaviors.designVsPerception.join('\n\n')}
+
+---
+
+FRICTION TITLES must be diagnoses, not categories:
+❌ "At Work" → ✅ "You Need Ownership, Not a Boss"
+❌ "In Relationships" → ✅ "You Push Away What You Want Most"
+❌ "With Money" → ✅ "You Earn Big but Keep Nothing"
+
+QUICK TIPS must pass Monday Morning Test:
+❌ "Try journaling about it"
+✅ "Before any meeting: write 3 words for what you actually want to say. Not sentences. Words."
+
+OUTPUT (JSON):
+{
+  "section_name": "Where You Get Stuck",
+  "friction_title": "Their core friction pattern as a memorable phrase (8-15 words)",
+  "friction_anchor": "ONE sentence defining the loop. (15-25 words)",
+  "career_friction": {
+    "title": "DIAGNOSTIC VERDICT (5-10 words)",
+    "description": "Pattern declaration with concrete scenario. Root cause. What this costs them. (70-90 words)",
+    "quick_tip": "Rule with a number. Can do this Monday. (30-50 words)"
+  },
+  "relationship_friction": {
+    "title": "DIAGNOSTIC VERDICT (5-10 words)",
+    "description": "Pattern + scenario + root cause + cost. (70-90 words)",
+    "quick_tip": "Concrete action with number + Monday test. (30-50 words)"
+  },
+  "money_friction": {
+    "title": "DIAGNOSTIC VERDICT (5-10 words)",
+    "description": "Pattern + scenario + root cause + cost. (70-90 words)",
+    "quick_tip": "DO + DON'T with numbers. (30-50 words)"
+  }
+}`;
+
+  const result = await model.generateContent({
+    contents: [{ role: "user", parts: [{ text: "Generate Page 4." }] }],
+    systemInstruction: systemPrompt,
+  });
+
+  return parseJSON(result.response.text());
+}
+
+async function generatePage5_v3(
+  sajuResult: SajuResult,
+  behaviors: BehaviorPatterns,
+  page3: any,
+  page4: any,
+  surveyScores: SurveyScores,
+  userName: string,
+  langInstruction?: string
+) {
+  const model = client!.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+  const elementCounts = sajuResult.elementCounts;
+  const missingElements = Object.entries(elementCounts)
+    .filter(([, count]) => (count as number) === 0)
+    .map(([el]) => el);
+  const weakElements = Object.entries(elementCounts)
+    .filter(([, count]) => (count as number) === 1)
+    .map(([el]) => el);
+  const elementNeeded = missingElements.length > 0 ? missingElements[0] : (weakElements.length > 0 ? weakElements[0] : "balance");
+
+  const opAnalysis = (sajuResult as any).operatingAnalysis;
+  const levelNum = opAnalysis?.level || 1;
+  const levelName = opAnalysis?.levelName || 'Survival';
+
+  const elementTips: Record<string, string> = {
+    wood: "Morning walks in nature. Green in your workspace. Stretching before decisions.",
+    fire: "Brighter lighting. Social energy. Something competitive or exciting each week.",
+    earth: "Regular meals at same times. Grounding routines. Earthy colors in your space.",
+    metal: "Declutter one area per week. Precision activities. Clean lines in environment.",
+    water: "Stay near actual water when possible. Hydrate before big conversations. Dark blue or black as default colors.",
+    balance: "Rotate activities. Do not over-index on any one thing.",
+  };
+
+  const systemPrompt = `You are writing Page 5: Action Protocol for ${userName}.
+
+${WRITING_STYLE_RULES}
+
+${langInstruction || 'Write in English.'}
+
+CONTEXT:
+- OS Diagnosis: ${page3.os_summary}
+- Friction Pattern: ${page4.friction_title}
+- Current Level: ${levelNum} (${levelName})
+
+THEIR PATTERNS:
+
+DECISION STYLE:
+${behaviors.decisionStyle}
+
+DECISION WARNING:
+${behaviors.decisionWarning}
+
+VULNERABILITIES:
+${behaviors.vulnerabilities.slice(0, 2).join('\n')}
+
+WARNING SIGNAL:
+${behaviors.warningSignal}
+
+OPTIMAL ENVIRONMENT:
+${behaviors.optimalEnvironment}
+
+AGE CONTEXT:
+${behaviors.ageContext}
+
+ELEMENT LIFESTYLE TIPS:
+${elementTips[elementNeeded] || elementTips.balance}
+
+---
+
+RITUAL NAMES must be specific actions, not generic:
+❌ "Morning Routine" → ✅ "The 3-Word Clarity Check"
+❌ "Breathwork" → ✅ "The 4-7-8 Reset"
+
+Every instruction needs a NUMBER:
+❌ "Take some time" → ✅ "Take 5 minutes"
+❌ "Regularly check in" → ✅ "Check in at 3pm daily"
+
+OUTPUT (JSON):
+{
+  "section_name": "Your Action Protocol",
+  "transformation_goal": "Where they are now → specific shift needed. Reference age. (35-50 words)",
+  "protocol_name": "A memorable 3-5 word protocol name",
+  "protocol_anchor": "ONE action command. 5-10 words.",
+  "daily_rituals": [
+    {
+      "name": "Specific action name (not generic)",
+      "description": "Step by step with numbers. Include ONE brain term with explanation. (60-80 words)",
+      "when": "Exact timing with constraint. 'Before your first screen. Non-negotiable.'",
+      "anti_pattern": "What happens if they skip. Specific consequence. (20-30 words)"
+    },
+    {
+      "name": "Second ritual name",
+      "description": "Step by step with numbers. Connect to their specific friction. (60-80 words)",
+      "when": "Exact timing",
+      "anti_pattern": "Specific consequence of skipping. (20-30 words)"
+    },
+    {
+      "name": "Third ritual name",
+      "description": "Step by step with numbers. (60-80 words)",
+      "when": "Exact timing",
+      "anti_pattern": "Specific consequence. (20-30 words)"
+    }
+  ],
+  "environment_boost": {
+    "element_needed": "${elementNeeded}",
+    "tips": [
+      "Specific environmental change 1. Not vague. (15-25 words)",
+      "Specific environmental change 2. (15-25 words)",
+      "One micro-action with a number. (15-25 words)",
+      "What to avoid and why. (15-25 words)"
+    ]
+  },
+  "closing_message": "Direct, not warm. Their system is miscalibrated, not broken. Pick one ritual. 7 days. That is the test. Reference their age. (50-70 words)"
+}`;
+
+  const result = await model.generateContent({
+    contents: [{ role: "user", parts: [{ text: "Generate Page 5." }] }],
+    systemInstruction: systemPrompt,
+  });
+
+  return parseJSON(result.response.text());
 }
 
 /**

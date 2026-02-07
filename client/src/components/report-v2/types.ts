@@ -1,6 +1,7 @@
 export interface Page1Identity {
     title: string;
     sub_headline: string;
+    one_line_diagnosis?: string;
     nature_snapshot: { title: string; definition: string; explanation: string };
     brain_snapshot: { title: string; definition: string; explanation: string };
     efficiency_snapshot: { level?: number; level_name?: string; score?: string; label: string; metaphor: string };
@@ -44,7 +45,7 @@ export interface Page5Solution {
     locked?: boolean;
     transformation_goal?: string;
     protocol_name?: string;
-    daily_rituals?: Array<{ name: string; description: string; when: string }>;
+    daily_rituals?: Array<{ name: string; description: string; when: string; anti_pattern?: string }>;
     environment_boost?: { element_needed: string; tips: string[] };
     closing_message?: string;
     protocol_anchor?: string;

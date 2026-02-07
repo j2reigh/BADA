@@ -55,7 +55,7 @@ function StickyProgressBar({ t }: { t: TranslateFn }) {
     <>
       {/* Desktop: Top Bar */}
       <motion.div
-        className="fixed top-0 left-0 right-0 z-40 hidden md:block pointer-events-none"
+        className="fixed top-0 left-0 right-0 z-[60] hidden md:block pointer-events-none"
         initial={{ y: -100 }}
         animate={{ y: isVisible ? 0 : -100 }}
         transition={{ duration: 0.3 }}
@@ -80,7 +80,7 @@ function StickyProgressBar({ t }: { t: TranslateFn }) {
 
       {/* Mobile: Bottom Sheet */}
       <motion.div
-        className="fixed bottom-0 left-0 right-0 z-40 md:hidden pointer-events-none"
+        className="fixed bottom-0 left-0 right-0 z-[60] md:hidden pointer-events-none"
         initial={{ y: 100 }}
         animate={{ y: isVisible ? 0 : 100 }}
         transition={{ duration: 0.3 }}

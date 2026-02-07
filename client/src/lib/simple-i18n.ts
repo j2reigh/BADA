@@ -136,7 +136,13 @@ export const translations = {
     'birth.gender.other': 'Other',
     'birth.date': 'Birth Date',
     'birth.time': 'Birth Time',
-    'birth.time_unknown': "I don't know my birth time",
+    'birth.time.placeholder': 'Select time',
+    'birth.time.modal.title': 'What time were you born?',
+    'birth.time.modal.subtitle': 'This helps improve accuracy',
+    'birth.time.hour': 'Hour',
+    'birth.time.minute': 'Min',
+    'birth.time.confirm': 'Confirm',
+    'birth.time_unknown': "I don't know my exact birth time",
     'birth.location': 'Birth Timezone',
     'birth.email': 'Email',
     'birth.email.placeholder': 'your@email.com',
@@ -203,6 +209,16 @@ export const translations = {
     'faq.contact.title': 'Contact',
     'faq.contact.desc': 'Questions, feedback, or just want to say hi?',
     'faq.cta': 'Start your analysis',
+
+    // Element names (radar chart)
+    'element.wood': 'Wood',
+    'element.fire': 'Fire',
+    'element.earth': 'Earth',
+    'element.metal': 'Metal',
+    'element.water': 'Water',
+    'element.balance.title': 'Your Element Balance',
+    'element.missing': 'Missing',
+    'element.excess': 'Excess',
   },
 
   ko: {
@@ -336,7 +352,13 @@ export const translations = {
     'birth.gender.other': '기타',
     'birth.date': '생년월일',
     'birth.time': '출생 시간',
-    'birth.time_unknown': '출생 시간을 모릅니다',
+    'birth.time.placeholder': '시간 선택',
+    'birth.time.modal.title': '몇 시에 태어나셨나요?',
+    'birth.time.modal.subtitle': '정확도 향상에 도움이 됩니다',
+    'birth.time.hour': '시',
+    'birth.time.minute': '분',
+    'birth.time.confirm': '확인',
+    'birth.time_unknown': '정확한 출생 시간을 모릅니다',
     'birth.location': '출생 시간대',
     'birth.email': '이메일',
     'birth.email.placeholder': 'your@email.com',
@@ -403,6 +425,16 @@ export const translations = {
     'faq.contact.title': '연락처',
     'faq.contact.desc': '질문, 피드백, 또는 그냥 인사하고 싶으신가요?',
     'faq.cta': '분석 시작하기',
+
+    // Element names (radar chart)
+    'element.wood': '목(木)',
+    'element.fire': '화(火)',
+    'element.earth': '토(土)',
+    'element.metal': '금(金)',
+    'element.water': '수(水)',
+    'element.balance.title': '오행 밸런스',
+    'element.missing': '부족',
+    'element.excess': '과다',
   },
 
   id: {
@@ -536,6 +568,12 @@ export const translations = {
     'birth.gender.other': 'Lainnya',
     'birth.date': 'Tanggal Lahir',
     'birth.time': 'Waktu Lahir',
+    'birth.time.placeholder': 'Pilih waktu',
+    'birth.time.modal.title': 'Jam berapa kamu lahir?',
+    'birth.time.modal.subtitle': 'Ini membantu meningkatkan akurasi',
+    'birth.time.hour': 'Jam',
+    'birth.time.minute': 'Menit',
+    'birth.time.confirm': 'Konfirmasi',
     'birth.time_unknown': 'Saya tidak tahu waktu lahir saya',
     'birth.location': 'Zona Waktu Kelahiran',
     'birth.email': 'Email',
@@ -603,6 +641,16 @@ export const translations = {
     'faq.contact.title': 'Kontak',
     'faq.contact.desc': 'Pertanyaan, masukan, atau sekadar ingin menyapa?',
     'faq.cta': 'Mulai analisismu',
+
+    // Element names (radar chart)
+    'element.wood': 'Kayu',
+    'element.fire': 'Api',
+    'element.earth': 'Tanah',
+    'element.metal': 'Logam',
+    'element.water': 'Air',
+    'element.balance.title': 'Keseimbangan Elemen',
+    'element.missing': 'Kurang',
+    'element.excess': 'Berlebih',
   },
 };
 
