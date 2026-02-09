@@ -7,7 +7,8 @@ import { z } from "zod";
 import { getCorrectedKST } from "../lib/time_utils";
 import { calculateSaju } from "../lib/saju_calculator";
 import { analyzeOperatingState } from "../lib/operating_logic"; // v2.3 Integration
-import { generateLifeBlueprintReport, type SurveyScores } from "../lib/gemini_client";
+import { generateLifeBlueprintReport, generateV3Cards, type SurveyScores } from "../lib/gemini_client";
+import { translateToBehaviors, calculateLuckCycle, SAMPLE_HD_DATA } from "../lib/behavior_translator";
 import { sendVerificationEmail } from "../lib/email";
 import { db } from "./db";
 import { type InsertBirthPattern, type InsertSajuResult, contentArchetypes } from "@shared/schema";
@@ -529,6 +530,54 @@ export async function registerRoutes(
     } catch (err) {
       console.error("Unlock report error:", err);
       res.status(500).json({ message: "Failed to unlock report" });
+    }
+  });
+
+  // Generate V3 Card Content (LLM-generated collision framing)
+  app.get("/api/results/:reportId/v3-cards", async (req, res) => {
+    try {
+      const { reportId } = req.params;
+
+      const sajuResult = await storage.getSajuResultById(reportId);
+      if (!sajuResult) {
+        return res.status(404).json({ message: "Report not found" });
+      }
+
+      const userInput = sajuResult.userInput as any;
+      const sajuData = sajuResult.sajuData as any;
+      const surveyScores: SurveyScores = userInput.surveyScores;
+      const birthDate = userInput.birthDate || "1996-01-01";
+      const userName = userInput.name || "Friend";
+      const language = (sajuResult as any).language || "en";
+
+      // Translate raw data to behavior patterns
+      const behaviors = translateToBehaviors(
+        sajuData,
+        SAMPLE_HD_DATA,
+        surveyScores,
+        birthDate
+      );
+
+      // Calculate luck cycle (대운/세운) with 십신
+      const birthTime = userInput.birthTime || "12:00";
+      const gender = userInput.gender || "F";
+      const luckCycle = calculateLuckCycle(birthDate, birthTime, gender);
+
+      // Generate V3 cards via Gemini
+      const v3Cards = await generateV3Cards(
+        sajuData,
+        surveyScores,
+        behaviors,
+        userName,
+        language,
+        birthDate,
+        luckCycle
+      );
+
+      res.json(v3Cards);
+    } catch (err) {
+      console.error("V3 Cards generation error:", err);
+      res.status(500).json({ message: "Failed to generate V3 cards", error: String(err) });
     }
   });
 

@@ -1266,3 +1266,320 @@ function generateMockReport(sajuResult: SajuResult, surveyScores: SurveyScores):
 export async function generateSajuReport(sajuResult: SajuResult, userName: string): Promise<string> {
   return "Legacy Text Report Deprecated. Use PDF.";
 }
+
+// ==========================================
+// V3 CARDS: Collision-Framed Q&A Cards
+// ==========================================
+
+export interface V3CardContent {
+  hookQuestion: string;
+  mirrorQuestion: string;
+  mirrorText: string;
+  mirrorAccent: string;
+  blueprintQuestion: string;
+  blueprintText: string;
+  blueprintAccent: string;
+  collisionQuestion: string;
+  collisionText: string;
+  collisionAccent: string;
+  evidenceQuestion: string;
+  evidence: string[];
+  costCareerQuestion: string;
+  costCareer: { title: string; text: string };
+  costRelationshipQuestion: string;
+  costRelationship: { title: string; text: string };
+  costMoneyQuestion: string;
+  costMoney: { title: string; text: string };
+  brainScan: {
+    question: string;
+    alarm: number;
+    drive: number;
+    stability: number;
+    remaining: number;
+    insight: string;
+  };
+  // Timeline cards (대운 → 세운 → Protocol)
+  chapter: {
+    question: string;
+    previousLabel: string;  // e.g. "Ages 15-24"
+    previousText: string;   // 1-2 sentences, plain language
+    currentLabel: string;   // e.g. "Ages 25-34"
+    currentText: string;    // 2-3 sentences, plain language
+    nextLabel: string;      // e.g. "Ages 35-44"
+    nextText: string;       // 1-2 sentences, plain language
+    accent: string;         // transition insight
+  };
+  yearQuestion: string;
+  yearText: string;
+  yearAccent: string;
+  actionQuestion: string;
+  actionNeuro: string;
+  shift: { name: string; text: string; when: string };
+  closingLine: string;
+}
+
+/**
+ * Generate V3 Card Content using LLM
+ * Uses "collision" framing: Survey (self-perception) vs Saju (born design)
+ * Few-shot approach: one gold-standard example sets the tone
+ */
+export async function generateV3Cards(
+  sajuResult: SajuResult,
+  surveyScores: SurveyScores,
+  behaviors: BehaviorPatterns,
+  userName: string = "Friend",
+  language: string = "en",
+  birthDate?: string,
+  luckCycle?: import("./behavior_translator").LuckCycleInfo | null
+): Promise<V3CardContent> {
+  if (!client) {
+    throw new Error("Gemini API key not configured");
+  }
+
+  const model = client.getGenerativeModel({ model: "gemini-2.5-flash" });
+  const langInstruction = getLanguageInstruction(language);
+
+  // ── Extract all available saju data ──
+  const dayMasterGan = sajuResult.fourPillars.day.gan;
+  const dayMasterInfo = DAY_MASTER_MAP[dayMasterGan];
+  const opAnalysis = (sajuResult as any).operatingAnalysis;
+  const alignmentType = opAnalysis?._internal?.alignmentType || "unknown";
+  const operatingRate = sajuResult.stats?.operatingRate || 50;
+  const dayMasterStrength = (sajuResult as any).dayMasterStrength || 50;
+  const dayMasterCategory = (sajuResult as any).dayMasterCategory || "balanced";
+  const hardwareType = (sajuResult as any).hardwareAnalysis?.hardwareType || "unknown";
+
+  // Ten Gods
+  const tenGods = sajuResult.tenGodsAnalysis;
+  const tenGodsStr = tenGods?.distribution
+    ? Object.entries(tenGods.distribution)
+        .map(([god, count]) => `${god}: ${count}`)
+        .join(", ")
+    : "N/A";
+
+  // Four Pillars full display
+  const fp = sajuResult.fourPillars;
+  const pillarsStr = [
+    `Year: ${fp.year.gan}${fp.year.zhi} (${fp.year.ganElement}/${fp.year.zhiElement}) [${fp.year.ganGod}/${fp.year.zhiGod}]`,
+    `Month: ${fp.month.gan}${fp.month.zhi} (${fp.month.ganElement}/${fp.month.zhiElement}) [${fp.month.ganGod}/${fp.month.zhiGod}]`,
+    `Day: ${fp.day.gan}${fp.day.zhi} (${fp.day.ganElement}/${fp.day.zhiElement}) [${fp.day.ganGod}/${fp.day.zhiGod}]`,
+    fp.hour ? `Hour: ${fp.hour.gan}${fp.hour.zhi} (${fp.hour.ganElement}/${fp.hour.zhiElement}) [${fp.hour.ganGod}/${fp.hour.zhiGod}]` : "Hour: unknown",
+  ].join("\n");
+
+  // Element counts
+  const ec = sajuResult.elementCounts;
+  const elemStr = `wood:${ec.wood} fire:${ec.fire} earth:${ec.earth} metal:${ec.metal} water:${ec.water}`;
+  const missingElements = Object.entries(ec).filter(([, v]) => v === 0).map(([k]) => k);
+  const excessElements = Object.entries(ec).filter(([, v]) => (v as number) >= 3).map(([k]) => k);
+
+  const systemPrompt = `You are writing a personal diagnostic report for ${userName}. Not a personality test. Not a horoscope. A diagnostic.
+
+${WRITING_STYLE_RULES}
+
+${langInstruction || 'Write in English.'}
+
+CORE CONCEPT: "COLLISION"
+The user has two data sources:
+1. SURVEY = how they see themselves (self-perception)
+2. SAJU = how they were born to operate (design blueprint)
+
+The insight lives in the GAP between these two. When self-perception ≠ design, that's where behavioral patterns hide. Your job: find the collision, name it, prove it with behavioral evidence, show the cost in career/relationships/money, then give one neural protocol to interrupt the pattern.
+
+STRUCTURE: Every card is Q→A. The question hooks. The answer delivers.
+LENGTH: 2-3 sentences per field. Brevity = precision. No filler.
+
+ABSOLUTE JARGON BAN — CRITICAL:
+The user has ZERO knowledge of saju, astrology, or Human Design. The following terms MUST NEVER appear in your output:
+- Saju terms: 편인, 정인, 편관, 정관, 편재, 정재, 식신, 상관, 비견, 겁재, ten gods, heavenly stem, earthly branch, day master, day pillar, four pillars, 천간, 지지, 갑자, 대운, 세운, yin/yang polarity
+- Element jargon: "wood chapter", "fire energy", "earth element", "water element", "metal element", "double dose of fire", "missing wood"
+- HD terms: gates, channels, centers, definition, authority, profile, type
+- Any Chinese/Korean characters (甲, 午, 丙, etc.)
+
+INSTEAD: Translate everything into plain behavioral language or natural metaphors:
+- "편관 energy" → "external pressure pushing you to perform"
+- "wood chapter" → "a decade of growth and new beginnings"
+- "fire excess" → "you burn through energy faster than you replenish it"
+- "missing water" → "you have no natural cooling system"
+- "정인 support" → "this year is offering you space to reflect and learn"
+The data section below is for YOUR understanding. The output must read like a conversation with a wise friend who knows nothing about astrology.
+
+═══════════════════════════════
+SAJU DATA (Birth Blueprint)
+═══════════════════════════════
+
+Day Master: ${dayMasterGan} (${dayMasterInfo.name})
+- Archetype: ${dayMasterInfo.archetype}
+- Strength: ${dayMasterInfo.strength}
+- Weakness: ${dayMasterInfo.weakness}
+- Day Master Strength: ${dayMasterStrength}/100 (${dayMasterCategory})
+- Hardware Type: ${hardwareType}
+- Operating Rate: ${operatingRate}%
+- Alignment: ${alignmentType}
+
+Four Pillars:
+${pillarsStr}
+
+Element Balance: ${elemStr}
+${missingElements.length > 0 ? `Missing elements: ${missingElements.join(", ")}` : "No missing elements"}
+${excessElements.length > 0 ? `Excess elements (≥3): ${excessElements.join(", ")}` : "No excess elements"}
+
+Ten Gods: dominant=${tenGods?.dominant || "N/A"}
+Distribution: ${tenGodsStr}
+
+═══════════════════════════════
+SURVEY DATA (Self-Perception)
+═══════════════════════════════
+
+OS Type: ${surveyScores.typeName} (${surveyScores.typeKey})
+- Threat Sensitivity: ${surveyScores.threatClarity === 1 ? "HIGH" : "LOW"} (raw score: ${surveyScores.threatScore})
+- Environment Response: ${surveyScores.environmentStable === 1 ? "STABLE" : "VOLATILE"} (raw score: ${surveyScores.environmentScore})
+- Agency: ${surveyScores.agencyActive === 1 ? "ACTIVE" : "PASSIVE"} (raw score: ${surveyScores.agencyScore})
+
+═══════════════════════════════
+BEHAVIOR PATTERNS (pre-translated)
+═══════════════════════════════
+
+Decision Style: ${behaviors.decisionStyle}
+Decision Warning: ${behaviors.decisionWarning}
+Energy Pattern: ${behaviors.energyPattern}
+Strengths: ${behaviors.strengths.join(" | ")}
+Vulnerabilities: ${behaviors.vulnerabilities.join(" | ")}
+Warning Signal: ${behaviors.warningSignal}
+Optimal Environment: ${behaviors.optimalEnvironment}
+Age Context: ${behaviors.ageContext}
+Design vs Perception Gaps: ${behaviors.designVsPerception.join(" | ")}
+
+═══════════════════════════════
+ENERGY ALLOCATION (pre-computed — use EXACT values)
+═══════════════════════════════
+
+These values are computed from survey raw scores. Do NOT change the numbers.
+Use them exactly as-is in the brainScan object. Only generate "question" and "insight" text.
+
+- alarm (Threat Response): ${Math.round((surveyScores.threatScore / 3) * 80 + 15)}%
+- drive (Drive Output): ${Math.round((surveyScores.agencyScore / 3) * 80 + 15)}%
+- stability (Stability Load): ${Math.round((surveyScores.environmentScore / 2) * 60 + 20)}%
+- remaining (Available): ${Math.max(5, 100 - Math.round((Math.round((surveyScores.threatScore / 3) * 80 + 15) + Math.round((surveyScores.agencyScore / 3) * 80 + 15) + Math.round((surveyScores.environmentScore / 2) * 60 + 20)) / 3))}%
+
+For "insight": interpret these numbers through neuroscience. Mention amygdala, dopamine, or prefrontal cortex to explain WHY these allocations matter. 2 sentences max.
+
+═══════════════════════════════
+LUCK CYCLE DATA (10-year chapters + annual energy)
+═══════════════════════════════
+${luckCycle ? `
+Day Master: ${luckCycle.dayMaster}
+
+CURRENT 대운 (10-Year Chapter): ${luckCycle.currentDaYun.ganZhi}
+- Age range: ${luckCycle.currentDaYun.startAge}-${luckCycle.currentDaYun.endAge}
+- 天干 (heavenly stem): ${luckCycle.currentDaYun.ganZhi[0]} = ${luckCycle.currentDaYun.ganElement} energy, ${luckCycle.currentDaYun.ganMeaning}
+- 地支 (earthly branch): ${luckCycle.currentDaYun.ganZhi[1]} = ${luckCycle.currentDaYun.zhiElement} energy, ${luckCycle.currentDaYun.zhiMeaning}
+- Ten God (천간 vs 일간): ${luckCycle.currentDaYun.tenGodGan} = ${TEN_GODS_MAP[luckCycle.currentDaYun.tenGodGan]?.meaning || 'unknown'}
+- Ten God (지지 vs 일간): ${luckCycle.currentDaYun.tenGodZhi} = ${TEN_GODS_MAP[luckCycle.currentDaYun.tenGodZhi]?.meaning || 'unknown'}
+- Cycle phase: ${luckCycle.cyclePhase}
+${luckCycle.previousDaYun ? `
+PREVIOUS 대운: ${luckCycle.previousDaYun.ganZhi}
+- Age range: ${luckCycle.previousDaYun.startAge}-${luckCycle.previousDaYun.endAge}
+- Ten God: ${luckCycle.previousDaYun.tenGodGan} (천간) / ${luckCycle.previousDaYun.tenGodZhi} (지지)
+- Energy: ${luckCycle.previousDaYun.ganElement} stem + ${luckCycle.previousDaYun.zhiElement} branch
+` : ''}${luckCycle.nextDaYun ? `
+NEXT 대운: ${luckCycle.nextDaYun.ganZhi}
+- Age range: ${luckCycle.nextDaYun.startAge}-${luckCycle.nextDaYun.endAge}
+- Ten God: ${luckCycle.nextDaYun.tenGodGan} (천간) / ${luckCycle.nextDaYun.tenGodZhi} (지지)
+- Energy: ${luckCycle.nextDaYun.ganElement} stem + ${luckCycle.nextDaYun.zhiElement} branch
+` : ''}
+CURRENT 세운 (${luckCycle.currentSeUn.year} Annual Energy): ${luckCycle.currentSeUn.ganZhi}
+- 천간: ${luckCycle.currentSeUn.ganZhi[0]} = ${luckCycle.currentSeUn.ganElement}, Ten God: ${luckCycle.currentSeUn.tenGodGan}
+- 지지: ${luckCycle.currentSeUn.ganZhi[1]} = ${luckCycle.currentSeUn.zhiElement}, Ten God: ${luckCycle.currentSeUn.tenGodZhi}
+
+INTERPRETATION GUIDE (for YOUR understanding only — NEVER expose these terms to user):
+- 대운 = the 10-year backdrop. It defines the CHAPTER theme.
+- 세운 = THIS year's energy layered on top of the chapter.
+- Ten God meanings (translate to behavior, NEVER use the Korean/Chinese terms):
+  편관/정관 → external pressure, being tested, structure, responsibility
+  편인/정인 → support, protection, learning, intuition, mentorship
+  편재/정재 → goals, achievement, resources, money, tangible results
+  식신/상관 → expression, creativity, output, freedom, breaking rules
+  비견/겁재 → self-reliance, competition, independence, identity
+
+FOR THE CHAPTER CARD (structured output with previousLabel/previousText/currentLabel/currentText/nextLabel/nextText/accent):
+- Tell a STORY across three phases. Past → Present → Future.
+- Each phase: 1-2 sentences of what that decade FEELS like in daily life.
+- The "accent" connects all three: what's the through-line?
+- REMEMBER: NO saju jargon. Write like describing life chapters to a friend.
+
+FOR THE YEAR CARD:
+- What is ${luckCycle.currentSeUn.year} specifically asking of them?
+- How does this year's energy interact with their collision?
+- Is it amplifying the gap or offering a bridge?
+- Keep it behavioral. "This year supports reflection" not "편인 energy".
+` : 'No luck cycle data available. Skip chapterQuestion/chapterText/yearQuestion/yearText fields (set to empty strings).'}
+
+═══════════════════════════════
+EXAMPLE OUTPUT (different user — match this QUALITY, not this content)
+═══════════════════════════════
+
+This example is for a Master Builder (T1-E1-A1) with earth day master, fire:4, wood:0, overdriven.
+DO NOT copy this content. Use it ONLY to calibrate tone and specificity.
+
+{
+  "hookQuestion": "Why does the person who catches every problem still feel like they're falling behind?",
+  "mirrorQuestion": "You think you know exactly who you are. But do you?",
+  "mirrorText": "You see yourself as someone who takes action, someone who catches problems before they happen, and someone who performs well under any conditions. The reliable one. The one who gets things done.",
+  "mirrorAccent": "In your mind, your strength is your ability to spot danger AND act on it immediately.",
+  "blueprintQuestion": "What if you were never meant to move this fast?",
+  "blueprintText": "You were designed to be a mountain. Patient. Immovable. Deliberate. Your power comes from staying still while everything else moves around you.",
+  "blueprintAccent": "Your internal fire is extreme, but you have zero cooling mechanism. You have no flexibility element. Adapting to change doesn't come naturally. Your system is overdriven.",
+  "collisionQuestion": "So what breaks when a mountain tries to sprint?",
+  "collisionText": "You think speed is your strength. Your design says it's your biggest leak. You were built to be a mountain, not a sprinter. Every time you rush to fix something, you're overriding the system that gives you your actual power: patience.",
+  "collisionAccent": "The gap: you act like fire, but you were built from earth. That mismatch is where your energy disappears.",
+  "evidenceQuestion": "Sound familiar?",
+  "evidence": [
+    "You scan every room for problems before you've even sat down. By the time the meeting starts, you've already drafted three contingency plans.",
+    "You say yes before checking your capacity. Not because you want to help. Because saying no feels like failing.",
+    "You finish other people's tasks 'because it's faster.' Then resent that no one does the same for you."
+  ],
+  "costCareerQuestion": "Why do you keep hitting the same ceiling?",
+  "costCareer": { "title": "At work", "text": "You become indispensable, then trapped. You built the system, now you're the only one who can maintain it. That's not success. That's a cage you constructed yourself." },
+  "costRelationshipQuestion": "Why do the people closest to you seem distant?",
+  "costRelationship": { "title": "In relationships", "text": "You show up as the strong one. Always capable, never needing. People stop asking if you're okay because you trained them not to. The fortress works. That's the problem." },
+  "costMoneyQuestion": "Why does money come in and leave just as fast?",
+  "costMoney": { "title": "With money", "text": "You earn and spend in the same motion. Money comes in through effort, leaks out through the constant maintenance of problems you anticipated but didn't need to solve." },
+  "brainScan": { "question": "Where is all your energy actually going?", "alarm": 68, "drive": 68, "stability": 20, "remaining": 48, "insight": "68% on threat scanning (amygdala in overdrive), 68% on drive output (dopamine loop). Only 48% left for rest, creativity, or connection." },
+  "chapter": {
+    "question": "What chapter of your life are you actually in?",
+    "previousLabel": "Ages 15-24",
+    "previousText": "A decade of learning the rules. Structure, discipline, figuring out how the world works. You absorbed everything.",
+    "currentLabel": "Ages 25-34",
+    "currentText": "A decade of being tested. Outside forces are pushing against your natural tendencies. This isn't comfortable. It's not supposed to be. This is the decade where you find out what you're actually made of.",
+    "nextLabel": "Ages 35-44",
+    "nextText": "A decade of building. The pressure you're feeling now becomes the foundation for real, tangible results.",
+    "accent": "You went from learning the rules to being forced to break them. Next comes building something real with what survived."
+  },
+  "yearQuestion": "What is 2026 actually asking of you?",
+  "yearText": "This year is offering you a pause button in the middle of a pressure decade. Your system wants to sprint. But 2026 is handing you a library card, not running shoes. The energy this year supports reflection, intuition, and unconventional learning.",
+  "yearAccent": "2026 is not asking you to do more. It's asking you to understand more before you act.",
+  "actionQuestion": "Can your brain actually rewire this?",
+  "actionNeuro": "Your amygdala triggers threat responses 3x above baseline. Your prefrontal cortex compensates by staying in control mode. This is why you crash by 3pm. The protocol below interrupts this loop at the neural level.",
+  "shift": { "name": "The Pause Protocol", "text": "Before any decision this week, wait 10 minutes. Not to think. To let the first impulse pass. Your mountain doesn't need to respond to every tremor. The right answer comes after the shaking stops.", "when": "Starting tomorrow. 7 days." },
+  "closingLine": "Your system isn't broken. It's overclocked. Dial it back 30% and watch what happens."
+}
+
+═══════════════════════════════
+YOUR TASK
+═══════════════════════════════
+
+Generate V3CardContent JSON for ${userName} using THEIR data above. Find THEIR specific collision between survey self-perception and saju design. The collision should feel unavoidable and specific to this person's data combination.
+
+Output ONLY valid JSON matching the structure above. No markdown, no explanation.`;
+
+  console.log(`[Gemini] Generating V3 Cards for ${userName}...`);
+
+  const result = await model.generateContent({
+    contents: [{ role: "user", parts: [{ text: "Generate V3 Card Content JSON." }] }],
+    systemInstruction: systemPrompt,
+  });
+
+  const v3Content = parseJSON(result.response.text()) as V3CardContent;
+  console.log("[Gemini] V3 Cards Generated");
+  return v3Content;
+}

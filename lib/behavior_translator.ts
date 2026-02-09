@@ -59,9 +59,24 @@ export function calculateAge(birthDate: string): number {
   return age;
 }
 
+export interface DaYunInfo {
+  ganZhi: string;
+  startAge: number;
+  endAge: number;
+  ganElement: string;
+  zhiElement: string;
+  ganMeaning: string;
+  zhiMeaning: string;
+  tenGodGan: string;   // 십신: 천간 vs 일간
+  tenGodZhi: string;   // 십신: 지지 본기 vs 일간
+}
+
 export interface LuckCycleInfo {
-  currentDaYun: { ganZhi: string; startAge: number; endAge: number; element: string; meaning: string };
-  currentSeUn: { year: number; ganZhi: string; element: string; meaning: string };
+  dayMaster: string;                   // 일간 (e.g. "戊")
+  currentDaYun: DaYunInfo;
+  previousDaYun: DaYunInfo | null;
+  nextDaYun: DaYunInfo | null;
+  currentSeUn: { year: number; ganZhi: string; ganElement: string; zhiElement: string; ganMeaning: string; tenGodGan: string; tenGodZhi: string };
   isForward: boolean;
   cyclePhase: string;
 }
@@ -89,6 +104,93 @@ const GANZHI_MEANING: Record<string, string> = {
   '癸': 'deep intuitive knowing',
 };
 
+// 지지 본기 (Main Qi of Earthly Branches) — the primary hidden stem
+const ZHI_MAIN_QI: Record<string, string> = {
+  '子': '癸', '丑': '己', '寅': '甲', '卯': '乙',
+  '辰': '戊', '巳': '丙', '午': '丁', '未': '己',
+  '申': '庚', '酉': '辛', '戌': '戊', '亥': '壬',
+};
+
+// Yin/Yang polarity of 天干
+const GAN_POLARITY: Record<string, 'yang' | 'yin'> = {
+  '甲': 'yang', '乙': 'yin',
+  '丙': 'yang', '丁': 'yin',
+  '戊': 'yang', '己': 'yin',
+  '庚': 'yang', '辛': 'yin',
+  '壬': 'yang', '癸': 'yin',
+};
+
+// Five-element production cycle: wood→fire→earth→metal→water→wood
+const PRODUCTION_CYCLE: Record<string, string> = {
+  'wood': 'fire', 'fire': 'earth', 'earth': 'metal', 'metal': 'water', 'water': 'wood',
+};
+
+// Five-element control cycle: wood→earth→water→fire→metal→wood
+const CONTROL_CYCLE: Record<string, string> = {
+  'wood': 'earth', 'earth': 'water', 'water': 'fire', 'fire': 'metal', 'metal': 'wood',
+};
+
+/**
+ * Calculate the Ten God (십신) relationship between day master and a target stem.
+ * Returns Korean ten god name (e.g. "편관", "정인").
+ */
+function getTenGod(dayMasterGan: string, targetGan: string): string {
+  if (dayMasterGan === targetGan) return '비견'; // same stem = 비견
+
+  const dmElement = GAN_ELEMENT[dayMasterGan];
+  const tgElement = GAN_ELEMENT[targetGan];
+  const dmPolarity = GAN_POLARITY[dayMasterGan];
+  const tgPolarity = GAN_POLARITY[targetGan];
+  const samePolarity = dmPolarity === tgPolarity;
+
+  if (!dmElement || !tgElement) return 'unknown';
+
+  // Same element, different stem → 비견 or 겁재
+  if (dmElement === tgElement) {
+    return samePolarity ? '비견' : '겁재';
+  }
+  // I produce target (생) → 식신 or 상관
+  if (PRODUCTION_CYCLE[dmElement] === tgElement) {
+    return samePolarity ? '식신' : '상관';
+  }
+  // Target produces me (인) → 편인 or 정인
+  if (PRODUCTION_CYCLE[tgElement] === dmElement) {
+    return samePolarity ? '편인' : '정인';
+  }
+  // I control target (극) → 편재 or 정재
+  if (CONTROL_CYCLE[dmElement] === tgElement) {
+    return samePolarity ? '편재' : '정재';
+  }
+  // Target controls me (관) → 편관 or 정관
+  if (CONTROL_CYCLE[tgElement] === dmElement) {
+    return samePolarity ? '편관' : '정관';
+  }
+
+  return 'unknown';
+}
+
+/**
+ * Build a DaYunInfo object from a daYun entry and the day master stem.
+ */
+function buildDaYunInfo(daYun: any, dayMasterGan: string): DaYunInfo {
+  const ganZhi = daYun.getGanZhi();
+  const gan = ganZhi.charAt(0);
+  const zhi = ganZhi.charAt(1);
+  const zhiMainQi = ZHI_MAIN_QI[zhi] || '';
+
+  return {
+    ganZhi,
+    startAge: daYun.getStartAge(),
+    endAge: daYun.getEndAge(),
+    ganElement: GAN_ELEMENT[gan] || 'unknown',
+    zhiElement: GAN_ELEMENT[ZHI_MAIN_QI[zhi]] ? GAN_ELEMENT[ZHI_MAIN_QI[zhi]] : 'unknown',
+    ganMeaning: GANZHI_MEANING[gan] || 'transitional energy',
+    zhiMeaning: GANZHI_MEANING[zhiMainQi] || 'transitional energy',
+    tenGodGan: getTenGod(dayMasterGan, gan),
+    tenGodZhi: getTenGod(dayMasterGan, zhiMainQi),
+  };
+}
+
 export function calculateLuckCycle(birthDate: string, birthTime: string, gender: 'M' | 'F'): LuckCycleInfo | null {
   try {
     const [year, month, day] = birthDate.split('-').map(Number);
@@ -105,14 +207,34 @@ export function calculateLuckCycle(birthDate: string, birthTime: string, gender:
     const currentYear = new Date().getFullYear();
     const age = calculateAge(birthDate);
 
+    // Day master stem (일간)
+    const dayMasterGan = eightChar.getDayGan();
+
     // Get 대운 list
     const daYunList = yun.getDaYun(10);
-    const currentDaYun = daYunList.find(dy => dy.getStartAge() <= age && dy.getEndAge() >= age);
+    let currentIdx = -1;
+    for (let i = 0; i < daYunList.length; i++) {
+      const dy = daYunList[i];
+      if (dy.getStartAge() <= age && dy.getEndAge() >= age) {
+        currentIdx = i;
+        break;
+      }
+    }
 
-    if (!currentDaYun) return null;
+    if (currentIdx < 0) return null;
 
-    const daYunGanZhi = currentDaYun.getGanZhi();
-    const daYunGan = daYunGanZhi.charAt(0);
+    const currentDaYun = daYunList[currentIdx];
+    const currentDaYunInfo = buildDaYunInfo(currentDaYun, dayMasterGan);
+
+    // Previous 대운
+    const previousDaYunInfo = currentIdx > 0
+      ? buildDaYunInfo(daYunList[currentIdx - 1], dayMasterGan)
+      : null;
+
+    // Next 대운
+    const nextDaYunInfo = currentIdx < daYunList.length - 1
+      ? buildDaYunInfo(daYunList[currentIdx + 1], dayMasterGan)
+      : null;
 
     // Get 세운 for current year
     const liuNianList = currentDaYun.getLiuNian(10);
@@ -120,6 +242,8 @@ export function calculateLuckCycle(birthDate: string, birthTime: string, gender:
 
     const seUnGanZhi = currentSeUn?.getGanZhi() || '';
     const seUnGan = seUnGanZhi.charAt(0);
+    const seUnZhi = seUnGanZhi.charAt(1);
+    const seUnZhiMainQi = ZHI_MAIN_QI[seUnZhi] || '';
 
     // Determine cycle phase based on position in 대운
     const yearsIntoDaYun = age - currentDaYun.getStartAge();
@@ -133,18 +257,18 @@ export function calculateLuckCycle(birthDate: string, birthTime: string, gender:
     }
 
     return {
-      currentDaYun: {
-        ganZhi: daYunGanZhi,
-        startAge: currentDaYun.getStartAge(),
-        endAge: currentDaYun.getEndAge(),
-        element: GAN_ELEMENT[daYunGan] || 'unknown',
-        meaning: GANZHI_MEANING[daYunGan] || 'transitional energy',
-      },
+      dayMaster: dayMasterGan,
+      currentDaYun: currentDaYunInfo,
+      previousDaYun: previousDaYunInfo,
+      nextDaYun: nextDaYunInfo,
       currentSeUn: {
         year: currentYear,
         ganZhi: seUnGanZhi,
-        element: GAN_ELEMENT[seUnGan] || 'unknown',
-        meaning: GANZHI_MEANING[seUnGan] || 'transitional energy',
+        ganElement: GAN_ELEMENT[seUnGan] || 'unknown',
+        zhiElement: GAN_ELEMENT[seUnZhiMainQi] || 'unknown',
+        ganMeaning: GANZHI_MEANING[seUnGan] || 'transitional energy',
+        tenGodGan: getTenGod(dayMasterGan, seUnGan),
+        tenGodZhi: getTenGod(dayMasterGan, seUnZhiMainQi),
       },
       isForward: yun.isForward(),
       cyclePhase,
@@ -280,8 +404,8 @@ export function translateToBehaviors(
 
   // Add luck cycle context if available
   if (luckCycle) {
-    const daYunContext = `You are currently in a ${luckCycle.currentDaYun.element} chapter (ages ${luckCycle.currentDaYun.startAge}-${luckCycle.currentDaYun.endAge}), which emphasizes ${luckCycle.currentDaYun.meaning}.`;
-    const seUnContext = `This year (${luckCycle.currentSeUn.year}) carries ${luckCycle.currentSeUn.element} energy: ${luckCycle.currentSeUn.meaning}.`;
+    const daYunContext = `You are currently in a ${luckCycle.currentDaYun.ganElement} chapter (ages ${luckCycle.currentDaYun.startAge}-${luckCycle.currentDaYun.endAge}), which emphasizes ${luckCycle.currentDaYun.ganMeaning}. The ten god relationship is ${luckCycle.currentDaYun.tenGodGan} (天干) / ${luckCycle.currentDaYun.tenGodZhi} (地支).`;
+    const seUnContext = `This year (${luckCycle.currentSeUn.year}) carries ${luckCycle.currentSeUn.ganElement} energy: ${luckCycle.currentSeUn.ganMeaning}.`;
     const phaseContext = `You are ${luckCycle.cyclePhase}`;
 
     ageContext = `${baseAgeContext} ${daYunContext} ${seUnContext} ${phaseContext}`;
