@@ -920,6 +920,8 @@ ${behaviors.designVsPerception[0] || 'No major gaps.'}
 
 ---
 
+IMPORTANT: Do NOT include numeric scores like "(2/3)" or "(0/2)" in the output. Use descriptive labels only.
+
 OUTPUT (JSON):
 {
   "section_name": "How You Operate",

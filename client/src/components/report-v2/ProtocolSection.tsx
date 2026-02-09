@@ -115,23 +115,7 @@ export default function ProtocolSection({ data }: { data: ResultsData }) {
     const sol = data.page5_solution;
     const isLocked = sol.locked;
 
-    // Calculate Expiration Date
-    // Prefer the calculated validity from backend (v2.3+), fallback to 1 year for legacy
     const sajuData = data.sajuData as any;
-    const validityDate = sajuData?.operatingAnalysis?.validity?.validUntil;
-
-    let expiredAtString = "";
-    if (validityDate) {
-        expiredAtString = new Date(validityDate).toLocaleDateString();
-    } else {
-        // Fallback to 1 Year from creation
-        const createdAt = new Date(data.createdAt);
-        const expiredAt = new Date(createdAt);
-        expiredAt.setFullYear(expiredAt.getFullYear() + 1);
-        expiredAtString = expiredAt.toLocaleDateString();
-    }
-
-    // Element data for radar chart
     const elementCounts = sajuData?.elementCounts;
     const birthTimeUnknown = sajuData?.birthTimeUnknown;
 
@@ -286,9 +270,8 @@ export default function ProtocolSection({ data }: { data: ResultsData }) {
                             <p className="text-xl md:text-2xl text-[#402525] leading-relaxed">
                                 {sol.closing_message}
                             </p>
-                            <div className="mt-12 text-[10px] uppercase tracking-[0.25em] text-[#402525]/40 space-y-2">
+                            <div className="mt-12 text-[10px] uppercase tracking-[0.25em] text-[#402525]/40">
                                 <p>BADA Report ID: {data.reportId.slice(0, 8)}</p>
-                                <p>Analysis Valid Until: {expiredAtString}</p>
                             </div>
                         </motion.div>
                     </>

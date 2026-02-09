@@ -5,6 +5,7 @@
  * RULE: All technical terms stay here. Output is plain language only.
  */
 
+import { Solar } from "lunar-typescript";
 import type { SajuResult } from "./saju_calculator";
 
 export interface HumanDesignData {
@@ -56,6 +57,102 @@ export function calculateAge(birthDate: string): number {
     age--;
   }
   return age;
+}
+
+export interface LuckCycleInfo {
+  currentDaYun: { ganZhi: string; startAge: number; endAge: number; element: string; meaning: string };
+  currentSeUn: { year: number; ganZhi: string; element: string; meaning: string };
+  isForward: boolean;
+  cyclePhase: string;
+}
+
+// 干支 to Element mapping
+const GAN_ELEMENT: Record<string, string> = {
+  '甲': 'wood', '乙': 'wood',
+  '丙': 'fire', '丁': 'fire',
+  '戊': 'earth', '己': 'earth',
+  '庚': 'metal', '辛': 'metal',
+  '壬': 'water', '癸': 'water',
+};
+
+// 干支 energy meaning (plain language)
+const GANZHI_MEANING: Record<string, string> = {
+  '甲': 'pioneering growth energy',
+  '乙': 'flexible adaptation energy',
+  '丙': 'bold outward expression',
+  '丁': 'warm inner illumination',
+  '戊': 'stable grounding force',
+  '己': 'nurturing receptive force',
+  '庚': 'decisive cutting energy',
+  '辛': 'refined precision energy',
+  '壬': 'flowing expansive wisdom',
+  '癸': 'deep intuitive knowing',
+};
+
+export function calculateLuckCycle(birthDate: string, birthTime: string, gender: 'M' | 'F'): LuckCycleInfo | null {
+  try {
+    const [year, month, day] = birthDate.split('-').map(Number);
+    const [hour, minute] = (birthTime || '12:00').split(':').map(Number);
+
+    const solar = Solar.fromYmdHms(year, month, day, hour, minute, 0);
+    const lunar = solar.getLunar();
+    const eightChar = lunar.getEightChar();
+
+    // gender: 1=male, 0=female
+    const genderNum = gender === 'M' ? 1 : 0;
+    const yun = eightChar.getYun(genderNum);
+
+    const currentYear = new Date().getFullYear();
+    const age = calculateAge(birthDate);
+
+    // Get 대운 list
+    const daYunList = yun.getDaYun(10);
+    const currentDaYun = daYunList.find(dy => dy.getStartAge() <= age && dy.getEndAge() >= age);
+
+    if (!currentDaYun) return null;
+
+    const daYunGanZhi = currentDaYun.getGanZhi();
+    const daYunGan = daYunGanZhi.charAt(0);
+
+    // Get 세운 for current year
+    const liuNianList = currentDaYun.getLiuNian(10);
+    const currentSeUn = liuNianList.find(ln => ln.getYear() === currentYear);
+
+    const seUnGanZhi = currentSeUn?.getGanZhi() || '';
+    const seUnGan = seUnGanZhi.charAt(0);
+
+    // Determine cycle phase based on position in 대운
+    const yearsIntoDaYun = age - currentDaYun.getStartAge();
+    let cyclePhase = '';
+    if (yearsIntoDaYun <= 2) {
+      cyclePhase = 'entering a new 10-year chapter. The energy is shifting. Give yourself time to adjust.';
+    } else if (yearsIntoDaYun >= 8) {
+      cyclePhase = 'approaching a transition point. The current chapter is closing. Prepare for what comes next.';
+    } else {
+      cyclePhase = 'in the middle of a stable chapter. This is the time to build and consolidate.';
+    }
+
+    return {
+      currentDaYun: {
+        ganZhi: daYunGanZhi,
+        startAge: currentDaYun.getStartAge(),
+        endAge: currentDaYun.getEndAge(),
+        element: GAN_ELEMENT[daYunGan] || 'unknown',
+        meaning: GANZHI_MEANING[daYunGan] || 'transitional energy',
+      },
+      currentSeUn: {
+        year: currentYear,
+        ganZhi: seUnGanZhi,
+        element: GAN_ELEMENT[seUnGan] || 'unknown',
+        meaning: GANZHI_MEANING[seUnGan] || 'transitional energy',
+      },
+      isForward: yun.isForward(),
+      cyclePhase,
+    };
+  } catch (e) {
+    console.error('Luck cycle calculation failed:', e);
+    return null;
+  }
 }
 
 export function translateToBehaviors(
@@ -160,20 +257,36 @@ export function translateToBehaviors(
     'Anger': 'Anger comes when you did not inform people before acting. Or when people blocked you without understanding your intention.',
   };
 
-  // Age Context
+  // Age Context with Luck Cycle
+  const luckCycle = calculateLuckCycle(birthDate, '12:00', 'F'); // TODO: pass actual gender
+
   let ageContext = '';
+  let baseAgeContext = '';
+
+  // Base life stage context
   if (age < 25) {
-    ageContext = `At ${age}, you are in the experimentation phase. This is the time to try things, fail, and learn what does not work. Mistakes are not setbacks. They are data.`;
+    baseAgeContext = `At ${age}, you are in the experimentation phase. This is the time to try things, fail, and learn what does not work. Mistakes are not setbacks. They are data.`;
   } else if (age < 30) {
-    ageContext = `At ${age}, you are transitioning out of pure experimentation. The lessons from your early twenties are starting to crystallize. Time to observe patterns, not just react to them.`;
+    baseAgeContext = `At ${age}, you are transitioning out of pure experimentation. The lessons from your early twenties are starting to crystallize.`;
   } else if (age < 35) {
-    ageContext = `At ${age}, you are entering a more observational phase. Less trial and error, more strategic watching. The chaos of your twenties should start making sense now.`;
+    baseAgeContext = `At ${age}, you are entering a more observational phase. Less trial and error, more strategic watching.`;
   } else if (age < 40) {
-    ageContext = `At ${age}, you have enough experience to see patterns others miss. Your role is shifting from student to guide. People are starting to look to you for direction.`;
+    baseAgeContext = `At ${age}, you have enough experience to see patterns others miss. Your role is shifting from student to guide.`;
   } else if (age < 50) {
-    ageContext = `At ${age}, you are in your authority years. The experiments are done. You know what works for you. Now it is about depth, not breadth.`;
+    baseAgeContext = `At ${age}, you are in your authority years. The experiments are done. You know what works for you.`;
   } else {
-    ageContext = `At ${age}, your accumulated wisdom is your biggest asset. You have lived through enough cycles to see the long game. Share what you have learned.`;
+    baseAgeContext = `At ${age}, your accumulated wisdom is your biggest asset. You have lived through enough cycles to see the long game.`;
+  }
+
+  // Add luck cycle context if available
+  if (luckCycle) {
+    const daYunContext = `You are currently in a ${luckCycle.currentDaYun.element} chapter (ages ${luckCycle.currentDaYun.startAge}-${luckCycle.currentDaYun.endAge}), which emphasizes ${luckCycle.currentDaYun.meaning}.`;
+    const seUnContext = `This year (${luckCycle.currentSeUn.year}) carries ${luckCycle.currentSeUn.element} energy: ${luckCycle.currentSeUn.meaning}.`;
+    const phaseContext = `You are ${luckCycle.cyclePhase}`;
+
+    ageContext = `${baseAgeContext} ${daYunContext} ${seUnContext} ${phaseContext}`;
+  } else {
+    ageContext = baseAgeContext;
   }
 
   // Design vs Perception Gap
