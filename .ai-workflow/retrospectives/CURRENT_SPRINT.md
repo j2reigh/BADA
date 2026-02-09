@@ -13,6 +13,41 @@
 
 ## 🔄 최근 회고 (최신순)
 
+### 2026-02-09 - V3 카드뉴스 리포트 프로토타입 (충돌 프레이밍 + 타임라인)
+**Agent:** Claude
+
+#### 👍 Keep (계속 할 것)
+- **"충돌 = 인사이트" 발견:** 서베이(자기인식) vs 사주(설계도)의 GAP을 핵심 프레이밍으로 삼은 것이 $10 moment를 만듦. 정보 나열이 아닌 서사 구조가 핵심
+- **Few-shot > Constraint:** v2의 constraint 15개 방식 대신 골드스탠다드 예시 1개 + "이 품질로 써라"가 훨씬 좋은 LLM 출력을 만듦
+- **Deterministic + LLM 하이브리드:** Energy Allocation 숫자는 서버가, 해석은 LLM이 — 환각 방지와 품질을 동시에 잡음
+- **사주 데이터 최대 활용:** 오행만이 아니라 사주팔자+십신+대운+세운까지 전부 활용. 최소 480개 조합 기반
+- **즉시 검증:** User B(Passive Floater)로 "산 vs 바다" 완전히 다른 콘텐츠 생성 확인 — 하드코딩 과최적화 아님을 증명
+- **유저 피드백 즉시 반영:** "전문용어 노출 금지" → 프롬프트에 JARGON BAN 추가, "타임라인 느낌 안남" → 시각적 세로 타임라인 + zoom-in 브레드크럼
+
+#### 🤔 Problem (문제점)
+- **하드코딩으로 먼저 만족시키려는 경향:** deriveV3Content()로 이지윤 데이터 하나에 과최적화한 후 LLM 프롬프트로 전환 — 순서가 반대였으면 더 빨랐음
+- **Brain Scan 환각:** LLM이 remaining:120% 생성. 숫자는 LLM에 맡기면 안 된다는 교훈
+- **오행→행동축 매핑 오류:** 목=flexibility로 잘못 매핑 (실제는 수=flexibility). 도메인 지식 확인 없이 매핑하면 안 됨
+- **HD 데이터 여전히 하드코딩:** SAMPLE_HD_DATA가 모든 유저에게 적용 중. v3에서 사주+서베이 충돌이 핵심이라 영향은 적지만 한계 존재
+
+#### 💡 Try (시도할 것)
+- **LLM 프롬프트 먼저, 하드코딩 fallback 나중에:** 다음엔 LLM 출력 품질을 먼저 검증하고, 하드코딩은 오프라인 fallback으로만
+- **사주 도메인 크로스체크 필수:** 오행/십신/대운 해석은 반드시 유저에게 확인 후 적용
+- **다국어 v3 카드 테스트:** 현재 en only — ko/id에서도 전문용어 차단 + 품질 유지되는지 검증 필요
+- **HD API 구매 판단:** v3 검증 후 실제 유저별 HD 데이터로 behavior_translator 정확도 향상
+
+#### 📦 산출물
+- `client/src/pages/ResultsV3.tsx`: 13장 카드뉴스 (HookCard, InsightCard×3, EnergyCard, EvidenceCard, CostCard×3, ChapterCard(세로 타임라인), YearCard(zoom-in), ActionCard(zoom-in), ClosingCard)
+- `lib/gemini_client.ts`: generateV3Cards() + V3CardContent interface (충돌 프레이밍 few-shot 프롬프트, 전문용어 차단, 타임라인)
+- `lib/behavior_translator.ts`: getTenGod(), buildDaYunInfo(), ZHI_MAIN_QI, calculateLuckCycle() 확장 (prev/current/next 대운 + 십신)
+- `server/routes.ts`: GET /api/results/:reportId/v3-cards (대운/세운 계산 포함)
+- `client/src/App.tsx`: /results/:reportId/v3 라우트
+- `scripts/test_v3_cards_diff.ts`: User B 차별화 검증
+- `scripts/test_dayun.ts`: 대운/십신 검증
+- `.ai-workflow/plans/2026-02-09-report-v3-card-prototype.md`: 기획 문서 (현재 상태 + 다음 단계)
+
+---
+
 ### 2026-01-31 - Gumroad 결제 연결 + 리포트 생성 로딩 화면 + 워크플로우 간소화
 **Agent:** Claude
 
@@ -128,7 +163,7 @@
 - **타입 체크 생활화:** `npm run check`를 통해 리팩토링 후 사이드 이펙트를 확실하게 잡고 넘어가는 습관 유지.
 
 #### 📦 산출물
-- `client/src/pages/Survey.tsx`: 수동 입력 UI (City Input 제거, Country/Timezone Dropdown)
+- `client/src/pages/Survey.tsx`: 수동 입력 UI (City Input 제거, Combobox Country/Timezone Selection)
 - `server/routes.ts`: `/api/cities/search` 엔드포인트 제거 및 클린업
 - `client/src/lib/simple-i18n.ts`: UI 언어 기반 Default Language 선택 로직 개선
 
