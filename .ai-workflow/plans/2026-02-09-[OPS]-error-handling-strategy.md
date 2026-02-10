@@ -1,7 +1,7 @@
 # Error Handling Strategy
 
 > 생성일: 2026-02-09
-> 상태: 🟡 계획 중
+> 상태: 🟢 분석 완료 → 구현 대기
 
 ## 개요
 시스템 안정성 강화를 위한 에러 핸들링 전략
@@ -123,11 +123,57 @@ class ErrorBoundary extends React.Component {
 
 ### 3. Gumroad Webhook (우선순위: 중간)
 
-**문제:** 중복 처리, 검증 실패
+**문제:** Idempotency 미흡 — 중복 결제/리플레이 공격 방어 불가
 
-**현재 코드 확인 필요:**
-- [ ] Idempotency 체크 있는지 확인
-- [ ] 중복 purchase_id 방지
+**현재 코드 분석:**
+```typescript
+// server/routes.ts:622-677
+app.post("/api/webhooks/gumroad", async (req, res) => {
+  const { sale_id, ... } = req.body;
+  // sale_id를 로그만 찍고 저장하지 않음!
+  console.log(`[Gumroad] 💰 Sale ID: ${sale_id}, ...`);
+  await storage.unlockReport(reportId);  // isPaid = true만 설정
+});
+
+// server/storage.ts:210-218
+async unlockReport(id: string) {
+  await db.update(sajuResults)
+    .set({ isPaid: true })  // sale_id 미저장
+    .where(eq(sajuResults.id, id));
+}
+```
+- ❌ `sale_id` 미저장 → 중복 webhook 감지 불가
+- ❌ 같은 `sale_id`로 여러 번 호출 시 매번 처리
+- ❌ 1 결제 = N 리포트 unlock 가능 (버그)
+
+**해결안:**
+```typescript
+// Option A: SajuResults에 paymentSaleId 컬럼 추가
+sajuResults 테이블:
+  + paymentSaleId: text (nullable, unique)
+
+unlockReportWithPayment(id: string, saleId: string) {
+  // 1. 이미 이 sale_id로 unlock된 리포트 있는지 확인
+  const existing = await db.select().from(sajuResults)
+    .where(eq(sajuResults.paymentSaleId, saleId));
+  if (existing.length > 0) {
+    return { success: false, reason: "DUPLICATE_SALE" };
+  }
+  // 2. unlock + sale_id 저장
+  await db.update(sajuResults)
+    .set({ isPaid: true, paymentSaleId: saleId })
+    .where(eq(sajuResults.id, id));
+}
+
+// Option B: 별도 payments 테이블
+payments 테이블:
+  id, saleId (unique), reportId, amount, currency, createdAt
+→ 결제 히스토리 추적 + 환불 처리 용이
+```
+
+- [ ] `paymentSaleId` 컬럼 추가 (최소 변경)
+- [ ] Webhook에서 중복 `sale_id` 체크 후 거부
+- [ ] (선택) 별도 `payments` 테이블로 확장
 
 ### 4. Logging (우선순위: 중간)
 
@@ -159,8 +205,8 @@ if (!emailResult.success) {
 |------|------|------|-------------|
 | 1 | Gemini retry | 핵심 기능, 실패 시 리포트 생성 불가 | 1-2시간 |
 | 2 | ErrorBoundary | UX 치명적 (white screen) | 30분 |
-| 3 | Sentry 연동 | 프로덕션 디버깅 필수 | 1시간 |
-| 4 | Gumroad 중복 방지 | 결제 신뢰성 | 확인 후 결정 |
+| 3 | Gumroad idempotency | 결제 신뢰성 (sale_id 미저장 확인됨) | 1시간 |
+| 4 | Sentry 연동 | 프로덕션 디버깅 필수 | 1시간 |
 | 5 | 나머지 | 점진적 개선 | - |
 
 ---
