@@ -8,116 +8,165 @@
 
 ---
 
-## 1. Gemini API
+## AS-IS 현황
 
-### Potential 문제
-- [ ] Rate limit / quota 초과
-- [ ] API 응답 파싱 실패 (JSON 깨짐)
-- [ ] Timeout (리포트 생성 60초+)
-- [ ] API 일시 장애
+### Backend (server/routes.ts)
+```typescript
+// 현재 패턴
+try {
+  // ... 로직
+} catch (err) {
+  console.error("[Assessment] error:", err);
+  res.status(500).json({ success: false, message: "Internal Server Error" });
+}
+```
+- ✅ try/catch로 감싸져 있음
+- ✅ Zod validation 에러 처리 (field별 메시지)
+- ✅ console.error 로깅
+- ❌ Retry 로직 없음
+- ❌ 외부 로깅 서비스 없음 (Sentry 등)
+- ❌ 에러 타입별 분기 처리 미흡
 
-### Contingency Plan
-- [ ] Retry logic (3회, exponential backoff)
-- [ ] JSON 파싱 실패 시 재시도 or fallback
-- [ ] Timeout 설정 + 사용자에게 "생성 중" 상태 표시
-- [ ] Circuit breaker 패턴 고려
+### Gemini API (lib/gemini_client.ts)
+```typescript
+// 현재 패턴
+try {
+  const result = await model.generateContent(...);
+  return parseJSON(result.response.text());
+} catch (error) {
+  console.error("Report Generation Failed:", error);
+  throw new Error(`Failed to generate...`);
+}
+```
+- ✅ try/catch 있음
+- ✅ API 키 없을 때 mock fallback
+- ❌ Retry 없음 (rate limit, 일시 장애 시 바로 실패)
+- ❌ JSON 파싱 실패 시 재시도 없음
+- ❌ Timeout 설정 없음
 
----
+### Client (React)
+```typescript
+// React Query 사용 (Wait.tsx, Results.tsx)
+onError: (error: Error) => {
+  // 처리
+}
+```
+- ✅ React Query의 onError 핸들러 사용
+- ✅ 일부 컴포넌트에 try/catch
+- ❌ Global ErrorBoundary 없음 (JS 에러 시 white screen)
+- ❌ 네트워크 에러 UI 미흡
 
-## 2. Saju/Luck Cycle 계산
-
-### Potential 문제
-- [ ] 잘못된 날짜 형식
-- [ ] lunar-typescript 예외
-- [ ] 대운 범위 밖 나이 (100세+)
-- [ ] birthTime null 처리
-
-### Contingency Plan
-- [ ] Input validation 강화
-- [ ] try-catch + graceful fallback (대운 없이 진행)
-- [ ] 에러 로깅
-
----
-
-## 3. Database (Supabase)
-
-### Potential 문제
-- [ ] 연결 끊김 / pool exhaustion
-- [ ] 쿼리 실패
-- [ ] Row limit 초과 (free tier)
-- [ ] 동시성 이슈
-
-### Contingency Plan
-- [ ] Connection retry
-- [ ] Transaction rollback 처리
-- [ ] DB health check endpoint
-- [ ] 에러 시 사용자 메시지
-
----
-
-## 4. Email (Resend)
-
-### Potential 문제
-- [ ] API 장애
-- [ ] Rate limit (100/day free)
-- [ ] 잘못된 이메일 주소
-
-### Contingency Plan
-- [ ] Retry queue
-- [ ] 실패 시 로깅 + 나중에 재시도
-- [ ] 이메일 검증 강화
+### Database (Supabase/Drizzle)
+- ✅ Drizzle ORM 사용
+- ✅ 기본적인 try/catch
+- ❌ Connection pool 관리 미확인
+- ❌ Retry 없음
 
 ---
 
-## 5. Payment (Gumroad Webhook)
+## TO-BE 개선안
 
-### Potential 문제
-- [ ] Webhook 검증 실패
-- [ ] 중복 처리 (같은 webhook 여러 번)
-- [ ] 네트워크 지연으로 순서 꼬임
+### 1. Gemini API (우선순위: 높음)
 
-### Contingency Plan
-- [ ] Idempotency key 체크
-- [ ] Webhook 로깅
-- [ ] 수동 unlock 백업 (관리자용)
+**문제:** Rate limit, 일시 장애, JSON 파싱 실패 시 바로 실패
+
+**해결:**
+```typescript
+// lib/gemini_client.ts에 추가
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries = 3,
+  delay = 1000
+): Promise<T> {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (e) {
+      if (i === maxRetries - 1) throw e;
+      await new Promise(r => setTimeout(r, delay * Math.pow(2, i)));
+    }
+  }
+  throw new Error("Retry exhausted");
+}
+```
+
+- [ ] Retry with exponential backoff (3회)
+- [ ] JSON 파싱 실패 시 1회 재시도
+- [ ] Timeout 설정 (90초)
+
+### 2. Client ErrorBoundary (우선순위: 높음)
+
+**문제:** JS 에러 시 white screen
+
+**해결:**
+```typescript
+// client/src/components/ErrorBoundary.tsx
+class ErrorBoundary extends React.Component {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <ErrorFallback onRetry={() => window.location.reload()} />;
+    }
+    return this.props.children;
+  }
+}
+```
+
+- [ ] Global ErrorBoundary 추가
+- [ ] 친절한 에러 UI + 새로고침 버튼
+- [ ] 에러 발생 시 Sentry 리포팅
+
+### 3. Gumroad Webhook (우선순위: 중간)
+
+**문제:** 중복 처리, 검증 실패
+
+**현재 코드 확인 필요:**
+- [ ] Idempotency 체크 있는지 확인
+- [ ] 중복 purchase_id 방지
+
+### 4. Logging (우선순위: 중간)
+
+**문제:** console.error만 사용, 프로덕션에서 추적 불가
+
+**해결:**
+- [ ] Sentry 또는 LogRocket 연동
+- [ ] Critical 에러 Slack 알림
+- [ ] 에러 context 포함 (userId, reportId 등)
+
+### 5. Email (Resend) (우선순위: 낮음)
+
+**현재:** 실패 시 로그만 남김
+```typescript
+if (!emailResult.success) {
+  console.error("[Assessment] Failed to send verification email:", emailResult.error);
+}
+```
+
+**개선:**
+- [ ] 실패 시 retry queue (optional)
+- [ ] 실패 알림
 
 ---
 
-## 6. Client-Side
+## 우선순위 정리
 
-### Potential 문제
-- [ ] JS 에러로 화면 crash
-- [ ] Network 실패
-- [ ] 렌더링 에러
-
-### Contingency Plan
-- [ ] React Error Boundary
-- [ ] Loading/Error 상태 UI
-- [ ] Retry 버튼
+| 순위 | 항목 | 이유 | 예상 작업량 |
+|------|------|------|-------------|
+| 1 | Gemini retry | 핵심 기능, 실패 시 리포트 생성 불가 | 1-2시간 |
+| 2 | ErrorBoundary | UX 치명적 (white screen) | 30분 |
+| 3 | Sentry 연동 | 프로덕션 디버깅 필수 | 1시간 |
+| 4 | Gumroad 중복 방지 | 결제 신뢰성 | 확인 후 결정 |
+| 5 | 나머지 | 점진적 개선 | - |
 
 ---
 
-## 7. Logging & Alerting
-
-### 필요 사항
-- [ ] 에러 로그 수집 (Sentry 등)
-- [ ] Critical 에러 알림 (Slack/Email)
-- [ ] 에러 대시보드
-
----
-
-## 우선순위
-
-| 순위 | 항목 | 이유 |
-|------|------|------|
-| 1 | Gemini API retry | 리포트 생성 핵심 |
-| 2 | Client Error Boundary | UX 안정성 |
-| 3 | Gumroad webhook 중복 방지 | 결제 신뢰성 |
-| 4 | Logging (Sentry) | 디버깅 필수 |
-| 5 | 나머지 | 점진적 개선 |
-
----
-
-## 참고
-- 현재 mock report fallback 있음 (Gemini 키 없을 때)
-- Supabase는 자체 retry 있음
+## 참고 파일
+- `server/routes.ts` - 백엔드 에러 핸들링
+- `lib/gemini_client.ts` - Gemini API 호출
+- `client/src/pages/Wait.tsx` - React Query 에러 핸들링
+- `lib/behavior_translator.ts:261` - Luck cycle try/catch
