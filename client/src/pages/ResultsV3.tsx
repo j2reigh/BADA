@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Lock, ChevronDown, Zap, Code2 } from "lucide-react";
+import { Loader2, Lock, ChevronDown, Zap, Code2, ExternalLink } from "lucide-react";
 import { ResultsData } from "@/components/report-v2/types";
 import { queryClient } from "@/lib/queryClient";
 
@@ -336,7 +336,7 @@ function deriveV3Content(report: ResultsData): V3CardContent {
 
 function Card({
   children,
-  bg = "bg-[#0f1729]",
+  bg = "bg-[#182339]",
   className = "",
 }: {
   children: React.ReactNode;
@@ -345,37 +345,24 @@ function Card({
 }) {
   return (
     <div
-      className={`h-[100dvh] w-full flex-shrink-0 snap-start flex flex-col justify-center items-center px-8 ${bg} ${className}`}
+      className={`h-[100dvh] w-full flex-shrink-0 snap-start flex flex-col justify-center items-center px-8 relative ${bg} ${className}`}
+      style={{ fontFamily: "'Inter', sans-serif" }}
     >
       {children}
+      {/* Watermark — visible in screenshots */}
+      <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-1.5 opacity-25 pointer-events-none">
+        <img src="/logowhite.svg" alt="" className="h-3.5" />
+        <span className="text-[10px] text-white/80 font-light tracking-wide" style={{ fontFamily: "'Inter', sans-serif" }}>bada.one</span>
+      </div>
     </div>
   );
 }
 
 function CardLabel({ children }: { children: React.ReactNode }) {
   return (
-    <span className="text-[11px] uppercase tracking-[0.3em] text-white/30 mb-6">
+    <span className="text-xs uppercase tracking-[0.3em] text-white/50 mb-6" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
       {children}
     </span>
-  );
-}
-
-function CardProgress({ current, total }: { current: number; total: number }) {
-  return (
-    <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-1.5">
-      {Array.from({ length: total }).map((_, i) => (
-        <div
-          key={i}
-          className={`h-1 rounded-full transition-all duration-300 ${
-            i === current
-              ? "w-6 bg-white/60"
-              : i < current
-              ? "w-1.5 bg-white/20"
-              : "w-1.5 bg-white/10"
-          }`}
-        />
-      ))}
-    </div>
   );
 }
 
@@ -384,18 +371,14 @@ function CardProgress({ current, total }: { current: number; total: number }) {
 function HookCard({
   name,
   question,
-  index,
-  total,
 }: {
   name: string;
   question: string;
-  index: number;
-  total: number;
 }) {
   return (
-    <Card bg="bg-gradient-to-b from-[#0f1729] to-[#161d2e]">
+    <Card bg="bg-gradient-to-b from-[#182339] to-[#1e2a40]">
       <div className="relative flex flex-col items-center text-center w-full max-w-sm">
-        <span className="text-[10px] uppercase tracking-[0.4em] text-[#879DC6]/60 mb-12">
+        <span className="text-xs uppercase tracking-[0.4em] text-[#879DC6]/60 mb-12" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
           BADA
         </span>
         <h1 className="text-3xl font-light text-white/90 mb-8 leading-tight">
@@ -404,11 +387,11 @@ function HookCard({
         <p className="text-lg text-[#879DC6] font-light leading-relaxed">
           {question}
         </p>
-        <div className="mt-16 flex flex-col items-center gap-2 text-white/20">
-          <span className="text-[10px] tracking-widest uppercase">scroll</span>
+        <div className="mt-16 flex flex-col items-center gap-2 text-white/30">
+          <span className="text-xs tracking-widest uppercase" style={{ fontFamily: "'JetBrains Mono', monospace" }}>scroll</span>
           <ChevronDown className="w-4 h-4 animate-bounce" />
         </div>
-        <CardProgress current={index} total={total} />
+
       </div>
     </Card>
   );
@@ -419,15 +402,11 @@ function InsightCard({
   question,
   text,
   accent,
-  index,
-  total,
 }: {
   label: string;
   question?: string;
   text: string;
   accent?: string;
-  index: number;
-  total: number;
 }) {
   return (
     <Card>
@@ -445,11 +424,11 @@ function InsightCard({
           {text}
         </p>
         {accent && (
-          <p className="mt-6 text-sm text-[#879DC6]/80 font-light leading-relaxed">
+          <p className="mt-6 text-sm text-[#ABBBD5]/70 font-light leading-relaxed">
             {accent}
           </p>
         )}
-        <CardProgress current={index} total={total} />
+
       </div>
     </Card>
   );
@@ -459,14 +438,10 @@ function EvidenceCard({
   label,
   question,
   items,
-  index,
-  total,
 }: {
   label: string;
   question?: string;
   items: string[];
-  index: number;
-  total: number;
 }) {
   return (
     <Card>
@@ -480,16 +455,16 @@ function EvidenceCard({
         <div className="space-y-6 mt-2">
           {items.map((item, i) => (
             <div key={i} className="flex gap-4 items-start">
-              <span className="text-[#879DC6]/40 font-mono text-sm mt-1 shrink-0">
+              <span className="text-[#879DC6]/50 text-sm mt-1 shrink-0" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
                 {String(i + 1).padStart(2, "0")}
               </span>
-              <p className="text-base font-light text-white/80 leading-relaxed">
+              <p className="text-base font-light text-white/85 leading-relaxed">
                 {item}
               </p>
             </div>
           ))}
         </div>
-        <CardProgress current={index} total={total} />
+
       </div>
     </Card>
   );
@@ -501,16 +476,12 @@ function CostCard({
   emoji,
   title,
   description,
-  index,
-  total,
 }: {
   label: string;
   question?: string;
   emoji: string;
   title: string;
   description: string;
-  index: number;
-  total: number;
 }) {
   return (
     <Card>
@@ -529,7 +500,7 @@ function CostCard({
         <p className="text-base font-light text-white/70 leading-relaxed">
           {firstSentences(description, 2)}
         </p>
-        <CardProgress current={index} total={total} />
+
       </div>
     </Card>
   );
@@ -541,48 +512,44 @@ function ActionCard({
   ritualName,
   description,
   when,
-  index,
-  total,
 }: {
   question: string;
   neuroExplanation: string;
   ritualName: string;
   description: string;
   when: string;
-  index: number;
-  total: number;
 }) {
   return (
-    <Card bg="bg-gradient-to-b from-[#0f1729] to-[#0d2137]">
+    <Card bg="bg-gradient-to-b from-[#182339] to-[#1e2a45]">
       <div className="relative flex flex-col items-center text-center w-full max-w-sm">
         <CardLabel>this week</CardLabel>
 
-        {/* Zoom-in breadcrumb — matching YearCard flow */}
-        <div className="flex items-center gap-2 mb-6">
-          <span className="text-[10px] text-white/20 uppercase tracking-wider">Decade</span>
-          <span className="text-white/15">›</span>
-          <span className="text-[10px] text-white/20 uppercase tracking-wider">{new Date().getFullYear()}</span>
-          <span className="text-white/15">›</span>
-          <span className="text-[10px] text-[#879DC6] uppercase tracking-wider font-medium">This week</span>
+        {/* Zoom-in breadcrumb */}
+        <div className="flex items-center gap-2 mb-6" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+          <span className="text-xs text-white/30 uppercase tracking-wider">Decade</span>
+          <span className="text-white/25">›</span>
+          <span className="text-xs text-white/30 uppercase tracking-wider">{new Date().getFullYear()}</span>
+          <span className="text-white/25">›</span>
+          <span className="text-xs text-[#ABBBD5] uppercase tracking-wider font-medium">This week</span>
         </div>
 
-        <p className="text-lg text-[#879DC6] font-light mb-6 leading-relaxed">
+        <p className="text-lg text-[#ABBBD5] font-light mb-6 leading-relaxed">
           {question}
         </p>
-        <div className="w-8 h-px bg-white/10 mb-6" />
-        <p className="text-sm text-white/50 font-light leading-relaxed mb-8">
+        <div className="w-8 h-px bg-white/15 mb-6" />
+        <p className="text-sm text-white/60 font-light leading-relaxed mb-8">
           {neuroExplanation}
         </p>
         <div className="w-full px-5 py-5 rounded-2xl bg-white/5 border border-white/10 mb-4">
           <h3 className="text-lg font-medium text-white/90 mb-3">{ritualName}</h3>
-          <p className="text-sm font-light text-white/60 leading-relaxed">
+          <p className="text-sm font-light text-white/70 leading-relaxed">
             {firstSentences(description, 2)}
           </p>
         </div>
         <div className="px-4 py-2.5 rounded-xl bg-white/5 border border-white/10">
-          <p className="text-xs text-[#879DC6]/60 font-light">{when}</p>
+          <p className="text-xs text-[#ABBBD5]/70 font-light" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{when}</p>
         </div>
-        <CardProgress current={index} total={total} />
+
       </div>
     </Card>
   );
@@ -601,7 +568,7 @@ function ScanBar({
     <div>
       <div className="flex justify-between items-baseline mb-1.5">
         <span className="text-xs text-white/70 font-medium">{label}</span>
-        <span className="text-xs text-white/50 font-mono">{value}%</span>
+        <span className="text-xs text-white/60" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{value}%</span>
       </div>
       <div className="h-2 bg-white/5 rounded-full overflow-hidden">
         <div
@@ -620,8 +587,6 @@ function EnergyCard({
   stability,
   remaining,
   insight,
-  index,
-  total,
 }: {
   question: string;
   alarm: number;
@@ -629,11 +594,9 @@ function EnergyCard({
   stability: number;
   remaining: number;
   insight: string;
-  index: number;
-  total: number;
 }) {
   return (
-    <Card bg="bg-gradient-to-b from-[#0f1729] to-[#0d1a2d]">
+    <Card bg="bg-gradient-to-b from-[#182339] to-[#1a2840]">
       <div className="relative flex flex-col items-center w-full max-w-sm">
         <CardLabel>energy allocation</CardLabel>
         <p className="text-lg text-[#879DC6] font-light mb-8 leading-relaxed text-center">
@@ -648,14 +611,14 @@ function EnergyCard({
           </div>
         </div>
         <div className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10">
-          <span className="text-[9px] uppercase tracking-[0.2em] text-[#879DC6]/30 block mb-2">
+          <span className="text-xs uppercase tracking-[0.2em] text-[#879DC6]/40 block mb-2" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
             Neuroscience
           </span>
-          <p className="text-xs text-white/50 font-light leading-relaxed">
+          <p className="text-xs text-white/60 font-light leading-relaxed">
             {insight}
           </p>
         </div>
-        <CardProgress current={index} total={total} />
+
       </div>
     </Card>
   );
@@ -663,83 +626,122 @@ function EnergyCard({
 
 function ChapterCard({
   chapter,
-  index,
-  total,
 }: {
   chapter: V3CardContent["chapter"];
-  index: number;
-  total: number;
 }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [activeSlide, setActiveSlide] = useState(1); // start at current (index 1)
+
+  // Scroll to "current" slide on mount
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    // Each slide is 100% width — scroll to index 1
+    requestAnimationFrame(() => {
+      el.scrollLeft = el.clientWidth;
+    });
+  }, []);
+
+  // Track active slide
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const idx = Math.round(el.scrollLeft / el.clientWidth);
+      setActiveSlide(idx);
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const slides = [
+    { label: chapter.previousLabel, text: chapter.previousText, period: "past" as const },
+    { label: chapter.currentLabel, text: chapter.currentText, period: "current" as const },
+    { label: chapter.nextLabel, text: chapter.nextText, period: "next" as const },
+  ];
+
   return (
-    <Card bg="bg-gradient-to-b from-[#0f1729] to-[#1a1525]">
+    <Card bg="bg-gradient-to-b from-[#182339] to-[#1e2a45]">
       <div className="relative flex flex-col items-center w-full max-w-sm">
         <CardLabel>your chapter</CardLabel>
-        <p className="text-xl text-[#c4a0e8] font-light mb-8 leading-relaxed text-center">
+        <p className="text-xl text-[#ABBBD5] font-light mb-6 leading-relaxed text-center">
           {chapter.question}
         </p>
 
-        {/* Vertical timeline */}
-        <div className="w-full space-y-0">
-          {/* Previous */}
-          <div className="flex gap-4 items-start">
-            <div className="flex flex-col items-center shrink-0 w-5">
-              <div className="w-2 h-2 rounded-full bg-white/15" />
-              <div className="w-px h-full min-h-[40px] bg-gradient-to-b from-white/15 to-white/30" />
-            </div>
-            <div className="pb-5">
-              <span className="text-[10px] uppercase tracking-[0.2em] text-white/25 font-medium">
-                {chapter.previousLabel}
-              </span>
-              <p className="text-sm text-white/35 font-light leading-relaxed mt-1">
-                {chapter.previousText}
-              </p>
-            </div>
-          </div>
+        {/* Slide indicators */}
+        <div className="flex items-center gap-3 mb-6" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+          {slides.map((s, i) => (
+            <button
+              key={i}
+              onClick={() => {
+                scrollRef.current?.scrollTo({ left: i * (scrollRef.current?.clientWidth || 0), behavior: "smooth" });
+              }}
+              className={`text-xs uppercase tracking-wider transition-all duration-300 ${
+                activeSlide === i
+                  ? i === 1
+                    ? "text-[#ABBBD5] font-medium"
+                    : "text-white/70 font-medium"
+                  : "text-white/30"
+              }`}
+            >
+              {i === 1 ? (
+                <span className="flex items-center gap-1.5">
+                  {s.label}
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#ABBBD5]/15 text-[#ABBBD5]/80 border border-[#ABBBD5]/20">
+                    NOW
+                  </span>
+                </span>
+              ) : s.label}
+            </button>
+          ))}
+        </div>
 
-          {/* Current — highlighted */}
-          <div className="flex gap-4 items-start">
-            <div className="flex flex-col items-center shrink-0 w-5">
-              <div className="w-3.5 h-3.5 rounded-full bg-[#c4a0e8] shadow-[0_0_12px_rgba(196,160,232,0.4)]" />
-              <div className="w-px h-full min-h-[40px] bg-gradient-to-b from-[#c4a0e8]/40 to-white/15" />
-            </div>
-            <div className="pb-5">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] uppercase tracking-[0.2em] text-[#c4a0e8] font-medium">
-                  {chapter.currentLabel}
-                </span>
-                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[#c4a0e8]/15 text-[#c4a0e8]/80 border border-[#c4a0e8]/20">
-                  NOW
-                </span>
+        {/* Horizontal carousel */}
+        <div
+          ref={scrollRef}
+          className="w-full overflow-x-auto snap-x snap-mandatory scrollbar-hide"
+          style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
+        >
+          <div className="flex w-[300%]">
+            {slides.map((s, i) => (
+              <div key={i} className="w-1/3 snap-center flex-shrink-0 px-2">
+                <div className={`rounded-2xl px-5 py-6 border transition-all duration-300 ${
+                  i === 1
+                    ? "bg-[#ABBBD5]/8 border-[#ABBBD5]/20"
+                    : "bg-white/3 border-white/8"
+                }`}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className={`rounded-full ${
+                      i === 1
+                        ? "w-3 h-3 bg-[#ABBBD5] shadow-[0_0_10px_rgba(171,187,213,0.4)]"
+                        : "w-2 h-2 bg-white/25"
+                    }`} />
+                    <span className={`text-xs uppercase tracking-[0.2em] font-medium ${
+                      i === 1 ? "text-[#ABBBD5]" : "text-white/40"
+                    }`} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                      {s.label}
+                    </span>
+                  </div>
+                  <p className={`font-light leading-relaxed ${
+                    i === 1
+                      ? "text-base text-white/90"
+                      : "text-sm text-white/60"
+                  }`}>
+                    {s.text}
+                  </p>
+                </div>
               </div>
-              <p className="text-base text-white/90 font-light leading-relaxed mt-1.5">
-                {chapter.currentText}
-              </p>
-            </div>
-          </div>
-
-          {/* Next */}
-          <div className="flex gap-4 items-start">
-            <div className="flex flex-col items-center shrink-0 w-5">
-              <div className="w-2 h-2 rounded-full bg-white/15" />
-            </div>
-            <div>
-              <span className="text-[10px] uppercase tracking-[0.2em] text-white/25 font-medium">
-                {chapter.nextLabel}
-              </span>
-              <p className="text-sm text-white/35 font-light leading-relaxed mt-1">
-                {chapter.nextText}
-              </p>
-            </div>
+            ))}
           </div>
         </div>
 
         {/* Transition insight */}
         {chapter.accent && (
-          <p className="mt-6 text-sm text-[#c4a0e8]/60 font-light leading-relaxed text-center px-2">
+          <p className="mt-6 text-sm text-[#ABBBD5]/70 font-light leading-relaxed text-center px-2">
             {chapter.accent}
           </p>
         )}
-        <CardProgress current={index} total={total} />
+
       </div>
     </Card>
   );
@@ -749,44 +751,40 @@ function YearCard({
   question,
   text,
   accent,
-  index,
-  total,
 }: {
   question: string;
   text: string;
   accent: string;
-  index: number;
-  total: number;
 }) {
   return (
-    <Card bg="bg-gradient-to-b from-[#0f1729] to-[#152025]">
+    <Card bg="bg-gradient-to-b from-[#182339] to-[#1e2a45]">
       <div className="relative flex flex-col items-center text-center w-full max-w-sm">
         <CardLabel>this year</CardLabel>
 
         {/* Zoom-in breadcrumb */}
-        <div className="flex items-center gap-2 mb-8">
-          <span className="text-[10px] text-white/20 uppercase tracking-wider">Decade</span>
-          <span className="text-white/15">›</span>
-          <span className="text-[10px] text-[#7ec8b8] uppercase tracking-wider font-medium">{new Date().getFullYear()}</span>
-          <span className="text-white/15">›</span>
-          <span className="text-[10px] text-white/20 uppercase tracking-wider">This week</span>
+        <div className="flex items-center gap-2 mb-8" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+          <span className="text-xs text-white/30 uppercase tracking-wider">Decade</span>
+          <span className="text-white/25">›</span>
+          <span className="text-xs text-[#ABBBD5] uppercase tracking-wider font-medium">{new Date().getFullYear()}</span>
+          <span className="text-white/25">›</span>
+          <span className="text-xs text-white/30 uppercase tracking-wider">This week</span>
         </div>
 
-        <p className="text-xl text-[#7ec8b8] font-light mb-6 leading-relaxed">
+        <p className="text-xl text-[#ABBBD5] font-light mb-6 leading-relaxed">
           {question}
         </p>
-        <div className="w-8 h-px bg-white/10 mb-6" />
+        <div className="w-8 h-px bg-white/15 mb-6" />
         <p className="text-base font-light text-white/90 leading-relaxed">
           {text}
         </p>
         {accent && (
-          <div className="mt-6 px-4 py-3 rounded-xl bg-[#7ec8b8]/5 border border-[#7ec8b8]/10">
-            <p className="text-sm text-[#7ec8b8]/80 font-light leading-relaxed">
+          <div className="mt-6 px-4 py-3 rounded-xl bg-[#ABBBD5]/8 border border-[#ABBBD5]/15">
+            <p className="text-sm text-[#ABBBD5]/80 font-light leading-relaxed">
               {accent}
             </p>
           </div>
         )}
-        <CardProgress current={index} total={total} />
+
       </div>
     </Card>
   );
@@ -795,17 +793,14 @@ function YearCard({
 function ClosingCard({
   message,
   reportId,
-  index,
-  total,
 }: {
   message: string;
   reportId: string;
-  index: number;
-  total: number;
 }) {
   const shareUrl = `${window.location.origin}/results/${reportId}/v3`;
+  const marqueeText = "FLOW WITH YOUR NATURE · BADA · ".repeat(12);
   return (
-    <Card bg="bg-gradient-to-b from-[#0f1729] to-[#1a1012]">
+    <Card bg="bg-gradient-to-b from-[#182339] via-[#233F64] to-[#402525]">
       <div className="relative flex flex-col items-center text-center w-full max-w-sm">
         <CardLabel>closing</CardLabel>
         <p className="text-xl font-light text-white/90 leading-relaxed mb-10">
@@ -819,11 +814,45 @@ function ClosingCard({
               navigator.clipboard.writeText(shareUrl);
             }
           }}
-          className="px-8 py-3 rounded-full bg-white/10 border border-white/20 text-sm text-white/70 hover:bg-white/15 transition-colors"
+          className="flex items-center gap-2 px-8 py-3 rounded-full bg-white/10 border border-white/20 text-sm text-white/70 hover:bg-white/15 transition-colors"
         >
           Share this report
+          <ExternalLink className="w-3.5 h-3.5" />
         </button>
-        <CardProgress current={index} total={total} />
+      </div>
+
+      {/* Marquee wave — "FLOW WITH YOUR NATURE · BADA" */}
+      <div className="absolute bottom-8 left-0 right-0 overflow-hidden pointer-events-none" style={{ height: "60px" }}>
+        <svg
+          width="3000"
+          height="60"
+          viewBox="0 0 3000 60"
+          className="absolute left-1/2 -translate-x-1/2"
+          style={{ minWidth: "3000px" }}
+        >
+          <defs>
+            <path
+              id="v3-curve"
+              d="M0,30 Q150,0 300,30 Q450,60 600,30 Q750,0 900,30 Q1050,60 1200,30 Q1350,0 1500,30 Q1650,60 1800,30 Q1950,0 2100,30 Q2250,60 2400,30 Q2550,0 2700,30 Q2850,60 3000,30"
+              fill="none"
+            />
+          </defs>
+          <text
+            className="uppercase"
+            style={{
+              fontSize: "13px",
+              fontFamily: "'Inter', sans-serif",
+              fontWeight: 400,
+              fill: "#ABBBD5",
+              opacity: 0.35,
+              letterSpacing: "0.2em",
+            }}
+          >
+            <textPath href="#v3-curve">
+              {marqueeText}
+            </textPath>
+          </text>
+        </svg>
       </div>
     </Card>
   );
@@ -871,19 +900,19 @@ function LockCard({
   };
 
   return (
-    <Card bg="bg-gradient-to-b from-[#0f1729] via-[#131a2b] to-[#0f1729]">
+    <Card bg="bg-gradient-to-b from-[#182339] via-[#1a2240] to-[#182339]">
       <div className="flex flex-col items-center text-center w-full max-w-sm">
         <div className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-8">
           <Lock className="w-5 h-5 text-white/40" />
         </div>
 
         <div className="flex items-center gap-4 mb-6">
-          <span className="text-lg text-white/50 font-light">거울</span>
+          <span className="text-lg text-white/60 font-light">거울</span>
           <span className="text-2xl text-[#879DC6]">≠</span>
-          <span className="text-lg text-white/50 font-light">설계도</span>
+          <span className="text-lg text-white/60 font-light">설계도</span>
         </div>
 
-        <p className="text-base text-white/60 font-light leading-relaxed mb-2">
+        <p className="text-base text-white/70 font-light leading-relaxed mb-2">
           이 간극이 만드는
         </p>
         <p className="text-xl text-white/90 font-light mb-10">
@@ -892,14 +921,14 @@ function LockCard({
 
         <button
           onClick={() => window.open(checkoutUrl, "_blank", "noopener")}
-          className="w-full max-w-xs py-4 rounded-full bg-white text-[#0f1729] text-sm font-medium tracking-wide hover:bg-white/90 transition-colors mb-4"
+          className="w-full max-w-xs py-4 rounded-full bg-white text-[#182339] text-sm font-medium tracking-wide hover:bg-white/90 transition-colors mb-4"
         >
           Unlock Full Report — $2.9
         </button>
 
         <div className="flex items-center gap-3 my-4 w-full max-w-xs">
           <div className="flex-1 h-px bg-white/10" />
-          <span className="text-[10px] text-white/30 uppercase tracking-wider">or</span>
+          <span className="text-xs text-white/40 uppercase tracking-wider" style={{ fontFamily: "'JetBrains Mono', monospace" }}>or</span>
           <div className="flex-1 h-px bg-white/10" />
         </div>
 
@@ -913,7 +942,8 @@ function LockCard({
             onKeyDown={(e) => e.key === "Enter" && handleRedeem()}
             placeholder="Enter code"
             maxLength={20}
-            className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-center font-mono text-sm uppercase tracking-wider text-white/70 placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-colors"
+            className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-center text-sm uppercase tracking-wider text-white/70 placeholder:text-white/30 focus:outline-none focus:border-white/30 transition-colors"
+            style={{ fontFamily: "'JetBrains Mono', monospace" }}
           />
           <button
             onClick={handleRedeem}
@@ -936,7 +966,6 @@ function LockCard({
 export default function ResultsV3() {
   const { reportId } = useParams<{ reportId: string }>();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [currentCard, setCurrentCard] = useState(0);
   const [source, setSource] = useState<"hardcoded" | "llm">("hardcoded");
 
   const { data: report, isLoading, error } = useQuery<ResultsData>({
@@ -949,21 +978,10 @@ export default function ResultsV3() {
     enabled: false, // manual trigger only
   });
 
-  // Track current card via scroll
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    const onScroll = () => {
-      const idx = Math.round(container.scrollTop / container.clientHeight);
-      setCurrentCard(idx);
-    };
-    container.addEventListener("scroll", onScroll, { passive: true });
-    return () => container.removeEventListener("scroll", onScroll);
-  }, []);
 
   if (isLoading) {
     return (
-      <div className="h-[100dvh] flex items-center justify-center bg-[#0f1729]">
+      <div className="h-[100dvh] flex items-center justify-center bg-[#182339]">
         <Loader2 className="w-6 h-6 text-white/30 animate-spin" />
       </div>
     );
@@ -971,7 +989,7 @@ export default function ResultsV3() {
 
   if (error || !report) {
     return (
-      <div className="h-[100dvh] flex items-center justify-center bg-[#0f1729]">
+      <div className="h-[100dvh] flex items-center justify-center bg-[#182339]">
         <p className="text-white/50 text-sm">Report not found.</p>
       </div>
     );
@@ -990,20 +1008,20 @@ export default function ResultsV3() {
   const freeCards = [
     {
       key: "hook",
-      render: (idx: number, total: number) => (
-        <HookCard name={name} question={v3.hookQuestion} index={idx} total={total} />
+      render: () => (
+        <HookCard name={name} question={v3.hookQuestion} />
       ),
     },
     {
       key: "mirror",
-      render: (idx: number, total: number) => (
-        <InsightCard label="Your mirror" question={v3.mirrorQuestion} text={v3.mirrorText} accent={v3.mirrorAccent} index={idx} total={total} />
+      render: () => (
+        <InsightCard label="Your mirror" question={v3.mirrorQuestion} text={v3.mirrorText} accent={v3.mirrorAccent} />
       ),
     },
     {
       key: "blueprint",
-      render: (idx: number, total: number) => (
-        <InsightCard label="Your blueprint" question={v3.blueprintQuestion} text={v3.blueprintText} accent={v3.blueprintAccent} index={idx} total={total} />
+      render: () => (
+        <InsightCard label="Your blueprint" question={v3.blueprintQuestion} text={v3.blueprintText} accent={v3.blueprintAccent} />
       ),
     },
   ];
@@ -1011,62 +1029,62 @@ export default function ResultsV3() {
   const paidCards = [
     {
       key: "collision",
-      render: (idx: number, total: number) => (
-        <InsightCard label="The collision" question={v3.collisionQuestion} text={v3.collisionText} accent={v3.collisionAccent} index={idx} total={total} />
+      render: () => (
+        <InsightCard label="The collision" question={v3.collisionQuestion} text={v3.collisionText} accent={v3.collisionAccent} />
       ),
     },
     {
       key: "brain-scan",
-      render: (idx: number, total: number) => (
-        <EnergyCard question={v3.brainScan.question} alarm={v3.brainScan.alarm} drive={v3.brainScan.drive} stability={v3.brainScan.stability} remaining={v3.brainScan.remaining} insight={v3.brainScan.insight} index={idx} total={total} />
+      render: () => (
+        <EnergyCard question={v3.brainScan.question} alarm={v3.brainScan.alarm} drive={v3.brainScan.drive} stability={v3.brainScan.stability} remaining={v3.brainScan.remaining} insight={v3.brainScan.insight} />
       ),
     },
     {
       key: "evidence",
-      render: (idx: number, total: number) => (
-        <EvidenceCard label="Proof" question={v3.evidenceQuestion} items={v3.evidence} index={idx} total={total} />
+      render: () => (
+        <EvidenceCard label="Proof" question={v3.evidenceQuestion} items={v3.evidence} />
       ),
     },
     {
       key: "cost-career",
-      render: (idx: number, total: number) => (
-        <CostCard label="At work" question={v3.costCareerQuestion} emoji="💼" title={v3.costCareer.title} description={v3.costCareer.text} index={idx} total={total} />
+      render: () => (
+        <CostCard label="At work" question={v3.costCareerQuestion} emoji="💼" title={v3.costCareer.title} description={v3.costCareer.text} />
       ),
     },
     {
       key: "cost-relationship",
-      render: (idx: number, total: number) => (
-        <CostCard label="In relationships" question={v3.costRelationshipQuestion} emoji="💬" title={v3.costRelationship.title} description={v3.costRelationship.text} index={idx} total={total} />
+      render: () => (
+        <CostCard label="In relationships" question={v3.costRelationshipQuestion} emoji="💬" title={v3.costRelationship.title} description={v3.costRelationship.text} />
       ),
     },
     {
       key: "cost-money",
-      render: (idx: number, total: number) => (
-        <CostCard label="With money" question={v3.costMoneyQuestion} emoji="💰" title={v3.costMoney.title} description={v3.costMoney.text} index={idx} total={total} />
+      render: () => (
+        <CostCard label="With money" question={v3.costMoneyQuestion} emoji="💰" title={v3.costMoney.title} description={v3.costMoney.text} />
       ),
     },
     {
       key: "chapter",
-      render: (idx: number, total: number) => (
-        <ChapterCard chapter={v3.chapter} index={idx} total={total} />
+      render: () => (
+        <ChapterCard chapter={v3.chapter} />
       ),
     },
     {
       key: "year",
-      render: (idx: number, total: number) => (
-        <YearCard question={v3.yearQuestion} text={v3.yearText} accent={v3.yearAccent} index={idx} total={total} />
+      render: () => (
+        <YearCard question={v3.yearQuestion} text={v3.yearText} accent={v3.yearAccent} />
       ),
     },
     {
       key: "action",
-      render: (idx: number, total: number) => (
-        <ActionCard question={v3.actionQuestion} neuroExplanation={v3.actionNeuro} ritualName={v3.shift.name} description={v3.shift.text} when={v3.shift.when} index={idx} total={total} />
+      render: () => (
+        <ActionCard question={v3.actionQuestion} neuroExplanation={v3.actionNeuro} ritualName={v3.shift.name} description={v3.shift.text} when={v3.shift.when} />
       ),
     },
     {
       key: "closing",
-      render: (idx: number, total: number) => (
-        <ClosingCard message={v3.closingLine} reportId={reportId || ""} index={idx} total={total} />
+      render: () => (
+        <ClosingCard message={v3.closingLine} reportId={reportId || ""} />
       ),
     },
   ];
@@ -1075,7 +1093,6 @@ export default function ResultsV3() {
     ? [...freeCards, ...paidCards]
     : freeCards;
 
-  const totalCards = isPaid ? freeCards.length + paidCards.length : freeCards.length + 1; // +1 for lock card
 
   return (
     <div className="relative">
@@ -1122,8 +1139,8 @@ export default function ResultsV3() {
 
         {!(source === "llm" && llmLoading) && (
           <>
-            {visibleCards.map((card, i) => (
-              <div key={card.key}>{card.render(i, totalCards)}</div>
+            {visibleCards.map((card) => (
+              <div key={card.key}>{card.render()}</div>
             ))}
 
             {/* Lock card for unpaid users */}
