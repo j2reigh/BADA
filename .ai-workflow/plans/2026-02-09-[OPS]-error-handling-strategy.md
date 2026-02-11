@@ -57,10 +57,21 @@ onError: (error: Error) => {
 - ❌ 네트워크 에러 UI 미흡
 
 ### Database (Supabase/Drizzle)
-- ✅ Drizzle ORM 사용
+- ✅ Drizzle ORM 사용 (SQL injection 방지)
 - ✅ 기본적인 try/catch
+- ✅ 서버 사이드 only (클라이언트에서 직접 접근 불가)
+- ✅ `.env` gitignore 됨
+- ❌ **RLS 비활성화** — 모든 테이블 `isRLSEnabled: false`
+- ❌ Rate limiting 없음 — API abuse 방어 불가
+- ❌ Helmet/CORS 미설정 — 기본 보안 헤더 없음
 - ❌ Connection pool 관리 미확인
 - ❌ Retry 없음
+
+### API Security
+- ✅ 이메일 인증 토큰 방식 (verificationToken)
+- ❌ API 인증 없음 — 누구나 `/api/results/:id` 접근 가능
+- ❌ Rate limiting 없음 — 무한 요청 가능
+- ❌ Report ID enumeration 취약 — UUID지만 brute force 가능
 
 ---
 
@@ -90,9 +101,9 @@ async function withRetry<T>(
 }
 ```
 
-- [ ] Retry with exponential backoff (3회)
-- [ ] JSON 파싱 실패 시 1회 재시도
-- [ ] Timeout 설정 (90초)
+- [x] Retry with exponential backoff (3회) ✅ **완료**
+- [x] JSON 파싱 실패 시 재시도 ✅ **완료**
+- [ ] Timeout 설정 (90초) — 선택사항
 
 ### 2. Client ErrorBoundary (우선순위: 높음)
 
@@ -117,9 +128,9 @@ class ErrorBoundary extends React.Component {
 }
 ```
 
-- [ ] Global ErrorBoundary 추가
-- [ ] 친절한 에러 UI + 새로고침 버튼
-- [ ] 에러 발생 시 Sentry 리포팅
+- [x] Global ErrorBoundary 추가 ✅ **완료**
+- [x] 친절한 에러 UI + 새로고침 버튼 ✅ **완료**
+- [ ] 에러 발생 시 Sentry 리포팅 — Sentry 연동 후
 
 ### 3. Gumroad Webhook (우선순위: 중간)
 
@@ -184,7 +195,65 @@ payments 테이블:
 - [ ] Critical 에러 Slack 알림
 - [ ] 에러 context 포함 (userId, reportId 등)
 
-### 5. Email (Resend) (우선순위: 낮음)
+### 5. Database Security (우선순위: 높음)
+
+**문제:** RLS 비활성화 — Supabase Security Advisor 경고
+
+**현재 상태:**
+```
+Supabase Security Advisor 경고:
+- RLS Disabled in Public: public.survey_results
+- RLS Disabled in Public: public.birth_patterns
+- RLS Disabled in Public: public.leads
+- RLS Disabled in Public: public.saju_results
+- RLS Disabled in Public: public.valid_codes
+- RLS Disabled in Public: public.content_archetypes
+```
+
+**위험:**
+- Supabase anon key 노출 시 모든 데이터 접근 가능
+- 현재는 DATABASE_URL (직접 연결) 사용 중이라 실질적 위험 낮음
+- 하지만 defense in depth 원칙상 활성화 권장
+
+**해결: Supabase SQL Editor에서 실행**
+
+```sql
+-- ============================================
+-- BADA RLS 활성화 스크립트
+-- Supabase Dashboard → SQL Editor에서 실행
+-- ============================================
+
+-- 1. 모든 테이블 RLS 활성화
+ALTER TABLE public.leads ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.saju_results ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.valid_codes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.survey_results ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.birth_patterns ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.content_archetypes ENABLE ROW LEVEL SECURITY;
+
+-- 2. 전체 접근 Policy 추가 (서버는 DATABASE_URL로 bypass하지만, 안전장치)
+CREATE POLICY "Allow all for service" ON public.leads FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for service" ON public.saju_results FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for service" ON public.valid_codes FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for service" ON public.survey_results FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for service" ON public.birth_patterns FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for service" ON public.content_archetypes FOR ALL USING (true) WITH CHECK (true);
+```
+
+**참고:**
+- `DATABASE_URL` 직접 연결은 RLS bypass (우리 서버)
+- `anon key` 사용 시 RLS 적용됨 (현재 안 씀)
+- Policy `USING (true)`는 "모두 허용" — 나중에 세분화 가능
+
+- [x] Supabase RLS 활성화 ✅ **완료 (2026-02-11)**
+- [x] express-rate-limit 추가 ✅ **완료**
+  - General API: 100 req / 15분 / IP
+  - Heavy endpoints (/api/assessment): 10 req / 15분 / IP
+  - Webhooks: 제외
+- [ ] Helmet 보안 헤더 추가
+- [ ] CORS 설정 명시적으로 지정
+
+### 6. Email (Resend) (우선순위: 낮음)
 
 **현재:** 실패 시 로그만 남김
 ```typescript
@@ -201,13 +270,15 @@ if (!emailResult.success) {
 
 ## 우선순위 정리
 
-| 순위 | 항목 | 이유 | 예상 작업량 |
-|------|------|------|-------------|
-| 1 | Gemini retry | 핵심 기능, 실패 시 리포트 생성 불가 | 1-2시간 |
-| 2 | ErrorBoundary | UX 치명적 (white screen) | 30분 |
-| 3 | Gumroad idempotency | 결제 신뢰성 (sale_id 미저장 확인됨) | 1시간 |
-| 4 | Sentry 연동 | 프로덕션 디버깅 필수 | 1시간 |
-| 5 | 나머지 | 점진적 개선 | - |
+| 순위 | 항목 | 이유 | 상태 |
+|------|------|------|------|
+| 1 | **RLS 활성화** | Supabase Security Advisor 경고 | ✅ 완료 |
+| 2 | **Gemini retry** | 핵심 기능, 실패 시 리포트 생성 불가 | ✅ 완료 |
+| 3 | **ErrorBoundary** | UX 치명적 (white screen) | ✅ 완료 |
+| 4 | Gumroad idempotency | 결제 신뢰성 (sale_id 미저장 확인됨) | ⬜ |
+| 5 | **Rate Limiting** | API abuse 방지 | ✅ 완료 |
+| 6 | Sentry 연동 | 프로덕션 디버깅 필수 | ⬜ |
+| 7 | 나머지 | 점진적 개선 | ⬜ |
 
 ---
 

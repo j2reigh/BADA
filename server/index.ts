@@ -1,10 +1,40 @@
 import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
+import rateLimit from "express-rate-limit";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 
 const app = express();
+
+// ==========================================
+// RATE LIMITING
+// ==========================================
+
+// General API rate limit: 100 requests per 15 minutes per IP
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100,
+  message: { error: "Too many requests. Please try again later." },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.path.startsWith("/api/webhooks"), // Skip webhooks
+});
+
+// Strict rate limit for heavy endpoints: 10 requests per 15 minutes per IP
+const strictLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10,
+  message: { error: "Too many requests for this endpoint. Please wait before trying again." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply general rate limiting to all /api routes (except webhooks)
+app.use("/api", generalLimiter);
+
+// Apply strict rate limiting to heavy endpoints
+app.use("/api/assessment", strictLimiter); // Report generation
 const httpServer = createServer(app);
 
 declare module "http" {

@@ -16,8 +16,8 @@ function Header({ t }: { t: TranslateFn }) {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 transition-colors duration-500">
       <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
-        <a href="/" className="text-xl font-semibold tracking-tight mix-blend-difference text-white">
-          BADA
+        <a href="/" className="mix-blend-difference">
+          <img src="/logowhite.svg" alt="BADA" className="h-5" />
         </a>
 
         <nav className="hidden md:flex items-center gap-8 mix-blend-difference text-white">

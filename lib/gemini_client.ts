@@ -17,7 +17,6 @@ import { FIVE_ELEMENTS_INFO } from "./saju_knowledge";
 import { OS_TYPE_PROTOCOLS } from "./standardization_dictionaries";
 import {
   translateToBehaviors,
-  SAMPLE_HD_DATA,
   type HumanDesignData,
   type BehaviorPatterns,
 } from "./behavior_translator";
@@ -31,6 +30,54 @@ if (!API_KEY) {
 }
 
 const client = API_KEY ? new GoogleGenerativeAI(API_KEY) : null;
+
+// ==========================================
+// RETRY UTILITY (Exponential Backoff)
+// ==========================================
+
+interface RetryOptions {
+  maxRetries?: number;
+  initialDelay?: number;
+  maxDelay?: number;
+  retryableErrors?: string[];
+}
+
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  options: RetryOptions = {}
+): Promise<T> {
+  const {
+    maxRetries = 3,
+    initialDelay = 1000,
+    maxDelay = 10000,
+    retryableErrors = ['RATE_LIMIT', 'RESOURCE_EXHAUSTED', 'UNAVAILABLE', 'DEADLINE_EXCEEDED', 'INTERNAL', 'timeout', '429', '500', '503']
+  } = options;
+
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      const errorMessage = lastError.message.toLowerCase();
+
+      // Check if error is retryable
+      const isRetryable = retryableErrors.some(e => errorMessage.includes(e.toLowerCase()));
+
+      if (!isRetryable || attempt === maxRetries - 1) {
+        throw lastError;
+      }
+
+      // Exponential backoff with jitter
+      const delay = Math.min(initialDelay * Math.pow(2, attempt) + Math.random() * 1000, maxDelay);
+      console.log(`[Gemini] Retry ${attempt + 1}/${maxRetries} after ${Math.round(delay)}ms. Error: ${lastError.message.slice(0, 100)}`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+
+  throw lastError || new Error('Retry exhausted');
+}
 
 const OS_TYPE_BACKGROUNDS: Record<string, string> = {
   "State Architect": "bg_type_03",
@@ -158,7 +205,8 @@ export async function generateLifeBlueprintReport(
   userName: string = "Friend",
   archetype?: ContentArchetype,
   language: string = "en",
-  birthDate?: string
+  birthDate?: string,
+  hdData?: HumanDesignData
 ): Promise<LifeBlueprintReport> {
   if (!client) {
     return generateMockReport(sajuResult, surveyScores);
@@ -168,12 +216,14 @@ export async function generateLifeBlueprintReport(
     console.log(`[Gemini] Starting Report Generation for ${userName} in ${language}...`);
     const langInstruction = getLanguageInstruction(language);
 
-    // V3: Translate all data to behavioral patterns (plain language)
-    // TODO: Replace SAMPLE_HD_DATA with real HD API data after purchase
-    const hdData: HumanDesignData = SAMPLE_HD_DATA;
+    // V3: HD data is required — no sample fallback
+    if (!hdData) {
+      throw new Error("HD data is required for report generation");
+    }
+    const effectiveHdData: HumanDesignData = hdData;
     const behaviors = translateToBehaviors(
       sajuResult,
-      hdData,
+      effectiveHdData,
       surveyScores,
       birthDate || "1996-09-18"
     );
@@ -280,12 +330,7 @@ OUTPUT (JSON Only):
   }
 }`;
 
-  const result = await model.generateContent({
-    contents: [{ role: "user", parts: [{ text: "Generate Page 1 Identity JSON." }] }],
-    systemInstruction: systemPrompt,
-  });
-
-  const data = parseJSON(result.response.text());
+  const data = await generateWithRetry(model, systemPrompt, "Generate Page 1 Identity JSON.");
 
   // Enforce Determinism — English only (non-English lets Gemini translate naturally)
   if (archetype && language === 'en') {
@@ -355,12 +400,7 @@ OUTPUT (JSON Only):
   ]
 }`;
 
-  const result = await model.generateContent({
-    contents: [{ role: "user", parts: [{ text: "Generate Page 2 Hardware JSON." }] }],
-    systemInstruction: systemPrompt,
-  });
-
-  const data = parseJSON(result.response.text());
+  const data = await generateWithRetry(model, systemPrompt, "Generate Page 2 Hardware JSON.");
 
   // Enforce Determinism — English only (non-English lets Gemini rewrite naturally)
   if (archetype && language === 'en') {
@@ -430,12 +470,7 @@ OUTPUT (JSON Only):
   "os_summary": "4-5 sentences showing CASCADE EFFECTS between the three systems. Format: 'Your alarm system does X, which forces your processing into Y, which leaves your drive running on Z. The result: [specific daily consequence].' This is a system-level diagnosis showing how the parts interact. End with what this pattern costs them daily. Do NOT include English type names in the output — describe the pattern in plain language."
 }`;
 
-  const result = await model.generateContent({
-    contents: [{ role: "user", parts: [{ text: "Generate Page 3 OS JSON." }] }],
-    systemInstruction: systemPrompt,
-  });
-
-  return parseJSON(result.response.text());
+  return generateWithRetry(model, systemPrompt, "Generate Page 3 OS JSON.");
 }
 
 // ==========================================
@@ -489,12 +524,7 @@ OUTPUT (JSON Only):
   }
 }`;
 
-  const result = await model.generateContent({
-    contents: [{ role: "user", parts: [{ text: "Generate Page 4 Friction JSON." }] }],
-    systemInstruction: systemPrompt,
-  });
-
-  return parseJSON(result.response.text());
+  return generateWithRetry(model, systemPrompt, "Generate Page 4 Friction JSON.");
 }
 
 // ==========================================
@@ -648,12 +678,7 @@ OUTPUT (JSON Only):
   "closing_message": "4-5 sentences. Direct, honest, NOT warm. Say their system is miscalibrated not broken. Tell them to start with one protocol for 7 days then decide. Do NOT use bracket notation or template fill-ins — write actual sentences."
 }`;
 
-  const result = await model.generateContent({
-    contents: [{ role: "user", parts: [{ text: "Generate Page 5 Solution JSON." }] }],
-    systemInstruction: systemPrompt,
-  });
-
-  return parseJSON(result.response.text());
+  return generateWithRetry(model, systemPrompt, "Generate Page 5 Solution JSON.");
 }
 
 function parseJSON(text: string): any {
@@ -661,9 +686,34 @@ function parseJSON(text: string): any {
     const cleaned = text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
     return JSON.parse(cleaned);
   } catch (e) {
-    console.error("JSON Parse Error:", text);
-    throw new Error("Failed to parse Gemini response");
+    console.error("JSON Parse Error:", text.slice(0, 500));
+    throw new Error("JSON_PARSE_ERROR: Failed to parse Gemini response");
   }
+}
+
+/**
+ * Wrapper for Gemini generateContent with retry + JSON parsing
+ * Retries on: rate limits, timeouts, server errors, JSON parse failures
+ */
+async function generateWithRetry(
+  model: ReturnType<NonNullable<typeof client>["getGenerativeModel"]>,
+  systemPrompt: string,
+  userPrompt: string,
+  maxRetries: number = 3
+): Promise<any> {
+  return withRetry(
+    async () => {
+      const result = await model.generateContent({
+        contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+        systemInstruction: systemPrompt,
+      });
+      return parseJSON(result.response.text());
+    },
+    {
+      maxRetries,
+      retryableErrors: ['RATE_LIMIT', 'RESOURCE_EXHAUSTED', 'UNAVAILABLE', 'DEADLINE_EXCEEDED', 'INTERNAL', 'timeout', '429', '500', '503', 'JSON_PARSE_ERROR']
+    }
+  );
 }
 
 // ==========================================
@@ -788,12 +838,7 @@ OUTPUT (JSON):
   }
 }`;
 
-  const result = await model.generateContent({
-    contents: [{ role: "user", parts: [{ text: "Generate Page 1." }] }],
-    systemInstruction: systemPrompt,
-  });
-
-  const data = parseJSON(result.response.text());
+  const data = await generateWithRetry(model, systemPrompt, "Generate Page 1.");
 
   if (archetype && language === 'en') {
     data.title = archetype.identityTitle;
@@ -858,12 +903,7 @@ OUTPUT (JSON):
   ]
 }`;
 
-  const result = await model.generateContent({
-    contents: [{ role: "user", parts: [{ text: "Generate Page 2." }] }],
-    systemInstruction: systemPrompt,
-  });
-
-  const data = parseJSON(result.response.text());
+  const data = await generateWithRetry(model, systemPrompt, "Generate Page 2.");
 
   if (archetype && language === 'en') {
     data.nature_title = archetype.identityTitle;
@@ -945,12 +985,7 @@ OUTPUT (JSON):
   "os_summary": "How these three systems interact. 'Your alarm system [does X], which [affects Y], leaving [Z result].' End with daily cost. Include one insight from Design vs Perception gap. (60-80 words)"
 }`;
 
-  const result = await model.generateContent({
-    contents: [{ role: "user", parts: [{ text: "Generate Page 3." }] }],
-    systemInstruction: systemPrompt,
-  });
-
-  return parseJSON(result.response.text());
+  return generateWithRetry(model, systemPrompt, "Generate Page 3.");
 }
 
 async function generatePage4_v3(
@@ -1019,12 +1054,7 @@ OUTPUT (JSON):
   }
 }`;
 
-  const result = await model.generateContent({
-    contents: [{ role: "user", parts: [{ text: "Generate Page 4." }] }],
-    systemInstruction: systemPrompt,
-  });
-
-  return parseJSON(result.response.text());
+  return generateWithRetry(model, systemPrompt, "Generate Page 4.");
 }
 
 async function generatePage5_v3(
@@ -1142,12 +1172,7 @@ OUTPUT (JSON):
   "closing_message": "Direct, not warm. Their system is miscalibrated, not broken. Pick one ritual. 7 days. That is the test. Reference their age. (50-70 words)"
 }`;
 
-  const result = await model.generateContent({
-    contents: [{ role: "user", parts: [{ text: "Generate Page 5." }] }],
-    systemInstruction: systemPrompt,
-  });
-
-  return parseJSON(result.response.text());
+  return generateWithRetry(model, systemPrompt, "Generate Page 5.");
 }
 
 /**
@@ -1574,12 +1599,7 @@ Output ONLY valid JSON matching the structure above. No markdown, no explanation
 
   console.log(`[Gemini] Generating V3 Cards for ${userName}...`);
 
-  const result = await model.generateContent({
-    contents: [{ role: "user", parts: [{ text: "Generate V3 Card Content JSON." }] }],
-    systemInstruction: systemPrompt,
-  });
-
-  const v3Content = parseJSON(result.response.text()) as V3CardContent;
+  const v3Content = await generateWithRetry(model, systemPrompt, "Generate V3 Card Content JSON.") as V3CardContent;
   console.log("[Gemini] V3 Cards Generated");
   return v3Content;
 }
