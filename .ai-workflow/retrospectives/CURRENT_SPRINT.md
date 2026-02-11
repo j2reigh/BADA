@@ -13,6 +13,33 @@
 
 ## 🔄 최근 회고 (최신순)
 
+### 2026-02-09 (B) - V3 카드 UI 브랜딩 정합 + 서베이 버그 수정
+**Agent:** Claude
+
+#### 👍 Keep (계속 할 것)
+- **브랜딩 팔레트 엄격 적용:** 오프팔레트 색상(purple #c4a0e8, teal #7ec8b8) 발견 즉시 브랜딩 문서 기준으로 교체 (#879DC6, #ABBBD5). "디자인적으로 예뻐 보이는 색" vs "브랜드 일관성" 사이에서 후자를 우선
+- **유저의 "maker's trap" 지적 즉시 수용:** Energy Allocation 100% 케이스 과최적화, collision 하드코딩 등에 대해 "유저는 숫자를 검증하지 않는다"는 핵심 인사이트 반영. operating-rate-v2.md 1300줄 중 실제 구현된 50줄만 가치 있다는 냉정한 평가
+- **카드 안 가로 캐러셀 UX:** 세로 스냅 스크롤(카드 간) 안에서 가로 스냅 스크롤(대운 타임라인) 구현 — snap-x + useRef scrollTo로 current 중앙 정렬 + 탭 인디케이터
+- **서베이 Q10 버그 근본 원인 추적:** 스크린샷 → i18n 키 역추적 → currentStep 범위 분석 → setTimeout 레이스컨디션 발견. `setCurrentStep(prev => prev + 1)`의 functional update가 stale closure 조건분기와 결합될 때 double-advance 발생
+
+#### 🤔 Problem (문제점)
+- **off-hand 제안의 위험:** "Energy Allocation 프레이밍을 바꾸는 게 임팩트" 발언 → 유저가 구체화 요청 → 깊이 생각한 게 아니었음을 인정. 검증 안 된 아이디어를 확신 있게 말하지 말 것
+- **LLM 텍스트 줄이자는 잘못된 판단:** ChapterCard overflow를 "텍스트가 길다"로 진단했으나 실제론 대운당 2문장뿐. 문제는 레이아웃이었지 콘텐츠가 아니었음. 유저가 바로잡음
+- **색상 교체 시 그라디언트 endpoint 누락:** 카드 배경색만 교체하고 그라디언트 endpoint(purple/teal-tinted #1a1c2e 등)을 놓침 → 유저 재지적 후 수정
+
+#### 💡 Try (시도할 것)
+- **"이 제안 깊이 생각한 건가?" 자기 점검:** 확신 없는 제안에는 명시적으로 "아직 검증 안 됨" 표시
+- **레이아웃 문제 vs 콘텐츠 문제 분리:** overflow 발생 시 "콘텐츠를 줄이자"가 아니라 "레이아웃으로 해결할 수 있는가"를 먼저 확인
+- **색상 교체 시 grep으로 전수 검사:** hex값 교체할 때 해당 색상의 모든 변형(rgba, gradient endpoint, shadow)까지 검색
+
+#### 📦 산출물
+- `client/src/pages/ResultsV3.tsx`: 브랜딩 컬러 정합 (off-palette 제거), 워터마크 추가, CardProgress 제거, ChapterCard 가로 캐러셀, ClosingCard SVG 마키 텍스트, 폰트 시스템 적용 (Inter body + JetBrains Mono data)
+- `client/src/index.css`: Inter + JetBrains Mono import, scrollbar-hide 유틸리티
+- `client/src/pages/Survey.tsx`: Q10 버그 수정 (handleNext double-advance 방지 — `Math.min(prev + 1, QUESTIONS.length)`)
+- `client/public/logowhite.svg`: 브랜드 로고 추가
+
+---
+
 ### 2026-02-09 - V3 카드뉴스 리포트 프로토타입 (충돌 프레이밍 + 타임라인)
 **Agent:** Claude
 

@@ -121,13 +121,9 @@ export default function Survey() {
   };
 
   const handleNext = () => {
-    if (currentStep < QUESTIONS.length - 1) {
-      setCurrentStep((prev) => prev + 1);
-    } else if (currentStep === QUESTIONS.length - 1) {
-      setCurrentStep((prev) => prev + 1);
-    } else {
-      handleBirthPatternSubmit();
-    }
+    // Use functional update with clamp to prevent double-advance from rapid clicks
+    // (setTimeout in handleOptionSelect can fire twice if user clicks multiple options)
+    setCurrentStep((prev) => Math.min(prev + 1, QUESTIONS.length));
   };
 
   const handleBirthPatternChange = (field: keyof BirthPatternData, value: any) => {
@@ -587,7 +583,21 @@ export default function Survey() {
                         onChange={(e) => handleBirthPatternChange("consent", e.target.checked)}
                         className="w-4 h-4 accent-white mt-0.5"
                       />
-                      <span>{t('birth.consent')} *</span>
+                      <span>
+                        {language === 'ko' ? (
+                          <>
+                            <a href="/terms" target="_blank" className="underline hover:text-white transition-colors" onClick={(e) => e.stopPropagation()}>이용약관</a>과 <a href="/privacy" target="_blank" className="underline hover:text-white transition-colors" onClick={(e) => e.stopPropagation()}>개인정보 처리방침</a>에 동의합니다 *
+                          </>
+                        ) : language === 'id' ? (
+                          <>
+                            Saya setuju dengan <a href="/terms" target="_blank" className="underline hover:text-white transition-colors" onClick={(e) => e.stopPropagation()}>Syarat Layanan</a> dan <a href="/privacy" target="_blank" className="underline hover:text-white transition-colors" onClick={(e) => e.stopPropagation()}>Kebijakan Privasi</a> *
+                          </>
+                        ) : (
+                          <>
+                            I agree to the <a href="/terms" target="_blank" className="underline hover:text-white transition-colors" onClick={(e) => e.stopPropagation()}>Terms of Service</a> and <a href="/privacy" target="_blank" className="underline hover:text-white transition-colors" onClick={(e) => e.stopPropagation()}>Privacy Policy</a> *
+                          </>
+                        )}
+                      </span>
                     </label>
 
                     <label className="flex items-start gap-3 text-sm cursor-pointer text-white/50">
