@@ -476,6 +476,12 @@ function Footer({ language, setLanguage, t }: { language: UILanguage; setLanguag
           <Link href="/faq" className="text-white/40 text-sm hover:text-white/70 transition-colors">
             {t('faq.title')}
           </Link>
+          <Link href="/privacy" className="text-white/40 text-sm hover:text-white/70 transition-colors">
+            Privacy
+          </Link>
+          <Link href="/terms" className="text-white/40 text-sm hover:text-white/70 transition-colors">
+            Terms
+          </Link>
         </div>
 
         {/* Language Toggle - Right Side */}

@@ -37,8 +37,16 @@ function Footer({ language, setLanguage }: { language: UILanguage; setLanguage: 
   return (
     <footer className="relative z-10 border-t border-white/10 py-8 px-6">
       <div className="max-w-[1400px] mx-auto flex items-center justify-between">
-        <div className="text-white/40 text-sm">
-          BADA © {new Date().getFullYear()}
+        <div className="flex items-center gap-4">
+          <span className="text-white/40 text-sm">
+            BADA © {new Date().getFullYear()}
+          </span>
+          <Link href="/privacy" className="text-white/40 text-sm hover:text-white/70 transition-colors">
+            Privacy
+          </Link>
+          <Link href="/terms" className="text-white/40 text-sm hover:text-white/70 transition-colors">
+            Terms
+          </Link>
         </div>
         <div className="flex items-center gap-1 bg-white/5 rounded-full p-1">
           {languages.map((lang) => (
