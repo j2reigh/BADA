@@ -3,14 +3,17 @@ import { motion, AnimatePresence } from "framer-motion";
 
 interface GeneratingScreenProps {
   isComplete: boolean;
+  isError?: boolean;
+  errorMessage?: string;
   onFinished: () => void;
+  onRetry?: () => void;
 }
 
 const STEPS = [
   { label: "Reading your birth chart", duration: 2000 },
-  { label: "Calculating four pillars", duration: 2500 },
-  { label: "Analyzing your operating system", duration: 3000 },
-  { label: "Generating your blueprint", duration: 5000 },
+  { label: "Mapping your energy design", duration: 2500 },
+  { label: "Finding the collision points", duration: 3000 },
+  { label: "Generating your diagnostic cards", duration: 5000 },
   { label: "Finalizing your report", duration: 5000 },
 ];
 
@@ -22,7 +25,7 @@ const INSIGHTS = [
   "Almost there — preparing your personalized action guide.",
 ];
 
-export default function GeneratingScreen({ isComplete, onFinished }: GeneratingScreenProps) {
+export default function GeneratingScreen({ isComplete, isError, errorMessage, onFinished, onRetry }: GeneratingScreenProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [progress, setProgress] = useState(0);
   const [insightIndex, setInsightIndex] = useState(0);
@@ -203,6 +206,29 @@ export default function GeneratingScreen({ isComplete, onFinished }: GeneratingS
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Error overlay */}
+      {isError && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#182339]/90 backdrop-blur-sm">
+          <div className="text-center px-8 max-w-sm">
+            <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-6">
+              <span className="text-red-400 text-xl">!</span>
+            </div>
+            <p className="text-white/80 text-base mb-2">Report generation failed</p>
+            <p className="text-white/40 text-sm mb-8">
+              {errorMessage || "Something went wrong. Please try again."}
+            </p>
+            {onRetry && (
+              <button
+                onClick={onRetry}
+                className="px-8 py-3 rounded-full bg-white/10 border border-white/20 text-sm text-white/70 hover:bg-white/15 transition-colors"
+              >
+                Try again
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Decorative circle */}
       <div className="absolute inset-0 pointer-events-none z-0 opacity-5">

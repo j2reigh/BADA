@@ -79,6 +79,8 @@ async function withRetry<T>(
   throw lastError || new Error('Retry exhausted');
 }
 
+const ALL_HD_CENTERS = ['Head', 'Ajna', 'Throat', 'G Center', 'Heart', 'Solar Plexus', 'Sacral', 'Spleen', 'Root'];
+
 const OS_TYPE_BACKGROUNDS: Record<string, string> = {
   "State Architect": "bg_type_03",
   "Silent Sentinel": "bg_type_08",
@@ -1355,7 +1357,8 @@ export async function generateV3Cards(
   userName: string = "Friend",
   language: string = "en",
   birthDate?: string,
-  luckCycle?: import("./behavior_translator").LuckCycleInfo | null
+  luckCycle?: import("./behavior_translator").LuckCycleInfo | null,
+  hdData?: HumanDesignData
 ): Promise<V3CardContent> {
   if (!client) {
     throw new Error("Gemini API key not configured");
@@ -1404,11 +1407,12 @@ ${WRITING_STYLE_RULES}
 ${langInstruction || 'Write in English.'}
 
 CORE CONCEPT: "COLLISION"
-The user has two data sources:
+The user has THREE data sources:
 1. SURVEY = how they see themselves (self-perception)
-2. SAJU = how they were born to operate (design blueprint)
+2. SAJU = how they were born to operate (structural blueprint)
+3. HD = their energy design (how energy flows through their system)
 
-The insight lives in the GAP between these two. When self-perception ≠ design, that's where behavioral patterns hide. Your job: find the collision, name it, prove it with behavioral evidence, show the cost in career/relationships/money, then give one neural protocol to interrupt the pattern.
+The insight lives in the GAPs between these three. When self-perception ≠ structural design ≠ energy blueprint, that's where behavioral patterns hide. Your job: find the collision across all three, name it, prove it with behavioral evidence, show the cost in career/relationships/money, then give one neural protocol to interrupt the pattern.
 
 STRUCTURE: Every card is Q→A. The question hooks. The answer delivers.
 LENGTH: 2-3 sentences per field. Brevity = precision. No filler.
@@ -1487,6 +1491,34 @@ Use them exactly as-is in the brainScan object. Only generate "question" and "in
 - remaining (Available): ${Math.max(5, 100 - Math.round((Math.round((surveyScores.threatScore / 3) * 80 + 15) + Math.round((surveyScores.agencyScore / 3) * 80 + 15) + Math.round((surveyScores.environmentScore / 2) * 60 + 20)) / 3))}%
 
 For "insight": interpret these numbers through neuroscience. Mention amygdala, dopamine, or prefrontal cortex to explain WHY these allocations matter. 2 sentences max.
+
+═══════════════════════════════
+HD DATA (Human Design Blueprint)
+═══════════════════════════════
+${hdData ? `
+Type: ${hdData.type}
+Profile: ${hdData.profile}
+Strategy: ${hdData.strategy}
+Authority: ${hdData.authority}
+Definition: ${hdData.definition}
+Defined Centers: ${hdData.centers.join(", ")}
+Open Centers: ${ALL_HD_CENTERS.filter(c => !hdData.centers.includes(c)).join(", ")}
+Channels: ${hdData.channels_long.join(", ")}
+Incarnation Cross: ${hdData.incarnation_cross || "N/A"}
+Signature: ${hdData.signature}
+Not-Self Theme: ${hdData.not_self_theme}
+Environment: ${hdData.environment || "N/A"}
+Cognition: ${hdData.cognition || "N/A"}
+Motivation: ${hdData.motivation || "N/A"}
+Perspective: ${hdData.perspective || "N/A"}
+
+INTERPRETATION GUIDE (for YOUR understanding only — translate to plain behavior):
+- Type defines their energy role (Manifestor=initiator, Generator=builder, Projector=guide, Reflector=mirror)
+- Authority = how they make correct decisions (Emotional=sleep on it, Sacral=gut response, Splenic=instinct)
+- Defined Centers = consistent energy; Open Centers = absorb/amplify others' energy
+- Strategy = their optimal way of engaging with the world
+- Not-Self Theme = what they feel when off-track
+` : 'No HD data available.'}
 
 ═══════════════════════════════
 LUCK CYCLE DATA (10-year chapters + annual energy)

@@ -7,12 +7,12 @@ import { z } from "zod";
 import { getCorrectedKST } from "../lib/time_utils";
 import { calculateSaju } from "../lib/saju_calculator";
 import { analyzeOperatingState } from "../lib/operating_logic"; // v2.3 Integration
-import { generateLifeBlueprintReport, generateV3Cards, type SurveyScores } from "../lib/gemini_client";
-import { translateToBehaviors, calculateLuckCycle, SAMPLE_HD_DATA } from "../lib/behavior_translator";
+import { generateV3Cards, type SurveyScores } from "../lib/gemini_client";
+import { translateToBehaviors, calculateLuckCycle, type HumanDesignData } from "../lib/behavior_translator";
+import { fetchHumanDesign } from "../lib/hd_client";
 import { sendVerificationEmail } from "../lib/email";
 import { db } from "./db";
-import { type InsertBirthPattern, type InsertSajuResult, contentArchetypes } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { type InsertBirthPattern, type InsertSajuResult } from "@shared/schema";
 
 // Helper function for unlock code error messages
 function getCodeErrorMessage(error: string): string {
@@ -126,6 +126,7 @@ export async function registerRoutes(
       console.log("[Assessment] Calculating Saju...");
       let sajuData: any = null;
       let reportData: any = null;
+      let hdData: HumanDesignData | null = null;
 
       const isTimeMissing = input.birthTimeUnknown || !input.birthTime;
       // If birth time unknown, use "12:00" as dummy for the library but flag birthTimeUnknown
@@ -154,8 +155,43 @@ export async function registerRoutes(
           console.error("[Assessment] Operating Analysis failed:", analysisErr);
         }
 
-        // 4. Generate AI report (5-page Life Blueprint)
-        console.log("[Assessment] Generating AI report...");
+        // 4. Fetch Human Design data from HD API
+        console.log("[Assessment] Fetching Human Design data...");
+        const hdBirthTime = isTimeMissing ? "12:00" : input.birthTime!;
+        const hdLocation = input.birthCity !== input.birthCountry
+          ? `${input.birthCity}, ${input.birthCountry || ""}`
+          : input.birthCountry || input.birthCity;
+
+        const hdResponse = await fetchHumanDesign(input.birthDate, hdBirthTime, hdLocation);
+        if (!hdResponse) {
+          throw new Error("HD API returned no data");
+        }
+        hdData = {
+          type: hdResponse.type,
+          profile: hdResponse.profile,
+          strategy: hdResponse.strategy,
+          authority: hdResponse.authority,
+          centers: hdResponse.centers,
+          definition: hdResponse.definition,
+          signature: hdResponse.signature,
+          not_self_theme: hdResponse.not_self_theme,
+          environment: hdResponse.environment || "",
+          channels_long: hdResponse.channels_long,
+          cognition: hdResponse.cognition,
+          determination: hdResponse.determination,
+          incarnation_cross: hdResponse.incarnation_cross,
+          variables: hdResponse.variables,
+          motivation: hdResponse.motivation,
+          perspective: hdResponse.perspective,
+          circuitries: hdResponse.circuitries,
+          gates: hdResponse.gates,
+          channels_short: hdResponse.channels_short,
+          activations: hdResponse.activations,
+        };
+        console.log(`[Assessment] HD data fetched: type=${hdData.type}, profile=${hdData.profile}`);
+
+        // 5. Generate V3 Card Report
+        console.log("[Assessment] Generating V3 card report...");
         const surveyScoresForReport: SurveyScores = {
           threatScore: input.surveyScores.threatScore,
           threatClarity: input.surveyScores.threatClarity,
@@ -167,32 +203,43 @@ export async function registerRoutes(
           typeName: input.surveyScores.typeName,
         };
 
-        // Fetch Content Archetype (Standardization)
-        const dayPillar = `${sajuData.fourPillars.day.gan}${sajuData.fourPillars.day.zhi}`;
-        const osTypeClean = input.surveyScores.typeName.replace(/\s+/g, "");
-        const archetypeId = `${dayPillar}_${osTypeClean}`;
+        // Translate raw data to behavior patterns
+        const behaviors = translateToBehaviors(
+          sajuData,
+          hdData,
+          surveyScoresForReport,
+          input.birthDate
+        );
+        console.log("[Assessment] Behavior patterns translated");
 
-        console.log(`[Content Standard] Looking up archetype: ${archetypeId}`);
+        // Calculate luck cycle (대운/세운)
+        const luckBirthTime = isTimeMissing ? "12:00" : input.birthTime!;
+        const luckGender = input.gender === "female" ? "F" : "M";
+        const luckCycle = calculateLuckCycle(input.birthDate, luckBirthTime, luckGender);
+        console.log("[Assessment] Luck cycle calculated");
 
-        const archetype = db ? await db.query.contentArchetypes.findFirst({
-          where: eq(contentArchetypes.id, archetypeId),
-        }) : undefined;
-
-        if (archetype) {
-          console.log(`[Content Standard] Found archetype: ${archetype.identityTitle}`);
-        } else {
-          console.warn(`[Content Standard] Archetype NOT FOUND for ${archetypeId}. content will be generated by AI.`);
-        }
-
-        reportData = await generateLifeBlueprintReport(sajuData, surveyScoresForReport, input.name, archetype, input.language);
-        console.log(`[Assessment] AI report generated successfully in language: ${input.language}`);
+        // Generate V3 cards via Gemini
+        const v3Cards = await generateV3Cards(
+          sajuData,
+          surveyScoresForReport,
+          behaviors,
+          input.name,
+          input.language,
+          input.birthDate,
+          luckCycle,
+          hdData
+        );
+        reportData = { v3Cards };
+        console.log(`[Assessment] V3 cards generated successfully in language: ${input.language}`);
       } catch (err) {
-        console.error("[Assessment] Saju/Report calculation error:", err);
-        sajuData = { error: "Calculation failed", message: String(err) };
-        reportData = { error: "Report generation failed" };
+        console.error("[Assessment] Saju/HD/Report calculation error:", err);
+        return res.status(500).json({
+          message: "Failed to generate report. Saju calculation or HD API failed.",
+          error: String(err),
+        });
       }
 
-      // 5. Create saju result record
+      // 6. Create saju result record
       console.log("[Assessment] Creating saju result record...");
       const userInput = {
         name: input.name,
@@ -206,6 +253,7 @@ export async function registerRoutes(
         kstConversion: kstData,
         surveyAnswers: input.answers,
         surveyScores: input.surveyScores,
+        hdData: hdData,
       };
 
       const sajuResult = await storage.createSajuResult({
@@ -217,7 +265,7 @@ export async function registerRoutes(
       });
       console.log("[Assessment] Saju result saved:", sajuResult.id);
 
-      // 6. Send verification email (only if not already verified)
+      // 7. Send verification email (only if not already verified)
       let emailSent = false;
       if (!lead.isVerified) {
         console.log("[Assessment] Sending verification email...");
@@ -450,11 +498,6 @@ export async function registerRoutes(
       const reportData = sajuResult.reportData as any;
       const isPaid = (sajuResult as any).isPaid || false;
 
-      // Show full report if paid
-      const showFullReport = isPaid;
-
-      // Always return Page 1 (Identity) - the free hook
-      // Only return Pages 2-5 if paid (or in development mode)
       const responseData: any = {
         reportId: sajuResult.id,
         email: lead.email,
@@ -462,42 +505,30 @@ export async function registerRoutes(
         sajuData: sajuResult.sajuData,
         isPaid,
         createdAt: sajuResult.createdAt,
-        // Page 1 - always available (free hook)
-        page1_identity: reportData.page1_identity || null,
       };
 
-      if (showFullReport) {
-        // Full report - Pages 2-5
-        responseData.page2_hardware = reportData.page2_hardware || null;
-        responseData.page3_os = reportData.page3_os || null;
-        responseData.page4_mismatch = reportData.page4_mismatch || null;
-        responseData.page5_solution = reportData.page5_solution || null;
+      // V3 card report format
+      if (reportData.v3Cards) {
+        if (isPaid) {
+          // Full V3 card content
+          responseData.v3Cards = reportData.v3Cards;
+        } else {
+          // Free preview: only hook, mirror, and blueprint cards
+          const cards = reportData.v3Cards;
+          responseData.v3Cards = {
+            hookQuestion: cards.hookQuestion,
+            mirrorQuestion: cards.mirrorQuestion,
+            mirrorText: cards.mirrorText,
+            mirrorAccent: cards.mirrorAccent,
+            blueprintQuestion: cards.blueprintQuestion,
+            blueprintText: cards.blueprintText,
+            blueprintAccent: cards.blueprintAccent,
+          };
+        }
       } else {
-        // Locked preview - show section names AND anchors (Teaser Mode)
-        responseData.page2_hardware = {
-          section_name: "Your Natural Blueprint",
-          locked: true,
-          nature_title: reportData.page2_hardware?.nature_title,
-          core_drive: reportData.page2_hardware?.core_drive
-        };
-        responseData.page3_os = {
-          section_name: "Your Current Operating System",
-          locked: true,
-          os_title: reportData.page3_os?.os_title,
-          os_anchor: reportData.page3_os?.os_anchor
-        };
-        responseData.page4_mismatch = {
-          section_name: "The Core Tension",
-          locked: true,
-          friction_title: reportData.page4_mismatch?.friction_title,
-          friction_anchor: reportData.page4_mismatch?.friction_anchor
-        };
-        responseData.page5_solution = {
-          section_name: "Your Action Protocol",
-          locked: true,
-          protocol_name: reportData.page5_solution?.protocol_name,
-          protocol_anchor: reportData.page5_solution?.protocol_anchor
-        };
+        // Legacy V2 report format (old reports without v3Cards)
+        responseData.isLegacy = true;
+        responseData.page1_identity = reportData.page1_identity || null;
       }
 
       res.json(responseData);
@@ -550,10 +581,16 @@ export async function registerRoutes(
       const userName = userInput.name || "Friend";
       const language = (sajuResult as any).language || "en";
 
+      // Use stored HD data — no fallback, HD data is required
+      const hdData: HumanDesignData | undefined = userInput.hdData;
+      if (!hdData) {
+        return res.status(400).json({ message: "No HD data found for this report. Report was generated before HD API integration." });
+      }
+
       // Translate raw data to behavior patterns
       const behaviors = translateToBehaviors(
         sajuData,
-        SAMPLE_HD_DATA,
+        hdData,
         surveyScores,
         birthDate
       );

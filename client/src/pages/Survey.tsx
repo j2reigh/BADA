@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, CheckCircle2, MapPin, Calendar, Clock, Mail, Globe, ChevronDown, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { REPORT_LANGUAGES, detectUILanguage, getDefaultReportLanguage, useTranslation, type ReportLanguage } from "@/lib/simple-i18n";
-import { Country } from "country-state-city";
+import { Country, City } from "country-state-city";
 import GeneratingScreen from "@/components/GeneratingScreen";
 import TimePickerModal from "@/components/TimePickerModal";
 import { Check, ChevronsUpDown } from "lucide-react";
@@ -32,6 +32,7 @@ interface BirthPatternData {
   birthTime: string;
   birthTimeUnknown: boolean;
   birthCountryCode: string;  // ISO Code for Dropdown
+  birthCityName: string;     // Selected City Name
   birthTimezone: string;     // Selected Timezone
   email: string;
   consent: boolean;
@@ -78,6 +79,7 @@ export default function Survey() {
       birthTime: "",
       birthTimeUnknown: false,
       birthCountryCode: "",
+      birthCityName: "",
       birthTimezone: "",
       email: "",
       consent: false,
@@ -85,6 +87,12 @@ export default function Survey() {
       reportLanguage: defaultLang,
     };
   });
+
+  // Derived State for Cities based on selected Country
+  const availableCities = useMemo(() => {
+    if (!birthData.birthCountryCode) return [];
+    return City.getCitiesOfCountry(birthData.birthCountryCode) || [];
+  }, [birthData.birthCountryCode]);
 
   // Derived State for Timezones based on selected Country
   const availableTimezones = useMemo(() => {
@@ -128,9 +136,9 @@ export default function Survey() {
 
   const handleBirthPatternChange = (field: keyof BirthPatternData, value: any) => {
     setBirthData((prev) => {
-      // If country changes, clear timezone (unless auto-selected by effect)
+      // If country changes, clear city and timezone
       if (field === 'birthCountryCode' && value !== prev.birthCountryCode) {
-        return { ...prev, [field]: value, birthTimezone: "" };
+        return { ...prev, [field]: value, birthCityName: "", birthTimezone: "" };
       }
       return { ...prev, [field]: value };
     });
@@ -151,9 +159,11 @@ export default function Survey() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isApiComplete, setIsApiComplete] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const pendingNavRef = useRef<string | null>(null);
   const [showTimeModal, setShowTimeModal] = useState(false);
   const [open, setOpen] = useState(false);
+  const [cityOpen, setCityOpen] = useState(false);
 
   const handleGeneratingFinished = () => {
     if (pendingNavRef.current) {
@@ -166,6 +176,7 @@ export default function Survey() {
 
     setIsSubmitting(true);
     setIsApiComplete(false);
+    setSubmitError(null);
     pendingNavRef.current = null;
 
     try {
@@ -177,10 +188,13 @@ export default function Survey() {
         "Rather not to say": "other",
       };
 
-      // Get Country Details for Lat/Lon fallback
+      // Get Country + City Details for Lat/Lon
       const selectedCountry = allCountries.find(c => c.isoCode === birthData.birthCountryCode);
       const selectedTimezoneObj = availableTimezones.find(tz => tz.zoneName === birthData.birthTimezone);
       const countryName = selectedCountry?.name || "Unknown";
+      const selectedCity = birthData.birthCityName
+        ? availableCities.find(c => c.name === birthData.birthCityName)
+        : null;
 
       const assessmentPayload = {
         answers,
@@ -202,13 +216,13 @@ export default function Survey() {
         birthTime: birthData.birthTimeUnknown ? undefined : birthData.birthTime,
         birthTimeUnknown: birthData.birthTimeUnknown,
 
-        // Revised Manual Location Data (City input removed -> use Country Name)
-        birthCity: countryName,
+        // Location Data: City if selected, Country fallback
+        birthCity: birthData.birthCityName || countryName,
         birthCountry: countryName,
         timezone: birthData.birthTimezone,
-        utcOffset: selectedTimezoneObj?.gmtOffsetName || "UTC", // e.g. UTC+09:00
-        latitude: selectedCountry ? Number(selectedCountry.latitude) : 0,
-        longitude: selectedCountry ? Number(selectedCountry.longitude) : 0,
+        utcOffset: selectedTimezoneObj?.gmtOffsetName || "UTC",
+        latitude: selectedCity ? Number(selectedCity.latitude) : (selectedCountry ? Number(selectedCountry.latitude) : 0),
+        longitude: selectedCity ? Number(selectedCity.longitude) : (selectedCountry ? Number(selectedCountry.longitude) : 0),
 
         language: birthData.reportLanguage,
       };
@@ -235,13 +249,8 @@ export default function Survey() {
       }
     } catch (error) {
       console.error("Error submitting assessment:", error);
-      setIsSubmitting(false);
-      setIsApiComplete(false);
-      toast({
-        title: "Error submitting information",
-        description: "Please try again.",
-        variant: "destructive",
-      });
+      const msg = error instanceof Error ? error.message : "Something went wrong. Please try again.";
+      setSubmitError(msg);
     }
   };
 
@@ -266,7 +275,14 @@ export default function Survey() {
         {isSubmitting && (
           <GeneratingScreen
             isComplete={isApiComplete}
+            isError={!!submitError}
+            errorMessage={submitError || undefined}
             onFinished={handleGeneratingFinished}
+            onRetry={() => {
+              setIsSubmitting(false);
+              setSubmitError(null);
+              setIsApiComplete(false);
+            }}
           />
         )}
       </AnimatePresence>
@@ -474,7 +490,7 @@ export default function Survey() {
                             <Button
                               variant="ghost"
                               role="combobox"
-                              aria-expanded={open} // Changed to aria-expanded
+                              aria-expanded={open}
                               className="w-full justify-between bg-transparent border-0 border-b border-white/20 rounded-none px-0 py-4 h-auto text-lg text-white hover:bg-transparent hover:text-white hover:border-white/40 font-normal focus:bg-transparent active:bg-transparent data-[state=open]:border-white"
                             >
                               {birthData.birthCountryCode
@@ -517,25 +533,73 @@ export default function Survey() {
                         </Popover>
                       </div>
 
-                      {/* Timezone Dropdown */}
+                      {/* City Dropdown (Combobox) */}
                       <div className="relative">
-                        <select
-                          value={birthData.birthTimezone}
-                          onChange={(e) => handleBirthPatternChange("birthTimezone", e.target.value)}
-                          disabled={!birthData.birthCountryCode || availableTimezones.length === 0}
-                          className="w-full bg-transparent border-0 border-b border-white/20 rounded-none px-0 py-4 text-lg text-white focus:outline-none focus:border-white transition-colors appearance-none cursor-pointer disabled:opacity-30"
-                        >
-                          <option value="" className="bg-[#182339] text-white/50">
-                            {availableTimezones.length === 0 ? "Timezone" : "Select Timezone"}
-                          </option>
-                          {availableTimezones.map((tz) => (
-                            <option key={tz.zoneName} value={tz.zoneName} className="bg-[#182339] text-white">
-                              {tz.zoneName} ({tz.gmtOffsetName})
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60 pointer-events-none" />
+                        <Popover open={cityOpen} onOpenChange={setCityOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              role="combobox"
+                              aria-expanded={cityOpen}
+                              disabled={!birthData.birthCountryCode || availableCities.length === 0}
+                              className="w-full justify-between bg-transparent border-0 border-b border-white/20 rounded-none px-0 py-4 h-auto text-lg text-white hover:bg-transparent hover:text-white hover:border-white/40 font-normal focus:bg-transparent active:bg-transparent data-[state=open]:border-white disabled:opacity-30"
+                            >
+                              {birthData.birthCityName
+                                ? birthData.birthCityName
+                                : <span className="text-white/50">{availableCities.length === 0 ? "City" : "Select City"}</span>}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[300px] p-0 max-h-[300px]" align="start">
+                            <Command>
+                              <CommandInput placeholder="Search city..." className="h-9" />
+                              <CommandList>
+                                <CommandEmpty>No city found.</CommandEmpty>
+                                <CommandGroup>
+                                  {availableCities.map((city) => (
+                                    <CommandItem
+                                      key={`${city.name}-${city.latitude}-${city.longitude}`}
+                                      value={city.name}
+                                      onSelect={(currentValue) => {
+                                        handleBirthPatternChange("birthCityName", currentValue);
+                                        setCityOpen(false);
+                                      }}
+                                    >
+                                      {city.name}
+                                      <Check
+                                        className={cn(
+                                          "ml-auto h-4 w-4",
+                                          birthData.birthCityName === city.name ? "opacity-100" : "opacity-0"
+                                        )}
+                                      />
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                       </div>
+                    </div>
+
+                    {/* Timezone Dropdown */}
+                    <div className="relative mt-4">
+                      <select
+                        value={birthData.birthTimezone}
+                        onChange={(e) => handleBirthPatternChange("birthTimezone", e.target.value)}
+                        disabled={!birthData.birthCountryCode || availableTimezones.length === 0}
+                        className="w-full bg-transparent border-0 border-b border-white/20 rounded-none px-0 py-4 text-lg text-white focus:outline-none focus:border-white transition-colors appearance-none cursor-pointer disabled:opacity-30"
+                      >
+                        <option value="" className="bg-[#182339] text-white/50">
+                          {availableTimezones.length === 0 ? "Timezone" : "Select Timezone"}
+                        </option>
+                        {availableTimezones.map((tz) => (
+                          <option key={tz.zoneName} value={tz.zoneName} className="bg-[#182339] text-white">
+                            {tz.zoneName} ({tz.gmtOffsetName})
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60 pointer-events-none" />
                     </div>
                   </div>
 
