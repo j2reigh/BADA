@@ -250,8 +250,8 @@ CREATE POLICY "Allow all for service" ON public.content_archetypes FOR ALL USING
   - General API: 100 req / 15분 / IP
   - Heavy endpoints (/api/assessment): 10 req / 15분 / IP
   - Webhooks: 제외
-- [ ] Helmet 보안 헤더 추가
-- [ ] CORS 설정 명시적으로 지정
+- [x] Helmet 보안 헤더 추가 ✅ **완료**
+- [x] CORS 설정 명시적으로 지정 ✅ **완료**
 
 ### 6. Email (Resend) (우선순위: 낮음)
 

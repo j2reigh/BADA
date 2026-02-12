@@ -1,11 +1,36 @@
 import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
+import helmet from "helmet";
+import cors from "cors";
 import rateLimit from "express-rate-limit";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 
 const app = express();
+
+// ==========================================
+// SECURITY HEADERS (Helmet)
+// ==========================================
+app.use(helmet({
+  contentSecurityPolicy: false, // Vite dev + inline scripts 호환을 위해 비활성화
+}));
+
+// ==========================================
+// CORS
+// ==========================================
+const allowedOrigins = process.env.APP_URL
+  ? [process.env.APP_URL]
+  : process.env.NODE_ENV === "production"
+    ? [] // 프로덕션: same-origin만 허용 (APP_URL 미설정 시)
+    : ["http://localhost:5001", "http://localhost:5173"];
+
+app.use(cors({
+  origin: allowedOrigins.length > 0
+    ? allowedOrigins
+    : false, // false = cross-origin 요청 차단 (same-origin만 허용)
+  credentials: true,
+}));
 
 // ==========================================
 // RATE LIMITING
