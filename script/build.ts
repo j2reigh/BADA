@@ -59,6 +59,29 @@ async function buildAll() {
     external: externals,
     logLevel: "info",
   });
+
+  // Build Vercel serverless handler (pre-bundled, no runtime imports needed)
+  console.log("building vercel handler...");
+  await esbuild({
+    entryPoints: ["server/vercel.ts"],
+    platform: "node",
+    bundle: true,
+    format: "esm",
+    outfile: "api/index.mjs",
+    define: {
+      "process.env.NODE_ENV": '"production"',
+      "process.env.VERCEL": '"1"',
+    },
+    banner: {
+      js: [
+        'import { createRequire } from "module";',
+        'const require = createRequire(import.meta.url);',
+      ].join("\n"),
+    },
+    minify: true,
+    external: externals,
+    logLevel: "info",
+  });
 }
 
 buildAll().catch((err) => {

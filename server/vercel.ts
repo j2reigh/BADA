@@ -1,6 +1,5 @@
-import { app, initPromise } from "../server/app";
+import { app, initPromise } from "./app";
 
-// Wait for routes to register before handling requests
 let initialized = false;
 const init = initPromise.then(() => { initialized = true; });
 
