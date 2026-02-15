@@ -690,6 +690,24 @@ export async function registerRoutes(
         }
       }
 
+      // If report_id exists but points to a non-existent report, fall back to email lookup
+      if (targetReportId) {
+        const exists = await storage.getSajuResultById(targetReportId);
+        if (!exists && email) {
+          console.log(`[Gumroad] report_id "${targetReportId}" not found, falling back to email lookup for: ${email}`);
+          targetReportId = null;
+          const lead = await storage.getLeadByEmail(email);
+          if (lead) {
+            const reports = await storage.getSajuResultsByLeadId(lead.id);
+            if (reports.length > 0) {
+              reports.sort((a, b) => new Date(b.createdAt as any).getTime() - new Date(a.createdAt as any).getTime());
+              targetReportId = reports[0].id;
+              console.log(`[Gumroad] Fallback: found report ${targetReportId} for email ${email}`);
+            }
+          }
+        }
+      }
+
       // Validation
       if (!sale_id || !targetReportId) {
         console.error("[Gumroad] Missing sale_id or could not resolve report_id");
