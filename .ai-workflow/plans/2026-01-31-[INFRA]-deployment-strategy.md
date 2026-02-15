@@ -310,6 +310,202 @@ Free로 시작하되, assessment submit에서 타임아웃 나면 즉시 Pro 전
 
 ---
 
+## 8. Contingency Plan (배포 장애 대응)
+
+> **최종 업데이트:** 2026-02-15 (배포 직전 점검)
+
+### 8-1. 배포 실패 시 즉시 롤백
+
+| 시나리오 | 대응 | 소요 시간 |
+|----------|------|-----------|
+| Vercel 빌드 실패 | 이전 Production 배포가 유지됨 (자동). 빌드 로그 확인 후 수정 | 0분 (무중단) |
+| 배포 성공했지만 런타임 에러 | Vercel Dashboard → Deployments → 직전 배포 "Promote to Production" | ~1분 |
+| 환경 변수 누락/오설정 | Vercel Dashboard → Settings → Environment Variables에서 수정 후 Redeploy | ~2분 |
+| DB 스키마 불일치 | 롤백 불가 → 아래 DB 섹션 참고 | 상황별 |
+
+**롤백 절차:**
+```
+1. 장애 감지 (모니터링 or 수동 확인)
+2. Vercel Dashboard → Deployments 탭
+3. 마지막 정상 배포 찾기 (초록색 ✓)
+4. ··· 메뉴 → "Promote to Production"
+5. 30초 내 이전 버전으로 복원
+6. 원인 분석 후 핫픽스 브랜치에서 수정
+```
+
+### 8-2. 외부 서비스 장애 대응
+
+#### Gemini AI API 장애 (리포트 생성 불가)
+
+| 증상 | `POST /api/assessment/submit` 500 에러, 타임아웃 |
+|------|--------------------------------------------------|
+| 영향 | 신규 리포트 생성 완전 중단 (핵심 기능) |
+| 감지 | 서버 로그 `[Assessment]` 에러, Gemini API 상태 페이지 확인 |
+| 즉시 대응 | 사용자에게 "잠시 후 다시 시도해주세요" 안내 표시 |
+| 단기 대응 | Gemini API 키 로테이션 시도 (할당량 초과인 경우) |
+| 중기 대응 | 대체 모델 엔드포인트 준비 (gemini-2.0-flash → gemini-1.5-pro 폴백) |
+
+```
+현재 코드 위치: lib/gemini_client.ts
+모니터링: https://status.cloud.google.com/
+```
+
+#### Supabase DB 장애
+
+| 증상 | 전체 API 500 에러, DB 연결 타임아웃 |
+|------|--------------------------------------|
+| 영향 | 서비스 전체 중단 (모든 읽기/쓰기 불가) |
+| 감지 | Supabase Dashboard → Health, 서버 로그 connection refused |
+| 즉시 대응 | Supabase 상태 페이지 확인 → 인프라 장애면 대기 |
+| 단기 대응 | DB connection pool 재시작 (Vercel 함수 재배포로 해결) |
+| 복구 불가 시 | Supabase 프로젝트 재생성 + 백업 복원 |
+
+```
+DB 리전: ap-southeast-1
+모니터링: https://status.supabase.com/
+백업: Supabase Dashboard → Database → Backups (자동 일일 백업)
+```
+
+#### Resend 이메일 장애
+
+| 증상 | 인증 이메일 미발송, `sendVerificationEmail` 에러 |
+|------|--------------------------------------------------|
+| 영향 | 신규 유저 이메일 인증 불가 (리포트 열람은 가능) |
+| 감지 | 서버 로그 이메일 발송 에러, Resend Dashboard 확인 |
+| 즉시 대응 | 현재 코드에서 이메일 실패가 submit을 블로킹하지 않음 → 리포트 생성은 계속 작동 |
+| 단기 대응 | Resend API 키 확인, 발신 도메인 DNS 상태 확인 |
+| 대안 | `RESEND_FROM_EMAIL`을 `onboarding@resend.dev`(무료 테스트용)로 임시 전환 |
+
+```
+현재 코드 위치: lib/email.ts
+현재 폴백: noreply-verify@bada.one → onboarding@resend.dev
+모니터링: https://resend.com/overview (Dashboard)
+```
+
+#### Gumroad 웹훅 장애
+
+| 증상 | 결제 완료 후 리포트 잠금 해제 안 됨 |
+|------|--------------------------------------|
+| 영향 | 결제한 유저가 리포트를 볼 수 없음 (매출 직결) |
+| 감지 | 유저 클레임, Gumroad Sales 로그 vs DB `isPaid` 불일치 |
+| 즉시 대응 | DB에서 수동 잠금 해제 (아래 쿼리) |
+| 단기 대응 | Gumroad Dashboard → Ping 재전송 시도 |
+| 재발 방지 | 웹훅 수신 로그 테이블 추가, 일일 정산 크로스체크 스크립트 |
+
+```sql
+-- 긴급 수동 잠금 해제 (Supabase SQL Editor)
+UPDATE saju_results
+SET is_paid = true, updated_at = NOW()
+WHERE id = '{report_id}';
+```
+
+#### HD (Human Design) API 장애
+
+| 증상 | HD 차트 데이터 조회 실패 |
+|------|--------------------------|
+| 영향 | 리포트에 HD 데이터 누락 (부분 장애) |
+| 감지 | 서버 로그 HD API 에러 |
+| 즉시 대응 | HD 데이터 없이 사주 기반 리포트만 생성되는지 확인 |
+| 단기 대응 | HD API 키 상태 확인, 요청 형식 검증 |
+
+```
+현재 코드 위치: lib/hd_client.ts
+```
+
+### 8-3. Vercel 특화 장애
+
+#### Serverless Function 타임아웃 (10초/60초)
+
+| 시나리오 | 대응 |
+|----------|------|
+| Free 플랜 10초 초과 | **즉시 Pro 플랜 전환** ($20/월, 60초 한도) |
+| Pro 플랜 60초 초과 | Gemini 모델을 더 빠른 모델로 전환 (flash → flash-lite) |
+| 지속적 타임아웃 | 리포트 생성을 비동기 처리로 전환 (큐 기반) |
+
+#### Cold Start 지연
+
+| 증상 | 첫 요청이 2~5초 느림 |
+|------|------------------------|
+| 대응 | Vercel Cron으로 5분마다 `/api/health` ping (워밍업) |
+| vercel.json 추가 | `"crons": [{ "path": "/api/health", "schedule": "*/5 * * * *" }]` |
+
+### 8-4. 데이터 복구
+
+#### DB 백업 & 복원
+
+```
+Supabase 자동 백업:
+- Free: 일일 백업 7일 보관
+- Pro: 일일 백업 30일 보관 + Point-in-Time Recovery
+
+복원 절차:
+1. Supabase Dashboard → Database → Backups
+2. 복원 시점 선택
+3. "Restore" 클릭 (다운타임 수분 발생)
+```
+
+#### 리포트 데이터 유실 시
+
+```sql
+-- 최근 생성된 리포트 확인
+SELECT id, lead_id, created_at, is_paid
+FROM saju_results
+ORDER BY created_at DESC
+LIMIT 20;
+
+-- 특정 유저 리포트 복구 확인
+SELECT l.email, s.id as report_id, s.created_at
+FROM leads l
+JOIN saju_results s ON l.id = s.lead_id
+WHERE l.email = '{user_email}';
+```
+
+### 8-5. 보안 인시던트 대응
+
+| 시나리오 | 즉시 대응 |
+|----------|-----------|
+| API 키 노출 | 해당 서비스에서 키 즉시 로테이션 → Vercel 환경 변수 업데이트 → Redeploy |
+| DB 크레덴셜 노출 | Supabase에서 DB 패스워드 변경 → `DATABASE_URL` 업데이트 → Redeploy |
+| 웹훅 악용 (가짜 결제) | 웹훅 엔드포인트 임시 비활성화 → 비정상 `isPaid` 레코드 롤백 → 서명 검증 구현 |
+| DDoS/과다 트래픽 | Vercel 자체 DDoS 보호 + Rate Limiting 임계치 하향 조정 |
+
+**키 로테이션 체크리스트:**
+```
+[ ] Gemini API Key → Google AI Studio에서 재발급
+[ ] Resend API Key → Resend Dashboard에서 재발급
+[ ] HD API Key → HD API 서비스에서 재발급
+[ ] Supabase DB Password → Supabase Dashboard → Settings → Database
+[ ] Vercel 환경 변수 전부 업데이트
+[ ] Redeploy 트리거
+```
+
+### 8-6. 커뮤니케이션 플랜
+
+| 장애 등급 | 기준 | 대응 |
+|-----------|------|------|
+| P0 (긴급) | 서비스 완전 중단, 결제 유저 영향 | 15분 내 대응 시작, 유저 개별 안내 |
+| P1 (높음) | 리포트 생성 불가 (Gemini 장애 등) | 1시간 내 대응, 서비스 공지 |
+| P2 (보통) | 이메일 미발송, Preview 배포 실패 | 당일 내 대응 |
+| P3 (낮음) | UI 깨짐, 비핵심 기능 오류 | 다음 배포 사이클에 수정 |
+
+### 8-7. 배포 전 최종 체크리스트 (Go/No-Go)
+
+```
+배포 판단 기준 — 모두 ✓ 여야 Go:
+
+[ ] 로컬 빌드 성공 (npm run build 에러 없음)
+[ ] 로컬 테스트 통과 (서베이 제출 → 리포트 생성 → 이메일)
+[ ] 환경 변수 Vercel에 전부 등록 확인
+[ ] .env 파일 .gitignore에 포함 확인
+[ ] Git history에 시크릿 미노출 확인
+[ ] Supabase DB 접속 정상 확인
+[ ] Gemini API 할당량 여유 확인
+[ ] Resend 발신 도메인 DNS 정상 확인
+[ ] 롤백 절차 숙지 완료
+```
+
+---
+
 ## ✋ Human Review Required
 
 **승인 상태:** [ ] 대기 중 / [ ] 승인됨 / [ ] 수정 필요

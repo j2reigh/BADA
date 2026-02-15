@@ -28,9 +28,9 @@ function getCodeErrorMessage(error: string): string {
 }
 
 export async function registerRoutes(
-  httpServer: Server,
-  app: Express
-): Promise<Server> {
+  app: Express,
+  httpServer?: Server,
+): Promise<Server | undefined> {
 
 
   app.post(api.survey.submit.path, async (req, res) => {

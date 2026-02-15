@@ -1,0 +1,287 @@
+Human Design API
+ 1.1.204 
+OAS 3.0
+Welcome to the Human Design API documentation. This API provides endpoints for calculating and analyzing Human Design charts.
+
+Authentication
+All endpoints require an API key to be passed in the header as HD-Api-Key.
+
+Google Places API
+All endpoints require a Geocode key to be passed in the header as HD-Geocode-Key.
+
+
+https://api.humandesignapi.nl/v1/ - Production server
+
+
+
+POST
+/bodygraphs
+Generate a complete bodygraph
+
+
+
+Request body
+
+application/json
+Example Value
+Schema
+{
+  "birthdate": "01-Jan-1990",
+  "birthtime": "14:30",
+  "location": "Haarlem, The Netherlands"
+}
+Responses
+Code	Description	Links
+200	
+Successful bodygraph generation
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+{
+  "type": "Generator",
+  "profile": "6/2",
+  "channels_short": [
+    "20-34",
+    "10-57"
+  ],
+  "centers": [
+    "Head",
+    "Ajna",
+    "G",
+    "Sacral"
+  ],
+  "strategy": "To Respond",
+  "authority": "Sacral",
+  "incarnation_cross": "Cross of Tension (20/34 | 10/57)",
+  "definition": "Split Definition",
+  "signature": "Satisfaction",
+  "not_self_theme": "Frustration",
+  "cognition": "Strategic",
+  "determination": "Focused Determination",
+  "variables": "PLL DRL",
+  "motivation": "Hope/Pain",
+  "transference": "Dominance",
+  "perspective": "Observation",
+  "distraction": "Attachment",
+  "circuitries": "Individual, Tribal",
+  "channels_long": [
+    "Integration (20/34)",
+    "Awareness (10/57)"
+  ],
+  "gates": [
+    "20",
+    "34",
+    "10",
+    "57"
+  ],
+  "activations": {
+    "design": {
+      "sun": "20.1",
+      "earth": "34.6"
+    },
+    "personality": {
+      "sun": "10.3",
+      "earth": "57.3"
+    }
+  }
+}
+No links
+401	
+API Key missing
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "status": "error",
+  "code": 401,
+  "message": "API Key missing"
+}
+No links
+403	
+User does not have access to this feature
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "status": "error",
+  "code": 403,
+  "message": "User does not have access to this feature"
+}
+No links
+404	
+Not found
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "status": "error",
+  "code": 404,
+  "message": "Not found"
+}
+No links
+500	
+Server error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "status": "error",
+  "code": 500,
+  "message": "Internal server error"
+}
+No links
+
+POST
+/bodygraphs/simple
+Generate a simplified bodygraph
+
+
+Parameters
+Try it out
+No parameters
+
+Request body
+
+application/json
+Example Value
+Schema
+{
+  "birthdate": "01-Jan-1990",
+  "birthtime": "14:30",
+  "location": "Haarlem, The Netherlands"
+}
+Responses
+Code	Description	Links
+200	
+Successful simplified bodygraph generation
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+{
+  "type": "Generator",
+  "profile": "6/2",
+  "gates": [
+    "20",
+    "34",
+    "10",
+    "57"
+  ],
+  "channels_short": [
+    "20-34",
+    "10-57"
+  ],
+  "centers": [
+    "Head",
+    "Ajna",
+    "G",
+    "Sacral"
+  ]
+}
+No links
+400	
+Invalid input
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "status": "error",
+  "code": 400,
+  "message": "Invalid input"
+}
+No links
+401	
+API Key missing
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "status": "error",
+  "code": 401,
+  "message": "API Key missing"
+}
+No links
+403	
+User does not have access to this feature
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "status": "error",
+  "code": 403,
+  "message": "User does not have access to this feature"
+}
+No links
+404	
+Not found
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "status": "error",
+  "code": 404,
+  "message": "Not found"
+}
+No links
+500	
+Server error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "status": "error",
+  "code": 500,
+  "message": "Internal server error"
+}
+No links
+
+
+
+----
+Google Maps API Platform
+To get started using the Google Geocode API, you need to create an API key. Follow these steps:
+
+Setup your project on Google Cloud.Create a new project
+Enable Google Maps Platform API in your project.
+Copy the API Key from your project credentials.
+For more detailed instructions, please refer to theGoogle Maps Platform documentation.
+
+
+Human Design API
+Copy the Human Design API Key from the section below.
+Store this key and the Google Maps API key into your environment variables.
+Copy a code snippet for your preferred language and start building your human design product.

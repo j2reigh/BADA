@@ -63,7 +63,20 @@
       "WebFetch(domain:letters.thedankoe.com)",
       "Bash(# Check if dev server is actually running lsof -i :5000)",
       "WebFetch(domain:www.humandesignapi.nl)",
-      "WebFetch(domain:humandesignapi.com)"
+      "WebFetch(domain:humandesignapi.com)",
+      "Bash(xargs -I {} bash -c 'cat /dev/null > /tmp/server_check.txt; sleep 0.5; lsof -p {} 2>/dev/null | grep -E \"\"\\\\.output|stdout\"\" | head -5')",
+      "Bash(tail:*)",
+      "Bash(grep:*)",
+      "Bash(git log:*)",
+      "WebFetch(domain:docs.humandesignapi.nl)",
+      "Bash(git diff:*)",
+      "Bash(xargs cat:*)",
+      "Bash(ps:*)",
+      "WebFetch(domain:bada.one)",
+      "Bash(dig:*)",
+      "Bash(git rm:*)",
+      "Bash(npx vercel inspect:*)",
+      "Bash(npx vercel:*)"
     ]
   }
 }

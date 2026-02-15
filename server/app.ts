@@ -1,11 +1,8 @@
-import 'dotenv/config';
-import express, { type Request, Response, NextFunction } from "express";
+import express from "express";
 import helmet from "helmet";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
-import { createServer } from "http";
 import { registerRoutes } from "./routes";
-import { serveStatic } from "./static";
 
 const app = express();
 
@@ -13,7 +10,7 @@ const app = express();
 // SECURITY HEADERS (Helmet)
 // ==========================================
 app.use(helmet({
-  contentSecurityPolicy: false,
+  contentSecurityPolicy: false, // Vite dev + inline scripts compatibility
 }));
 
 // ==========================================
@@ -22,13 +19,13 @@ app.use(helmet({
 const allowedOrigins = process.env.APP_URL
   ? [process.env.APP_URL]
   : process.env.NODE_ENV === "production"
-    ? []
-    : ["http://localhost:5001", "http://localhost:5173"];
+    ? [] // Production: same-origin only (if APP_URL not set)
+    : ["http://localhost:5001", "http://localhost:5173", "http://127.0.0.1:5173"];
 
 app.use(cors({
   origin: allowedOrigins.length > 0
     ? allowedOrigins
-    : false,
+    : false, // false = cross-origin blocked
   credentials: true,
 }));
 
@@ -36,15 +33,17 @@ app.use(cors({
 // RATE LIMITING
 // ==========================================
 
+// General API rate limit: 100 requests per 15 minutes per IP
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
   message: { error: "Too many requests. Please try again later." },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => req.path.startsWith("/api/webhooks"),
+  skip: (req) => req.path.startsWith("/api/webhooks"), // Skip webhooks
 });
 
+// Strict rate limit for heavy endpoints: 10 requests per 15 minutes per IP
 const strictLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
@@ -53,13 +52,13 @@ const strictLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Apply general rate limiting to all /api routes (except webhooks)
 app.use("/api", generalLimiter);
-app.use("/api/assessment", strictLimiter);
 
-// ==========================================
-// BODY PARSING
-// ==========================================
+// Apply strict rate limiting to heavy endpoints
+app.use("/api/assessment", strictLimiter); // Report generation
 
+// JSON Body Parser with raw body verification (for webhooks)
 declare module "http" {
   interface IncomingMessage {
     rawBody: unknown;
@@ -76,10 +75,7 @@ app.use(
 
 app.use(express.urlencoded({ extended: false }));
 
-// ==========================================
-// REQUEST LOGGING
-// ==========================================
-
+// Logging Helper
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
     hour: "numeric",
@@ -91,6 +87,7 @@ export function log(message: string, source = "express") {
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
+// Request Logger
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -117,27 +114,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// ==========================================
-// ROUTE REGISTRATION + STATIC SERVING
-// ==========================================
+// Register routes (No httpServer passed - Vercel compatible)
+// Note: We register routes here for the app instance.
+// If actual httpServer is needed for WebSockets, it should be attached separately.
+registerRoutes(app);
 
-const httpServer = createServer(app);
-
-const initPromise = (async () => {
-  await registerRoutes(httpServer, app);
-
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-    throw err;
-  });
-
-  // Vercel CDN handles static files — only serve locally
-  if (process.env.NODE_ENV === "production" && !process.env.VERCEL) {
-    serveStatic(app);
-  }
-})();
-
-export { app, httpServer, initPromise };
+export default app;
