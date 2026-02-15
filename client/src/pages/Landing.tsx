@@ -150,7 +150,7 @@ function HeroSection({ t }: { t: TranslateFn }) {
         style={{ opacity, y }}
       >
         {/* Left: The Message */}
-        <div className="order-2 lg:order-1">
+        <div className="order-1 lg:order-1">
           <motion.p
             className="text-xs font-mono mb-4 text-white/50 uppercase tracking-widest"
             initial={{ opacity: 0 }}
@@ -195,7 +195,7 @@ function HeroSection({ t }: { t: TranslateFn }) {
         </div>
 
         {/* Right: Embedded Q1 Card */}
-        <div className="order-1 lg:order-2 flex justify-center lg:justify-end">
+        <div className="order-2 lg:order-2 flex justify-center lg:justify-end">
           <EmbeddedDiagnosticCard t={t} />
         </div>
       </motion.div>

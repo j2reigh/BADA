@@ -143,10 +143,7 @@ export default function Survey() {
       return { ...prev, [field]: value };
     });
 
-    // Auto-open time modal when date is selected (and time not yet set)
-    if (field === 'birthDate' && value && !birthData.birthTime && !birthData.birthTimeUnknown) {
-      setTimeout(() => setShowTimeModal(true), 300);
-    }
+    // Removed auto-open time modal — users tap the time field manually
   };
 
   const handleTimeSelect = (time: string | null, unknown: boolean) => {
