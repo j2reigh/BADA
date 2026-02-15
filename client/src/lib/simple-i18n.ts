@@ -50,7 +50,12 @@ export const translations = {
     'landing.solution.step2': 'Analyze',
     'landing.solution.step2.desc': 'We map your natural rhythm using Time-Data',
     'landing.solution.step3': 'Align',
-    'landing.solution.step3.desc': 'Get your personalized guide to flow',
+    'landing.solution.step3.desc': 'Get your collision report and weekly protocol',
+
+    // Landing - Sample Cards
+    'landing.samples.tag': 'From Real Reports',
+    'landing.samples.title': 'A glimpse into someone else\'s mind.',
+    'landing.samples.disclaimer': 'Shared with permission from beta testers.',
 
     // Landing - Community Section
     'landing.community.tag': 'Join the Ritual',
@@ -74,7 +79,7 @@ export const translations = {
     'survey.q1.A': 'I become more alert and focused',
     'survey.q1.B': 'I feel overwhelmed or emotional',
     'survey.q1.C': 'I try to escape the situation',
-    'survey.q1.D': 'It depends, but usually A or B',
+    'survey.q1.D': 'It depends, but usually I become focused or emotional',
 
     'survey.q2.text': 'In crisis situations, people often say I am:',
     'survey.q2.A': 'Calm and clear-headed',
@@ -199,9 +204,9 @@ export const translations = {
     'faq.q7.q': 'Why mention neuroscience?',
     'faq.q7.a': 'Because your behavior isn\'t fixed — it shifts with context.\n\nNeuroscience shows that energy, timing, and environment change how you think and act. The Four Pillars system maps those same shifts from a different angle.\n\nWe\'re not claiming scientific proof. We\'re saying the frameworks point in the same direction.',
     'faq.q8.q': 'What do I actually get?',
-    'faq.q8.a': 'A multi-page personal report covering:\n\n• Your core operating pattern (how you\'re wired)\n• Your current energy phase (what\'s active now)\n• Where tension builds (what drains you)\n• Actionable direction (what to adjust)\n\nThe first section is free. The full report is unlocked with payment.',
+    'faq.q8.a': 'A personal report delivered as a card-by-card experience.\n\nFree preview (3 cards):\n• Your mirror — how you see yourself\n• Your blueprint — how you were designed to operate\n\nFull report (10 more cards):\n• The collision — where self-image meets structural design\n• Your brain scan — where your energy actually goes\n• Proof — 3 behavioral patterns you\'ll recognize\n• The cost — what this pattern costs you at work, in relationships, and with money\n• Your chapter — what decade of life you\'re in and what\'s shifting\n• This week — one 7-day protocol to test\n\nThe first 3 cards are free. The rest unlocks with a one-time payment.',
     'faq.q9.q': 'How long does it take?',
-    'faq.q9.a': 'About 3 minutes to complete the survey.\nYour report is generated and delivered by email within minutes.',
+    'faq.q9.a': 'About 5 minutes to complete the survey.\nYour report is generated and delivered by email within minutes.',
     'faq.q10.q': 'Is my data safe?',
     'faq.q10.a': 'Your birth data is used to generate your report. That\'s it.\n\nWe don\'t sell data. We don\'t share it with third parties.\nEmail is used only for report delivery.',
     'faq.q11.q': 'Does this define me?',
@@ -266,7 +271,12 @@ export const translations = {
     'landing.solution.step2': '분석',
     'landing.solution.step2.desc': '시간 데이터로 자연스러운 리듬 매핑',
     'landing.solution.step3': '정렬',
-    'landing.solution.step3.desc': '맞춤형 흐름 가이드 제공',
+    'landing.solution.step3.desc': '나만의 충돌 리포트와 주간 프로토콜 확인',
+
+    // Landing - Sample Cards
+    'landing.samples.tag': '실제 리포트에서',
+    'landing.samples.title': '다른 사람의 마음을 엿보다.',
+    'landing.samples.disclaimer': '베타 테스터의 동의 하에 공유됩니다.',
 
     // Landing - Community Section
     'landing.community.tag': '리추얼에 참여하세요',
@@ -290,7 +300,7 @@ export const translations = {
     'survey.q1.A': '더 또렷하고 집중하게 된다',
     'survey.q1.B': '압도당하거나 감정적이 된다',
     'survey.q1.C': '그 상황을 피하려고 한다',
-    'survey.q1.D': '상황에 따라 다르지만, 보통 A나 B',
+    'survey.q1.D': '상황에 따라 다르지만, 보통 집중하거나 감정적이 된다',
 
     'survey.q2.text': '위기 상황에서 주변 사람들은 나를 이렇게 평가해요:',
     'survey.q2.A': '침착하고 명료하다',
@@ -415,9 +425,9 @@ export const translations = {
     'faq.q7.q': '왜 신경과학을 언급하나요?',
     'faq.q7.a': '행동은 고정된 것이 아니라 맥락에 따라 변하기 때문입니다.\n\n신경과학은 에너지, 타이밍, 환경이 생각과 행동 방식을 바꾼다는 것을 보여줍니다. 사주 시스템은 다른 각도에서 같은 변화를 매핑합니다.\n\n과학적 증명을 주장하는 것이 아닙니다. 프레임워크들이 같은 방향을 가리킨다는 것입니다.',
     'faq.q8.q': '실제로 무엇을 받나요?',
-    'faq.q8.a': '다음을 다루는 다중 페이지 개인 리포트:\n\n• 핵심 작동 패턴 (어떻게 설계되었는지)\n• 현재 에너지 단계 (지금 활성화된 것)\n• 긴장이 쌓이는 곳 (에너지를 소모하는 것)\n• 실행 가능한 방향 (조정할 것)\n\n첫 번째 섹션은 무료입니다. 전체 리포트는 결제 후 잠금 해제됩니다.',
+    'faq.q8.a': '카드 형식으로 전달되는 개인 리포트입니다.\n\n무료 미리보기 (3장):\n• 거울 — 스스로 인식하는 나\n• 설계도 — 본래 설계된 작동 방식\n\n전체 리포트 (10장 추가):\n• 충돌 — 자기 인식과 구조적 설계가 부딪히는 지점\n• 브레인 스캔 — 에너지가 실제로 어디에 쓰이는지\n• 증거 — 바로 알아볼 수 있는 행동 패턴 3개\n• 비용 — 이 패턴이 직장, 관계, 돈에서 치르는 대가\n• 챕터 — 지금 인생의 어떤 시기인지, 무엇이 전환 중인지\n• 이번 주 — 7일간 테스트할 프로토콜 1개\n\n처음 3장은 무료입니다. 나머지는 1회 결제로 잠금 해제됩니다.',
     'faq.q9.q': '얼마나 걸리나요?',
-    'faq.q9.a': '설문 완료까지 약 3분.\n리포트는 생성 후 몇 분 내에 이메일로 전달됩니다.',
+    'faq.q9.a': '설문 완료까지 약 5분.\n리포트는 생성 후 몇 분 내에 이메일로 전달됩니다.',
     'faq.q10.q': '데이터는 안전한가요?',
     'faq.q10.a': '출생 데이터는 리포트 생성에만 사용됩니다. 그뿐입니다.\n\n데이터를 판매하지 않습니다. 제3자와 공유하지 않습니다.\n이메일은 리포트 전달에만 사용됩니다.',
     'faq.q11.q': '이게 나를 규정하나요?',
@@ -482,7 +492,12 @@ export const translations = {
     'landing.solution.step2': 'Analisis',
     'landing.solution.step2.desc': 'Kami petakan ritme alami menggunakan Data-Waktu',
     'landing.solution.step3': 'Selaraskan',
-    'landing.solution.step3.desc': 'Dapatkan panduan personal untuk flow',
+    'landing.solution.step3.desc': 'Dapatkan laporan collision dan protokol mingguanmu',
+
+    // Landing - Sample Cards
+    'landing.samples.tag': 'Dari Laporan Nyata',
+    'landing.samples.title': 'Mengintip ke dalam pikiran orang lain.',
+    'landing.samples.disclaimer': 'Dibagikan dengan izin dari beta tester.',
 
     // Landing - Community Section
     'landing.community.tag': 'Bergabung dengan Ritual',
@@ -506,7 +521,7 @@ export const translations = {
     'survey.q1.A': 'Aku jadi lebih waspada dan fokus',
     'survey.q1.B': 'Aku merasa kewalahan atau emosional',
     'survey.q1.C': 'Aku mencoba melarikan diri dari situasi itu',
-    'survey.q1.D': 'Tergantung, tapi biasanya A atau B',
+    'survey.q1.D': 'Tergantung, tapi biasanya jadi fokus atau emosional',
 
     'survey.q2.text': 'Dalam situasi krisis, orang-orang biasanya bilang aku:',
     'survey.q2.A': 'Tenang dan berpikir jernih',
@@ -631,9 +646,9 @@ export const translations = {
     'faq.q7.q': 'Kenapa menyebut neurosains?',
     'faq.q7.a': 'Karena perilakumu tidak tetap — berubah sesuai konteks.\n\nNeurosains menunjukkan bahwa energi, waktu, dan lingkungan mengubah cara berpikir dan bertindak. Sistem Four Pillars memetakan perubahan yang sama dari sudut berbeda.\n\nKami tidak mengklaim bukti ilmiah. Kami mengatakan kerangka-kerangka ini menunjuk ke arah yang sama.',
     'faq.q8.q': 'Apa yang sebenarnya saya dapat?',
-    'faq.q8.a': 'Laporan personal multi-halaman yang mencakup:\n\n• Pola operasi inti (bagaimana kamu terhubung)\n• Fase energi saat ini (apa yang aktif sekarang)\n• Di mana ketegangan menumpuk (apa yang menguras)\n• Arah yang bisa ditindaklanjuti (apa yang perlu disesuaikan)\n\nBagian pertama gratis. Laporan lengkap dibuka dengan pembayaran.',
+    'faq.q8.a': 'Laporan personal yang disajikan dalam format kartu.\n\nPreview gratis (3 kartu):\n• Cermin — bagaimana kamu melihat dirimu\n• Cetak biru — bagaimana kamu dirancang untuk beroperasi\n\nLaporan lengkap (10 kartu tambahan):\n• Tabrakan — di mana citra diri bertemu desain struktural\n• Brain scan — ke mana energimu sebenarnya pergi\n• Bukti — 3 pola perilaku yang langsung kamu kenali\n• Biaya — apa yang pola ini biayakan di pekerjaan, hubungan, dan uang\n• Chapter — dekade hidup apa yang sedang kamu jalani dan apa yang bergeser\n• Minggu ini — satu protokol 7 hari untuk diuji\n\n3 kartu pertama gratis. Sisanya dibuka dengan pembayaran satu kali.',
     'faq.q9.q': 'Berapa lama prosesnya?',
-    'faq.q9.a': 'Sekitar 3 menit untuk menyelesaikan survei.\nLaporanmu dibuat dan dikirim lewat email dalam hitungan menit.',
+    'faq.q9.a': 'Sekitar 5 menit untuk menyelesaikan survei.\nLaporanmu dibuat dan dikirim lewat email dalam hitungan menit.',
     'faq.q10.q': 'Apakah data saya aman?',
     'faq.q10.a': 'Data kelahiranmu digunakan untuk membuat laporanmu. Itu saja.\n\nKami tidak menjual data. Kami tidak membagikannya dengan pihak ketiga.\nEmail hanya digunakan untuk pengiriman laporan.',
     'faq.q11.q': 'Apakah ini mendefinisikan saya?',

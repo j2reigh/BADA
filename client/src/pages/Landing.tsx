@@ -5,6 +5,12 @@ import { Link } from "wouter";
 import TypewriterText from "@/components/landing/TypewriterText";
 import EmbeddedDiagnosticCard from "@/components/landing/EmbeddedDiagnosticCard";
 import { useTranslation, type UILanguage } from "@/lib/simple-i18n";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  type CarouselApi,
+} from "@/components/ui/carousel";
 
 // --- Components ---
 
@@ -23,7 +29,7 @@ function Header({ t }: { t: TranslateFn }) {
         <nav className="hidden md:flex items-center gap-8 mix-blend-difference text-white">
           <a href="#problem" className="text-sm hover:opacity-70 transition-opacity">{t('landing.nav.problem')}</a>
           <a href="#solution" className="text-sm hover:opacity-70 transition-opacity">{t('landing.nav.solution')}</a>
-          <a href="#community" className="text-sm hover:opacity-70 transition-opacity">{t('landing.nav.community')}</a>
+          {/* <a href="#community" className="text-sm hover:opacity-70 transition-opacity">{t('landing.nav.community')}</a> */}
           <Link href="/faq" className="text-sm hover:opacity-70 transition-opacity">{t('faq.title')}</Link>
         </nav>
 
@@ -353,6 +359,137 @@ function SolutionSection({ t }: { t: TranslateFn }) {
   );
 }
 
+const SAMPLE_CARDS = [
+  {
+    label: "COLLISION",
+    born: "Born 1996. Seoul.",
+    question: "What happens when your alertness has nowhere to go?",
+    text: "You scan for threats that don't exist yet. Not because you're anxious. Because your system was built to detect danger before it arrives. The cost? You can't rest even when you're safe.",
+  },
+  {
+    label: "EVIDENCE",
+    born: "Born 1989. Jakarta.",
+    question: "Things you do that you thought were just personality:",
+    text: "You rehearse conversations before they happen. You feel guilty resting on a productive day. You know the answer but wait for someone else to say it first.",
+  },
+  {
+    label: "BRAIN SCAN",
+    born: "Born 2001. London.",
+    question: "What's actually running under the surface?",
+    text: "Your prefrontal cortex is competing with your limbic system for bandwidth. You don't lack focus. You have two systems fighting for the steering wheel.",
+  },
+  {
+    label: "MIRROR",
+    born: "Born 1993. New York.",
+    question: "The version of you that others see:",
+    text: "Calm. Collected. Slightly hard to read. Here's what they miss: you're running 4 simulations of this conversation before you open your mouth.",
+  },
+  {
+    label: "CLOSING",
+    born: "Born 1988. Tokyo.",
+    question: "",
+    text: "You've spent years building systems to manage a mind you were never given the manual for.",
+  },
+];
+
+function SampleCardsSection({ t }: { t: TranslateFn }) {
+  const [api, setApi] = useState<CarouselApi>();
+  const [current, setCurrent] = useState(0);
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!api) return;
+    setCount(api.scrollSnapList().length);
+    setCurrent(api.selectedScrollSnap());
+    const onSelect = () => setCurrent(api.selectedScrollSnap());
+    api.on("select", onSelect);
+    return () => { api.off("select", onSelect); };
+  }, [api]);
+
+  return (
+    <section className="py-20 px-6">
+      <div className="max-w-5xl mx-auto w-full">
+        <FocusSection>
+          <div className="text-center mb-10">
+            <span className="inline-block text-xs font-mono text-white/40 uppercase tracking-widest mb-4">
+              {t('landing.samples.tag')}
+            </span>
+            <h2 className="text-3xl md:text-4xl font-display font-medium text-white">
+              {t('landing.samples.title')}
+            </h2>
+          </div>
+        </FocusSection>
+
+        <FocusSection>
+          <Carousel
+            setApi={setApi}
+            opts={{ align: "start", loop: true }}
+            className="w-full"
+          >
+            <CarouselContent className="-ml-3 md:-ml-4">
+              {SAMPLE_CARDS.map((s, i) => (
+                <CarouselItem key={i} className="pl-3 md:pl-4 basis-[85%] md:basis-[48%]">
+                  <div className="bg-[#182339] border border-white/10 rounded-xl p-6 md:p-8 min-h-[240px] flex flex-col justify-between">
+                    <div>
+                      <span
+                        className="text-[10px] uppercase tracking-[0.3em] text-white/30"
+                        style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                      >
+                        {s.label}
+                      </span>
+                      {s.question && (
+                        <p
+                          className="text-white/90 text-base md:text-lg font-medium mt-4 mb-3"
+                          style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                        >
+                          {s.question}
+                        </p>
+                      )}
+                      <p
+                        className="text-white/50 text-sm leading-relaxed mt-3"
+                        style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                      >
+                        {s.text}
+                      </p>
+                    </div>
+                    <p
+                      className="text-white/20 text-[10px] mt-5 uppercase tracking-wider"
+                      style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                    >
+                      {s.born}
+                    </p>
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+          </Carousel>
+
+          {/* Dot indicators */}
+          <div className="flex justify-center gap-1.5 mt-6">
+            {Array.from({ length: count }).map((_, i) => (
+              <button
+                key={i}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  i === current ? "bg-white/60 w-4" : "bg-white/20 w-1.5"
+                }`}
+                onClick={() => api?.scrollTo(i)}
+              />
+            ))}
+          </div>
+
+          {/* Disclaimer */}
+          <p
+            className="text-center text-white/20 text-[10px] mt-4 uppercase tracking-wider"
+            style={{ fontFamily: "'JetBrains Mono', monospace" }}
+          >
+            {t('landing.samples.disclaimer')}
+          </p>
+        </FocusSection>
+      </div>
+    </section>
+  );
+}
+
 function VibeCheckSection({ t }: { t: TranslateFn }) {
   // Static Instagram images (manual update)
   const instagramPosts = [
@@ -540,7 +677,8 @@ export default function Landing() {
         <HeroSection t={t} />
         <ProblemSection t={t} />
         <SolutionSection t={t} />
-        <VibeCheckSection t={t} />
+        <SampleCardsSection t={t} />
+        {/* <VibeCheckSection t={t} /> */}
         <FinalCTA t={t} />
       </div>
 
