@@ -507,6 +507,7 @@ export async function registerRoutes(
         sajuData: sajuResult.sajuData,
         isPaid,
         createdAt: sajuResult.createdAt,
+        language: (sajuResult as any).language || "en",
       };
 
       // V3 card report format

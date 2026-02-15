@@ -69,6 +69,7 @@ interface ResultsApiResponse {
   createdAt: string;
   v3Cards?: V3CardContent;
   isLegacy?: boolean;
+  language?: string;
 }
 
 // ─── Card Shell ───
@@ -601,14 +602,75 @@ function LockCard({
   reportId,
   email,
   remainingCount,
+  language = "en",
 }: {
   reportId: string;
   email: string;
   remainingCount: number;
+  language?: string;
 }) {
   const [code, setCode] = useState("");
   const [codeError, setCodeError] = useState("");
   const [isRedeeming, setIsRedeeming] = useState(false);
+  const [openFaq, setOpenFaq] = useState<string | null>(null);
+
+  const translations = {
+    en: {
+      left: "mirror",
+      right: "blueprint",
+      line1: "You've seen the gap.",
+      line2: "Now see what it's costing you.",
+      count: "10 cards",
+      contents: "Your brain scan · 3 hidden costs · Your 10-year chapter · This week's protocol",
+      cta: "Unlock",
+      or: "or",
+      placeholder: "Enter code",
+      apply: "Apply",
+      faq: [
+        { key: "q2", q: "Is this fortune telling?", a: "No.\n\nNothing is predicted. No \"good\" or \"bad\" outcomes.\nWe don't tell you what will happen.\n\nWe show how your energy tends to move — so you can work with it, not against it." },
+        { key: "q8", q: "What do I actually get?", a: "3 free cards (mirror + blueprint), then 10 more with payment — brain scan, behavioral proof, 3 hidden costs, your 10-year chapter, and a weekly protocol." },
+        { key: "q10", q: "Is my data safe?", a: "Your birth data is used to generate your report. That's it.\n\nWe don't sell data. We don't share it with third parties.\nEmail is used only for report delivery." },
+        { key: "contact", q: "Contact", a: "Questions, feedback, or just want to say hi?" },
+      ],
+    },
+    ko: {
+      left: "거울",
+      right: "설계도",
+      line1: "간극은 확인했습니다.",
+      line2: "이제 그 대가를 확인하세요.",
+      count: "10장",
+      contents: "브레인 스캔 · 3가지 비용 분석 · 10년 챕터 · 이번 주 프로토콜",
+      cta: "잠금 해제",
+      or: "또는",
+      placeholder: "코드 입력",
+      apply: "적용",
+      faq: [
+        { key: "q2", q: "점술인가요?", a: "아닙니다.\n\n아무것도 예측하지 않습니다. \"좋은\" 결과도 \"나쁜\" 결과도 없습니다.\n무슨 일이 일어날지 말해주지 않습니다.\n\n당신의 에너지가 어떻게 움직이는 경향이 있는지 보여줍니다 — 그래서 그것에 맞서지 않고 함께 할 수 있도록." },
+        { key: "q8", q: "실제로 무엇을 받나요?", a: "무료 3장 (거울 + 설계도), 결제 시 10장 추가 — 브레인 스캔, 행동 증거, 3가지 비용 분석, 10년 챕터, 주간 프로토콜." },
+        { key: "q10", q: "데이터는 안전한가요?", a: "출생 데이터는 리포트 생성에만 사용됩니다. 그뿐입니다.\n\n데이터를 판매하지 않습니다. 제3자와 공유하지 않습니다.\n이메일은 리포트 전달에만 사용됩니다." },
+        { key: "contact", q: "연락처", a: "질문, 피드백, 또는 그냥 인사하고 싶으신가요?" },
+      ],
+    },
+    id: {
+      left: "cermin",
+      right: "cetak biru",
+      line1: "Kamu sudah melihat kesenjangannya.",
+      line2: "Sekarang lihat apa yang kamu bayar.",
+      count: "10 kartu",
+      contents: "Brain scan · 3 biaya tersembunyi · Chapter 10 tahun · Protokol minggu ini",
+      cta: "Buka",
+      or: "atau",
+      placeholder: "Masukkan kode",
+      apply: "Terapkan",
+      faq: [
+        { key: "q2", q: "Apakah ini ramalan?", a: "Tidak.\n\nTidak ada yang diprediksi. Tidak ada hasil \"baik\" atau \"buruk\".\nKami tidak memberitahu apa yang akan terjadi.\n\nKami menunjukkan bagaimana energimu cenderung bergerak — agar kamu bisa bekerja bersamanya, bukan melawannya." },
+        { key: "q8", q: "Apa yang sebenarnya saya dapat?", a: "3 kartu gratis (cermin + cetak biru), lalu 10 kartu tambahan — brain scan, bukti perilaku, 3 biaya tersembunyi, chapter 10 tahun, dan protokol mingguan." },
+        { key: "q10", q: "Apakah data saya aman?", a: "Data kelahiranmu digunakan untuk membuat laporanmu. Itu saja.\n\nKami tidak menjual data. Kami tidak membagikannya dengan pihak ketiga.\nEmail hanya digunakan untuk pengiriman laporan." },
+        { key: "contact", q: "Kontak", a: "Pertanyaan, masukan, atau sekadar ingin menyapa?" },
+      ],
+    },
+  };
+  const t = translations[language as keyof typeof translations] || translations.en;
 
   const checkoutUrl = `https://gumroad.com/l/bada-full-report?wanted=true&report_id=${reportId}&email=${encodeURIComponent(email || "")}`;
 
@@ -637,35 +699,41 @@ function LockCard({
   };
 
   return (
-    <Card bg="bg-gradient-to-b from-[#182339] via-[#1a2240] to-[#182339]">
-      <div className="flex flex-col items-center text-center w-full max-w-sm">
-        <div className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-8">
+    <Card bg="bg-gradient-to-b from-[#182339] via-[#233F64] to-[#402525]">
+      <div className="flex flex-col items-center text-center w-full max-w-sm max-h-[calc(100dvh-14rem)] overflow-y-auto">
+        <div className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-8 flex-shrink-0">
           <Lock className="w-5 h-5 text-white/40" />
         </div>
 
         <div className="flex items-center gap-4 mb-6">
-          <span className="text-lg text-white/60 font-light">거울</span>
+          <span className="text-lg text-white/60 font-light">{t.left}</span>
           <span className="text-2xl text-[#879DC6]">≠</span>
-          <span className="text-lg text-white/60 font-light">설계도</span>
+          <span className="text-lg text-white/60 font-light">{t.right}</span>
         </div>
 
-        <p className="text-base text-white/70 font-light leading-relaxed mb-2">
-          이 간극이 만드는
+        <p className="text-base text-white/70 font-light leading-relaxed mb-1">
+          {t.line1}
         </p>
-        <p className="text-xl text-white/90 font-light mb-10">
-          반복 패턴 <span className="text-[#879DC6]">{remainingCount}장</span>
+        <p className="text-base text-white/70 font-light leading-relaxed">
+          {t.line2}
         </p>
+
+        <p className="text-xs text-white/30 font-light tracking-wide leading-relaxed mt-4 mb-8">
+          {t.contents}
+        </p>
+
+        <p className="text-3xl text-white font-light mb-4">$2.9</p>
 
         <button
           onClick={() => window.open(checkoutUrl, "_blank", "noopener")}
           className="w-full max-w-xs py-4 rounded-full bg-white text-[#182339] text-sm font-medium tracking-wide hover:bg-white/90 transition-colors mb-4"
         >
-          Unlock Full Report — $2.9
+          {t.cta}
         </button>
 
         <div className="flex items-center gap-3 my-4 w-full max-w-xs">
           <div className="flex-1 h-px bg-white/10" />
-          <span className="text-xs text-white/40 uppercase tracking-wider" style={{ fontFamily: "'JetBrains Mono', monospace" }}>or</span>
+          <span className="text-xs text-white/40 uppercase tracking-wider" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{t.or}</span>
           <div className="flex-1 h-px bg-white/10" />
         </div>
 
@@ -677,7 +745,7 @@ function LockCard({
               setCodeError("");
             }}
             onKeyDown={(e) => e.key === "Enter" && handleRedeem()}
-            placeholder="Enter code"
+            placeholder={t.placeholder}
             maxLength={20}
             className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-center text-sm uppercase tracking-wider text-white/70 placeholder:text-white/30 focus:outline-none focus:border-white/30 transition-colors"
             style={{ fontFamily: "'JetBrains Mono', monospace" }}
@@ -687,12 +755,72 @@ function LockCard({
             disabled={!code.trim() || isRedeeming}
             className="px-5 py-3 bg-white/10 border border-white/10 rounded-xl text-sm text-white/70 hover:bg-white/15 disabled:opacity-30 transition-colors"
           >
-            {isRedeeming ? <Loader2 className="w-4 h-4 animate-spin" /> : "Apply"}
+            {isRedeeming ? <Loader2 className="w-4 h-4 animate-spin" /> : t.apply}
           </button>
         </div>
         {codeError && (
           <p className="text-xs text-red-400 mt-2">{codeError}</p>
         )}
+
+        {/* FAQ toggles */}
+        <div className="w-full max-w-xs mt-10 space-y-0 border-t border-white/5">
+          {t.faq.map((item) => (
+            <div key={item.key} className="border-b border-white/5">
+              <button
+                onClick={() => setOpenFaq(openFaq === item.key ? null : item.key)}
+                className="w-full flex items-center justify-between py-3 text-xs text-white/30 hover:text-white/50 transition-colors"
+              >
+                <span>{item.q}</span>
+                <ChevronDown className={`w-3 h-3 transition-transform ${openFaq === item.key ? "rotate-180" : ""}`} />
+              </button>
+              {openFaq === item.key && (
+                <div className="pb-3 text-xs text-white/40 text-left leading-relaxed whitespace-pre-line max-h-24 overflow-y-auto">
+                  {item.key === "contact" ? (
+                    <div className="space-y-1">
+                      <p>{item.a}</p>
+                      <p>→ Instagram: <a href="https://www.instagram.com/badathebrand" target="_blank" rel="noopener noreferrer" className="text-[#879DC6] hover:text-[#879DC6]/70 transition-colors">@badathebrand</a></p>
+                      <p>→ Email: <a href="mailto:badathebrand@gmail.com" className="text-[#879DC6] hover:text-[#879DC6]/70 transition-colors">badathebrand@gmail.com</a></p>
+                    </div>
+                  ) : item.a}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Marquee wave */}
+      <div className="absolute bottom-8 left-0 right-0 overflow-hidden pointer-events-none" style={{ height: "60px" }}>
+        <svg
+          width="3000"
+          height="60"
+          viewBox="0 0 3000 60"
+          className="absolute left-1/2 -translate-x-1/2"
+          style={{ minWidth: "3000px" }}
+        >
+          <defs>
+            <path
+              id="v3-lock-curve"
+              d="M0,30 Q150,0 300,30 Q450,60 600,30 Q750,0 900,30 Q1050,60 1200,30 Q1350,0 1500,30 Q1650,60 1800,30 Q1950,0 2100,30 Q2250,60 2400,30 Q2550,0 2700,30 Q2850,60 3000,30"
+              fill="none"
+            />
+          </defs>
+          <text
+            className="uppercase"
+            style={{
+              fontSize: "13px",
+              fontFamily: "'JetBrains Mono', monospace",
+              fontWeight: 400,
+              fill: "#ABBBD5",
+              opacity: 0.35,
+              letterSpacing: "0.2em",
+            }}
+          >
+            <textPath href="#v3-lock-curve">
+              {"CLARITY IS THE NEW HIGH · BADA · ".repeat(12)}
+            </textPath>
+          </text>
+        </svg>
       </div>
     </Card>
   );
@@ -847,6 +975,7 @@ export default function ResultsV3() {
             reportId={reportId || ""}
             email={report.email || ""}
             remainingCount={paidCards.length}
+            language={report.language || "en"}
           />
         )}
       </div>
