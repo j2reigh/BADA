@@ -724,22 +724,22 @@ async function generateWithRetry(
 
 const WRITING_STYLE_RULES = `
 WRITING STYLE:
-- Direct but warm. Like a wise friend, not a therapist or coach.
-- Conversational. Use contractions (you're, that's, it's, don't).
-- Concrete situations, not abstract concepts.
-- Vary sentence length. Some short. Some longer with natural flow.
-- Occasional fragments are fine. Like this.
-- Start some sentences with "And" or "But"
-- Use "you" more than "your"
+- Direct. No warmth needed. Like a friend who respects you too much to soften the truth.
+- Conversational. Contractions. Fragments. Like this.
+- Concrete situations. If it can't happen on a Tuesday afternoon, it's too abstract.
+- Short sentences dominate. One longer sentence per paragraph max.
+- Start with "You" often. This is about them, not the universe.
+- Rhetorical questions that sting. Not to be cruel. To be precise.
+- Every sentence should feel slightly uncomfortable to read if it's true.
 
 ABSOLUTELY FORBIDDEN (will reject output if found):
 - Em-dashes (—). Use periods or commas instead.
 - Semicolons.
 - "might", "probably", "perhaps", "could be" (hedging)
 - Starting multiple sentences with "This is" or "That's"
-- "Here's the thing:" more than once
-- "Let's be clear:" / "Let's be honest:"
+- "Here's the thing:" / "Let's be clear:" / "Let's be honest:"
 - Ending with "And that changes everything."
+- Comfort phrases: "it's okay", "that's normal", "many people", "you're not alone"
 
 NEUROSCIENCE TERMS:
 - Use sparingly. ONE per paragraph max.
@@ -748,17 +748,13 @@ NEUROSCIENCE TERMS:
 - BAD: "Your amygdala triggers cortisol which activates sympathetic response..."
 
 PUNCTUATION:
-- Periods. Short sentences are powerful.
-- Colons for explanations.
-- Parentheses for brief asides.
-- Question marks for actual questions.
+- Periods. Short sentences hit harder.
+- Colons for diagnosis.
+- Question marks for questions that sting.
 
 FIX EM-DASH PATTERNS:
 ❌ "You're fast — but your clarity needs time."
 ✅ "You're fast. But your clarity needs time."
-
-❌ "The truth? Your system — which never turns off — burns energy."
-✅ "The truth? Your system never turns off. That burns energy."
 `;
 
 async function generatePage1_v3(
@@ -1358,13 +1354,17 @@ export async function generateV3Cards(
   language: string = "en",
   birthDate?: string,
   luckCycle?: import("./behavior_translator").LuckCycleInfo | null,
-  hdData?: HumanDesignData
+  hdData?: HumanDesignData,
+  styleOverride?: string
 ): Promise<V3CardContent> {
   if (!client) {
     throw new Error("Gemini API key not configured");
   }
 
-  const model = client.getGenerativeModel({ model: "gemini-2.5-flash" });
+  const model = client.getGenerativeModel({
+    model: "gemini-2.5-flash",
+    generationConfig: { maxOutputTokens: 8192 },
+  });
   const langInstruction = getLanguageInstruction(language);
 
   // ── Extract all available saju data ──
@@ -1402,7 +1402,7 @@ export async function generateV3Cards(
 
   const systemPrompt = `You are writing a personal diagnostic report for ${userName}. Not a personality test. Not a horoscope. A diagnostic.
 
-${WRITING_STYLE_RULES}
+${styleOverride || WRITING_STYLE_RULES}
 
 ${langInstruction || 'Write in English.'}
 
@@ -1479,18 +1479,21 @@ Age Context: ${behaviors.ageContext}
 Design vs Perception Gaps: ${behaviors.designVsPerception.join(" | ")}
 
 ═══════════════════════════════
-ENERGY ALLOCATION (pre-computed — use EXACT values)
+BRAIN SCAN (neuroscience interpretation only)
 ═══════════════════════════════
 
-These values are computed from survey raw scores. Do NOT change the numbers.
-Use them exactly as-is in the brainScan object. Only generate "question" and "insight" text.
+Survey energy signals:
+- Threat sensitivity: ${surveyScores.threatScore}/3 (${surveyScores.threatClarity === 1 ? 'HIGH' : 'LOW'})
+- Drive output: ${surveyScores.agencyScore}/3 (${surveyScores.agencyActive === 1 ? 'ACTIVE' : 'PASSIVE'})
+- Environment stability: ${surveyScores.environmentScore}/2 (${surveyScores.environmentStable === 1 ? 'STABLE' : 'VOLATILE'})
 
-- alarm (Threat Response): ${Math.round((surveyScores.threatScore / 3) * 80 + 15)}%
-- drive (Drive Output): ${Math.round((surveyScores.agencyScore / 3) * 80 + 15)}%
-- stability (Stability Load): ${Math.round((surveyScores.environmentScore / 2) * 60 + 20)}%
-- remaining (Available): ${Math.max(5, 100 - Math.round((Math.round((surveyScores.threatScore / 3) * 80 + 15) + Math.round((surveyScores.agencyScore / 3) * 80 + 15) + Math.round((surveyScores.environmentScore / 2) * 60 + 20)) / 3))}%
+For "brainScan.insight": Write 3-4 sentences explaining how THIS person's brain operates using neuroscience. Reference specific brain systems (amygdala, prefrontal cortex, dopamine pathways, default mode network) to explain their behavioral patterns. Connect the brain mechanics to the collision you identified. Be specific to their data, not generic.
 
-For "insight": interpret these numbers through neuroscience. Mention amygdala, dopamine, or prefrontal cortex to explain WHY these allocations matter. 2 sentences max.
+Still include alarm/drive/stability/remaining numbers in brainScan (use these exact values):
+- alarm: ${Math.round((surveyScores.threatScore / 3) * 80 + 15)}
+- drive: ${Math.round((surveyScores.agencyScore / 3) * 80 + 15)}
+- stability: ${Math.round((surveyScores.environmentScore / 2) * 60 + 20)}
+- remaining: ${Math.max(5, 100 - Math.round((Math.round((surveyScores.threatScore / 3) * 80 + 15) + Math.round((surveyScores.agencyScore / 3) * 80 + 15) + Math.round((surveyScores.environmentScore / 2) * 60 + 20)) / 3))}
 
 ═══════════════════════════════
 HD DATA (Human Design Blueprint)
@@ -1509,8 +1512,8 @@ Signature: ${hdData.signature}
 Not-Self Theme: ${hdData.not_self_theme}
 Environment: ${hdData.environment || "N/A"}
 Cognition: ${hdData.cognition || "N/A"}
-Motivation: ${hdData.motivation || "N/A"}
-Perspective: ${hdData.perspective || "N/A"}
+Motivation: ${hdData.motivation || "N/A"} (shadow: ${hdData.transference || "N/A"})
+Perspective: ${hdData.perspective || "N/A"} (shadow: ${hdData.distraction || "N/A"})
 
 INTERPRETATION GUIDE (for YOUR understanding only — translate to plain behavior):
 - Type defines their energy role (Manifestor=initiator, Generator=builder, Projector=guide, Reflector=mirror)
@@ -1518,6 +1521,8 @@ INTERPRETATION GUIDE (for YOUR understanding only — translate to plain behavio
 - Defined Centers = consistent energy; Open Centers = absorb/amplify others' energy
 - Strategy = their optimal way of engaging with the world
 - Not-Self Theme = what they feel when off-track
+- Motivation/Transference = what genuinely drives them vs the distorted drive they fall into when off-track
+- Perspective/Distraction = how they naturally see the world vs the warped lens they adopt when off-track
 ` : 'No HD data available.'}
 
 ═══════════════════════════════
@@ -1601,7 +1606,7 @@ DO NOT copy this content. Use it ONLY to calibrate tone and specificity.
   "costRelationship": { "title": "In relationships", "text": "You show up as the strong one. Always capable, never needing. People stop asking if you're okay because you trained them not to. The fortress works. That's the problem." },
   "costMoneyQuestion": "Why does money come in and leave just as fast?",
   "costMoney": { "title": "With money", "text": "You earn and spend in the same motion. Money comes in through effort, leaks out through the constant maintenance of problems you anticipated but didn't need to solve." },
-  "brainScan": { "question": "Where is all your energy actually going?", "alarm": 68, "drive": 68, "stability": 20, "remaining": 48, "insight": "68% on threat scanning (amygdala in overdrive), 68% on drive output (dopamine loop). Only 48% left for rest, creativity, or connection." },
+  "brainScan": { "question": "Where is all your energy actually going?", "alarm": 68, "drive": 68, "stability": 20, "remaining": 48, "insight": "Your amygdala fires at nearly double the baseline rate, keeping your threat-detection system permanently on. This hijacks your prefrontal cortex into reactive problem-solving mode instead of strategic thinking. Meanwhile, your dopamine pathways are locked in a production loop: finish one task, crave the next, repeat. The result is a brain running two expensive programs simultaneously with almost nothing left for the default mode network, the system that handles creativity, self-reflection, and genuine rest." },
   "chapter": {
     "question": "What chapter of your life are you actually in?",
     "previousLabel": "Ages 15-24",

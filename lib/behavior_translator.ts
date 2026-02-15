@@ -21,6 +21,16 @@ export interface HumanDesignData {
   channels_long: string[];
   cognition?: string;
   determination?: string;
+  incarnation_cross?: string;
+  variables?: string;
+  motivation?: string;
+  transference?: string;
+  perspective?: string;
+  distraction?: string;
+  circuitries?: string;
+  gates?: string[];
+  channels_short?: string[];
+  activations?: { design: Record<string, string>; personality: Record<string, string> };
 }
 
 export interface SurveyScores {
@@ -530,4 +540,8 @@ export const SAMPLE_HD_DATA: HumanDesignData = {
   ],
   cognition: "Smell",
   determination: "Open Taste",
+  motivation: "Hope",
+  transference: "Guilt",
+  perspective: "Wanting",
+  distraction: "Distraction",
 };

@@ -17,8 +17,8 @@ async function getCredentials(): Promise<{ apiKey: string; fromEmail: string }> 
   const xReplitToken = process.env.REPL_IDENTITY
     ? 'repl ' + process.env.REPL_IDENTITY
     : process.env.WEB_REPL_RENEWAL
-    ? 'depl ' + process.env.WEB_REPL_RENEWAL
-    : null;
+      ? 'depl ' + process.env.WEB_REPL_RENEWAL
+      : null;
 
   if (!xReplitToken) {
     throw new Error('RESEND_API_KEY not set. Please set RESEND_API_KEY in your environment variables.');
@@ -58,29 +58,29 @@ function getBaseUrl(): string {
   if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
     return `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`;
   }
-    if (process.env.NODE_ENV === 'development') {
-        return 'http://localhost:5001';
-    }
+  if (process.env.NODE_ENV === 'development') {
     return 'http://localhost:5001';
+  }
+  return 'http://localhost:5001';
 }
 
 // Send verification email
 export async function sendVerificationEmail(
-  email: string, 
-  token: string, 
+  email: string,
+  token: string,
   leadId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const { client, fromEmail } = await getUncachableResendClient();
     const baseUrl = getBaseUrl();
     const verificationLink = `${baseUrl}/api/verify?token=${token}&id=${leadId}`;
-    
+
     // Sender priority:
     // 1. noreply-verify@bada.one (preferred once domain is verified in Resend)
     // 2. Resend test sender (fallback for development/unverified domain)
     const preferredSender = 'BADA <noreply-verify@bada.one>';
     const fallbackSender = 'BADA <onboarding@resend.dev>';
-    
+
     // Try with preferred sender first
     console.log(`Attempting to send email from: ${preferredSender}`);
     let sendResult = await client.emails.send({
@@ -89,14 +89,14 @@ export async function sendVerificationEmail(
       subject: 'Verify Your Email - BADA Assessment Results Ready',
       html: generateVerificationEmailHtml(verificationLink),
     });
-    
+
     // If domain verification error, retry with fallback
     const isVerificationError = sendResult.error && (
       sendResult.error.name === 'validation_error' ||
       sendResult.error.message?.toLowerCase().includes('not verified') ||
       sendResult.error.message?.toLowerCase().includes('domain')
     );
-    
+
     if (isVerificationError) {
       console.log(`Domain not verified, falling back to: ${fallbackSender}`);
       sendResult = await client.emails.send({
@@ -106,16 +106,16 @@ export async function sendVerificationEmail(
         html: generateVerificationEmailHtml(verificationLink),
       });
     }
-    
+
     const result = sendResult;
-    
+
     console.log('Verification email result:', result);
-    
+
     if (result.error) {
       console.error('Resend API error:', result.error);
       return { success: false, error: result.error.message || 'Email sending failed' };
     }
-    
+
     return { success: true };
   } catch (error) {
     console.error('Failed to send verification email:', error);
@@ -123,7 +123,7 @@ export async function sendVerificationEmail(
   }
 }
 
-function generateVerificationEmailHtml(verificationLink: string): string {
+export function generateVerificationEmailHtml(verificationLink: string): string {
   return `
     <!DOCTYPE html>
     <html>
@@ -132,45 +132,45 @@ function generateVerificationEmailHtml(verificationLink: string): string {
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Verify Your Email</title>
     </head>
-    <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #E8F4F8;">
+    <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #FAFAFA;">
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
         <tr>
-          <td style="background-color: #ffffff; border-radius: 16px; padding: 40px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
+          <td style="background-color: #ffffff; border-radius: 1px; padding: 40px; border: 1px solid #e5e7eb;">
             <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
               <tr>
                 <td style="text-align: center; padding-bottom: 30px;">
-                  <h1 style="margin: 0; font-size: 28px; font-weight: bold; color: #4A7BA7;">BADA</h1>
-                  <p style="margin: 10px 0 0; font-size: 14px; color: #666; font-style: italic;">Flow with your nature</p>
+                  <h1 style="margin: 0; font-size: 24px; font-weight: 600; color: #182339; letter-spacing: -0.5px;">BADA</h1>
+                  <p style="margin: 8px 0 0; font-size: 13px; color: #879DC6; font-family: monospace; letter-spacing: 0.05em;">CLARITY IS THE NEW HIGH</p>
                 </td>
               </tr>
               <tr>
-                <td style="padding-bottom: 20px;">
-                  <h2 style="margin: 0; font-size: 22px; font-weight: 600; color: #1a1a2e;">Your Results Are Ready!</h2>
+                <td style="padding-bottom: 24px;">
+                  <h2 style="margin: 0; font-size: 20px; font-weight: 600; color: #182339;">Your Results Are Ready</h2>
                 </td>
               </tr>
               <tr>
-                <td style="padding-bottom: 30px;">
-                  <p style="margin: 0; font-size: 16px; line-height: 1.6; color: #4a4a4a;">
+                <td style="padding-bottom: 32px;">
+                  <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #2F3034;">
                     Thank you for completing your BADA assessment. Click the button below to verify your email and unlock your personalized report.
                   </p>
                 </td>
               </tr>
               <tr>
-                <td style="text-align: center; padding-bottom: 30px;">
+                <td style="text-align: center; padding-bottom: 32px;">
                   <a href="${verificationLink}"
-                     style="display: inline-block; background-color: #4A7BA7; color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; padding: 16px 40px; border-radius: 50px; box-shadow: 0 4px 12px rgba(74, 123, 167, 0.3);">
+                     style="display: inline-block; background-color: #182339; color: #ffffff; font-size: 15px; font-weight: 500; text-decoration: none; padding: 14px 32px; border-radius: 4px;">
                     View My Results
                   </a>
                 </td>
               </tr>
               <tr>
-                <td style="padding-top: 20px; border-top: 1px solid #e0e0e0;">
-                  <p style="margin: 0; font-size: 13px; color: #888; line-height: 1.5;">
+                <td style="padding-top: 24px; border-top: 1px solid #f3f4f6;">
+                  <p style="margin: 0; font-size: 12px; color: #9ca3af; line-height: 1.5;">
                     If you didn't request this email, you can safely ignore it.
                     <br><br>
                     If the button doesn't work, copy and paste this link into your browser:
                     <br>
-                    <a href="${verificationLink}" style="color: #4A7BA7; word-break: break-all;">${verificationLink}</a>
+                    <a href="${verificationLink}" style="color: #879DC6; text-decoration: underline; word-break: break-all;">${verificationLink}</a>
                   </p>
                 </td>
               </tr>
@@ -178,8 +178,8 @@ function generateVerificationEmailHtml(verificationLink: string): string {
           </td>
         </tr>
         <tr>
-          <td style="text-align: center; padding-top: 20px;">
-            <p style="margin: 0; font-size: 12px; color: #888;">
+          <td style="text-align: center; padding-top: 24px;">
+            <p style="margin: 0; font-size: 11px; color: #9ca3af; font-family: monospace;">
               &copy; ${new Date().getFullYear()} BADA. All rights reserved.
             </p>
           </td>

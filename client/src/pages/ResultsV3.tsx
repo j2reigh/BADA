@@ -321,10 +321,6 @@ function ScanBar({
 
 function EnergyCard({
   question,
-  alarm,
-  drive,
-  stability,
-  remaining,
   insight,
 }: {
   question: string;
@@ -337,27 +333,18 @@ function EnergyCard({
   return (
     <Card bg="bg-gradient-to-b from-[#182339] to-[#1a2840]">
       <div className="relative flex flex-col items-center w-full max-w-sm">
-        <CardLabel>energy allocation</CardLabel>
+        <CardLabel>your brain</CardLabel>
         <p className="text-lg text-[#879DC6] font-light mb-8 leading-relaxed text-center">
           {question}
         </p>
-        <div className="w-full space-y-5 mb-6">
-          <ScanBar label="Threat Response" value={alarm} color="from-red-500/60 to-red-400/40" />
-          <ScanBar label="Drive Output" value={drive} color="from-amber-500/60 to-amber-400/40" />
-          <ScanBar label="Stability Load" value={stability} color="from-blue-500/60 to-blue-400/40" />
-          <div className="pt-3 border-t border-white/5">
-            <ScanBar label="Available" value={remaining} color="from-emerald-500/60 to-emerald-400/40" />
-          </div>
-        </div>
         <div className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10">
           <span className="text-xs uppercase tracking-[0.2em] text-[#879DC6]/40 block mb-2" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
             Neuroscience
           </span>
-          <p className="text-xs text-white/60 font-light leading-relaxed">
+          <p className="text-sm text-white/70 font-light leading-relaxed">
             {insight}
           </p>
         </div>
-
       </div>
     </Card>
   );
@@ -548,7 +535,7 @@ function ClosingCard({
   reportId: string;
 }) {
   const shareUrl = `${window.location.origin}/results/${reportId}`;
-  const marqueeText = "FLOW WITH YOUR NATURE · BADA · ".repeat(12);
+  const marqueeText = "CLARITY IS THE NEW HIGH · BADA · ".repeat(12);
   return (
     <Card bg="bg-gradient-to-b from-[#182339] via-[#233F64] to-[#402525]">
       <div className="relative flex flex-col items-center text-center w-full max-w-sm">
@@ -571,7 +558,7 @@ function ClosingCard({
         </button>
       </div>
 
-      {/* Marquee wave — "FLOW WITH YOUR NATURE · BADA" */}
+      {/* Marquee wave — "CLARITY IS THE NEW HIGH · BADA" */}
       <div className="absolute bottom-8 left-0 right-0 overflow-hidden pointer-events-none" style={{ height: "60px" }}>
         <svg
           width="3000"
@@ -591,7 +578,7 @@ function ClosingCard({
             className="uppercase"
             style={{
               fontSize: "13px",
-              fontFamily: "'Inter', sans-serif",
+              fontFamily: "'JetBrains Mono', monospace",
               fontWeight: 400,
               fill: "#ABBBD5",
               opacity: 0.35,

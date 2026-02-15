@@ -22,7 +22,7 @@ function TextAlongPathFooter() {
     setStartOffset(latest * -50);
   });
 
-  const baseText = "FLOW WITH YOUR NATURE · BADA · ";
+  const baseText = "CLARITY IS THE NEW HIGH · BADA · ";
   const repeatedText = baseText.repeat(20);
 
   return (

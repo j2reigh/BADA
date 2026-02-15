@@ -1,20 +1,25 @@
 /**
- * Test Script for V3 Report Generation
- * Tests new 3-layer personalization: Saju + HD + Survey behaviors
+ * Test Script for V3 Card Report Generation
+ * Uses real HD API data + Saju + Survey → V3 Collision Cards
  */
 
 import * as dotenv from "dotenv";
 dotenv.config();
 
-import { generateLifeBlueprintReport, type SurveyScores } from "../lib/gemini_client";
-import { calculateSaju } from "../lib/saju_calculator";
-import { translateToBehaviors, SAMPLE_HD_DATA } from "../lib/behavior_translator";
+// Dynamic imports after dotenv.config() so env vars are available at module init
+const { generateV3Cards } = await import("../lib/gemini_client");
+const { calculateSaju } = await import("../lib/saju_calculator");
+const { translateToBehaviors, calculateLuckCycle } = await import("../lib/behavior_translator");
+const { fetchHumanDesign } = await import("../lib/hd_client");
+import type { SurveyScores } from "../lib/gemini_client";
+import type { HumanDesignData } from "../lib/behavior_translator";
 
 // Sample user data (이지윤)
 const TEST_BIRTH_DATE = "1996-09-18";
 const TEST_BIRTH_TIME = "14:30";
-const TEST_GENDER = "F";
+const TEST_GENDER: "M" | "F" = "F";
 const TEST_NAME = "Jiyoon";
+const TEST_LOCATION = "Seoul, South Korea";
 
 // Sample survey scores
 const TEST_SURVEY_SCORES: SurveyScores = {
@@ -30,164 +35,151 @@ const TEST_SURVEY_SCORES: SurveyScores = {
 
 async function runTest() {
   console.log("=".repeat(60));
-  console.log("V3 REPORT GENERATION TEST");
+  console.log("V3 CARD REPORT GENERATION TEST");
   console.log("=".repeat(60));
   console.log(`\nUser: ${TEST_NAME}`);
   console.log(`Birth: ${TEST_BIRTH_DATE} ${TEST_BIRTH_TIME}`);
+  console.log(`Location: ${TEST_LOCATION}`);
   console.log(`Survey Type: ${TEST_SURVEY_SCORES.typeName}`);
   console.log("");
 
-  // Calculate saju
-  console.log("[1/4] Calculating Saju...");
+  // 1. Calculate Saju
+  console.log("[1/5] Calculating Saju...");
   const sajuResult = calculateSaju(TEST_BIRTH_DATE, TEST_BIRTH_TIME);
   console.log(`   Day Master: ${sajuResult.fourPillars.day.gan}`);
   console.log(`   Elements: ${JSON.stringify(sajuResult.elementCounts)}`);
   console.log(`   Operating Rate: ${sajuResult.stats.operatingRate.toFixed(1)}%`);
 
-  // Translate behaviors
-  console.log("\n[2/4] Translating to Behaviors...");
-  const behaviors = translateToBehaviors(sajuResult, SAMPLE_HD_DATA, TEST_SURVEY_SCORES, TEST_BIRTH_DATE);
-  console.log("\n--- BEHAVIOR PATTERNS (Plain Language) ---");
-  console.log(`\nDECISION STYLE:\n${behaviors.decisionStyle}`);
-  console.log(`\nDECISION WARNING:\n${behaviors.decisionWarning}`);
-  console.log(`\nENERGY PATTERN:\n${behaviors.energyPattern}`);
-  console.log(`\nWARNING SIGNAL:\n${behaviors.warningSignal}`);
-  console.log(`\nOPTIMAL ENVIRONMENT:\n${behaviors.optimalEnvironment}`);
-  console.log(`\nAGE CONTEXT:\n${behaviors.ageContext}`);
-  console.log(`\nSTRENGTHS:\n${behaviors.strengths.slice(0, 3).join('\n')}`);
-  console.log(`\nVULNERABILITIES:\n${behaviors.vulnerabilities.slice(0, 2).join('\n')}`);
-  console.log(`\nDESIGN VS PERCEPTION GAPS:\n${behaviors.designVsPerception.join('\n\n')}`);
+  // 2. Fetch HD Data from real API
+  console.log("\n[2/5] Fetching HD Data from API...");
+  const hdResponse = await fetchHumanDesign(TEST_BIRTH_DATE, TEST_BIRTH_TIME, TEST_LOCATION);
+  if (!hdResponse) {
+    console.error("HD API returned no data. Check API keys.");
+    return;
+  }
 
-  // Generate report
+  const hdData: HumanDesignData = {
+    type: hdResponse.type,
+    profile: hdResponse.profile,
+    strategy: hdResponse.strategy,
+    authority: hdResponse.authority,
+    centers: hdResponse.centers,
+    definition: hdResponse.definition,
+    signature: hdResponse.signature,
+    not_self_theme: hdResponse.not_self_theme,
+    environment: hdResponse.environment || "",
+    channels_long: hdResponse.channels_long,
+    cognition: hdResponse.cognition,
+    determination: hdResponse.determination,
+    incarnation_cross: hdResponse.incarnation_cross,
+    variables: hdResponse.variables,
+    motivation: hdResponse.motivation,
+    transference: hdResponse.transference,
+    perspective: hdResponse.perspective,
+    distraction: hdResponse.distraction,
+    circuitries: hdResponse.circuitries,
+    gates: hdResponse.gates,
+    channels_short: hdResponse.channels_short,
+    activations: hdResponse.activations,
+  };
+
+  console.log(`   Type: ${hdData.type}`);
+  console.log(`   Profile: ${hdData.profile}`);
+  console.log(`   Authority: ${hdData.authority}`);
+  console.log(`   Motivation: ${hdData.motivation} (shadow: ${hdData.transference})`);
+  console.log(`   Perspective: ${hdData.perspective} (shadow: ${hdData.distraction})`);
+
+  // 3. Translate Behaviors
+  console.log("\n[3/5] Translating to Behaviors...");
+  const behaviors = translateToBehaviors(sajuResult, hdData, TEST_SURVEY_SCORES, TEST_BIRTH_DATE);
+  console.log(`   Decision Style: ${behaviors.decisionStyle.slice(0, 60)}...`);
+  console.log(`   Vulnerabilities: ${behaviors.vulnerabilities.length} found`);
+  console.log(`   Gaps: ${behaviors.designVsPerception.length} found`);
+
+  // 4. Calculate Luck Cycle
+  console.log("\n[4/5] Calculating Luck Cycle...");
+  const luckCycle = calculateLuckCycle(TEST_BIRTH_DATE, TEST_BIRTH_TIME, TEST_GENDER);
+  if (luckCycle) {
+    console.log(`   Current 대운: ${luckCycle.currentDaYun.ganZhi} (ages ${luckCycle.currentDaYun.startAge}-${luckCycle.currentDaYun.endAge})`);
+    console.log(`   세운 ${luckCycle.currentSeUn.year}: ${luckCycle.currentSeUn.ganZhi}`);
+  }
+
+  // 5. Generate V3 Cards
   console.log("\n" + "=".repeat(60));
-  console.log("[3/4] Generating Report with Gemini...");
+  console.log("[5/5] Generating V3 Cards with Gemini...");
   console.log("=".repeat(60));
 
   try {
-    const report = await generateLifeBlueprintReport(
+    const cards = await generateV3Cards(
       sajuResult,
       TEST_SURVEY_SCORES,
+      behaviors,
       TEST_NAME,
-      undefined, // no archetype override
       "en",
-      TEST_BIRTH_DATE
+      TEST_BIRTH_DATE,
+      luckCycle,
+      hdData
     );
 
-    console.log("\n[4/4] REPORT OUTPUT:");
+    console.log("\n" + "=".repeat(60));
+    console.log("V3 CARD OUTPUT");
     console.log("=".repeat(60));
 
-    // Page 1
-    console.log("\n--- PAGE 1: IDENTITY ---");
-    console.log(`Title: ${report.page1_identity.title}`);
-    console.log(`Sub-headline: ${report.page1_identity.sub_headline}`);
-    console.log(`One-line diagnosis: ${report.page1_identity.one_line_diagnosis || 'N/A'}`);
-    console.log(`\nNature Snapshot:`);
-    console.log(`  ${report.page1_identity.nature_snapshot.title}`);
-    console.log(`  ${report.page1_identity.nature_snapshot.definition}`);
-    console.log(`  ${report.page1_identity.nature_snapshot.explanation}`);
-    console.log(`\nBrain Snapshot:`);
-    console.log(`  ${report.page1_identity.brain_snapshot.title}`);
-    console.log(`  ${report.page1_identity.brain_snapshot.definition}`);
-    console.log(`  ${report.page1_identity.brain_snapshot.explanation}`);
-    console.log(`\nEfficiency: ${report.page1_identity.efficiency_snapshot.score} - ${report.page1_identity.efficiency_snapshot.label}`);
-    console.log(`  ${report.page1_identity.efficiency_snapshot.metaphor}`);
-
-    // Page 2
-    console.log("\n--- PAGE 2: NATURAL BLUEPRINT ---");
-    console.log(`Title: ${report.page2_hardware.nature_title}`);
-    if ((report.page2_hardware as any).core_drive) {
-      console.log(`Core Drive: ${(report.page2_hardware as any).core_drive}`);
-    }
-    console.log(`\nNature Description:\n${report.page2_hardware.nature_description}`);
-    console.log(`\nShadow: ${report.page2_hardware.shadow_title}`);
-    console.log(`${report.page2_hardware.shadow_description}`);
-    console.log(`\nCore Insights:`);
-    report.page2_hardware.core_insights.forEach((insight, i) => {
-      console.log(`  ${i + 1}. ${insight}`);
-    });
-
-    // Page 3
-    console.log("\n--- PAGE 3: OPERATING SYSTEM ---");
-    console.log(`Title: ${report.page3_os.os_title}`);
-    if ((report.page3_os as any).os_anchor) {
-      console.log(`Anchor: ${(report.page3_os as any).os_anchor}`);
-    }
-    console.log(`\nThreat Axis (${report.page3_os.threat_axis.level}):`);
-    console.log(`  ${report.page3_os.threat_axis.description}`);
-    console.log(`\nEnvironment Axis (${report.page3_os.environment_axis.level}):`);
-    console.log(`  ${report.page3_os.environment_axis.description}`);
-    console.log(`\nAgency Axis (${report.page3_os.agency_axis.level}):`);
-    console.log(`  ${report.page3_os.agency_axis.description}`);
-    console.log(`\nOS Summary:\n${report.page3_os.os_summary}`);
-
-    // Page 4
-    console.log("\n--- PAGE 4: FRICTION MAP ---");
-    console.log(`Title: ${report.page4_mismatch.friction_title}`);
-    if ((report.page4_mismatch as any).friction_anchor) {
-      console.log(`Anchor: ${(report.page4_mismatch as any).friction_anchor}`);
-    }
-    console.log(`\nCareer: ${report.page4_mismatch.career_friction.title}`);
-    console.log(`  ${report.page4_mismatch.career_friction.description}`);
-    console.log(`  Quick Tip: ${report.page4_mismatch.career_friction.quick_tip}`);
-    console.log(`\nRelationship: ${report.page4_mismatch.relationship_friction.title}`);
-    console.log(`  ${report.page4_mismatch.relationship_friction.description}`);
-    console.log(`  Quick Tip: ${report.page4_mismatch.relationship_friction.quick_tip}`);
-    console.log(`\nMoney: ${report.page4_mismatch.money_friction.title}`);
-    console.log(`  ${report.page4_mismatch.money_friction.description}`);
-    console.log(`  Quick Tip: ${report.page4_mismatch.money_friction.quick_tip}`);
-
-    // Page 5
-    console.log("\n--- PAGE 5: ACTION PROTOCOL ---");
-    console.log(`Goal: ${report.page5_solution.transformation_goal}`);
-    console.log(`Protocol: ${report.page5_solution.protocol_name}`);
-    if ((report.page5_solution as any).protocol_anchor) {
-      console.log(`Anchor: ${(report.page5_solution as any).protocol_anchor}`);
-    }
-    console.log(`\nDaily Rituals:`);
-    report.page5_solution.daily_rituals.forEach((ritual, i) => {
-      console.log(`\n  ${i + 1}. ${ritual.name}`);
-      console.log(`     ${ritual.description}`);
-      console.log(`     When: ${ritual.when}`);
-      if (ritual.anti_pattern) {
-        console.log(`     Skip Cost: ${ritual.anti_pattern}`);
-      }
-    });
-    console.log(`\nEnvironment Boost (${report.page5_solution.environment_boost.element_needed}):`);
-    report.page5_solution.environment_boost.tips.forEach((tip, i) => {
-      console.log(`  ${i + 1}. ${tip}`);
-    });
-    console.log(`\nClosing Message:\n${report.page5_solution.closing_message}`);
+    console.log(`\n[HOOK] ${cards.hookQuestion}`);
+    console.log(`\n[MIRROR] ${cards.mirrorQuestion}`);
+    console.log(`${cards.mirrorText}`);
+    console.log(`  accent: ${cards.mirrorAccent}`);
+    console.log(`\n[BLUEPRINT] ${cards.blueprintQuestion}`);
+    console.log(`${cards.blueprintText}`);
+    console.log(`  accent: ${cards.blueprintAccent}`);
+    console.log(`\n[COLLISION] ${cards.collisionQuestion}`);
+    console.log(`${cards.collisionText}`);
+    console.log(`  accent: ${cards.collisionAccent}`);
+    console.log(`\n[EVIDENCE] ${cards.evidenceQuestion}`);
+    cards.evidence.forEach((e, i) => console.log(`  ${i + 1}. ${e}`));
+    console.log(`\n[COST: CAREER] ${cards.costCareerQuestion}`);
+    console.log(`  ${cards.costCareer.title}: ${cards.costCareer.text}`);
+    console.log(`\n[COST: RELATIONSHIP] ${cards.costRelationshipQuestion}`);
+    console.log(`  ${cards.costRelationship.title}: ${cards.costRelationship.text}`);
+    console.log(`\n[COST: MONEY] ${cards.costMoneyQuestion}`);
+    console.log(`  ${cards.costMoney.title}: ${cards.costMoney.text}`);
+    console.log(`\n[BRAIN SCAN] ${cards.brainScan.question}`);
+    console.log(`  Alarm: ${cards.brainScan.alarm}% | Drive: ${cards.brainScan.drive}% | Stability: ${cards.brainScan.stability}% | Remaining: ${cards.brainScan.remaining}%`);
+    console.log(`  ${cards.brainScan.insight}`);
+    console.log(`\n[CHAPTER] ${cards.chapter.question}`);
+    console.log(`  ${cards.chapter.previousLabel}: ${cards.chapter.previousText}`);
+    console.log(`  ${cards.chapter.currentLabel}: ${cards.chapter.currentText}`);
+    console.log(`  ${cards.chapter.nextLabel}: ${cards.chapter.nextText}`);
+    console.log(`  accent: ${cards.chapter.accent}`);
+    console.log(`\n[YEAR] ${cards.yearQuestion}`);
+    console.log(`${cards.yearText}`);
+    console.log(`  accent: ${cards.yearAccent}`);
+    console.log(`\n[ACTION] ${cards.actionQuestion}`);
+    console.log(`Neuro: ${cards.actionNeuro}`);
+    console.log(`  Shift: ${cards.shift.name}`);
+    console.log(`  ${cards.shift.text}`);
+    console.log(`  When: ${cards.shift.when}`);
+    console.log(`\n[CLOSING] ${cards.closingLine}`);
 
     // Quality Check
     console.log("\n" + "=".repeat(60));
     console.log("QUALITY CHECK:");
     console.log("=".repeat(60));
 
-    const fullText = JSON.stringify(report);
+    const fullText = JSON.stringify(cards);
     const emDashCount = (fullText.match(/—/g) || []).length;
-    const mightCount = (fullText.match(/might/gi) || []).length;
-    const probablyCount = (fullText.match(/probably/gi) || []).length;
-    const perhapsCount = (fullText.match(/perhaps/gi) || []).length;
+    const hedgingCount = (fullText.match(/\b(might|probably|perhaps)\b/gi) || []).length;
 
-    console.log(`Em-dashes found: ${emDashCount}`);
-    console.log(`Hedging words (might/probably/perhaps): ${mightCount + probablyCount + perhapsCount}`);
-
-    // Check for HD/Saju terms
     const hdTerms = ['Emotional', 'Sacral', 'Spleen', 'Projector', 'Generator', 'Manifestor', 'Reflector', 'Solar Plexus', 'Authority'];
     const sajuTerms = ['사주', 'Fire element', 'Wood element', 'Water element', 'Metal element', 'Earth element', 'Day Master'];
 
-    let foundHDTerms: string[] = [];
-    let foundSajuTerms: string[] = [];
+    const foundHD = hdTerms.filter(t => fullText.includes(t));
+    const foundSaju = sajuTerms.filter(t => fullText.includes(t));
 
-    hdTerms.forEach(term => {
-      if (fullText.includes(term)) foundHDTerms.push(term);
-    });
-    sajuTerms.forEach(term => {
-      if (fullText.includes(term)) foundSajuTerms.push(term);
-    });
-
-    console.log(`HD terms in output: ${foundHDTerms.length > 0 ? foundHDTerms.join(', ') : 'NONE (Good!)'}`);
-    console.log(`Saju terms in output: ${foundSajuTerms.length > 0 ? foundSajuTerms.join(', ') : 'NONE (Good!)'}`);
+    console.log(`Em-dashes: ${emDashCount}`);
+    console.log(`Hedging words: ${hedgingCount}`);
+    console.log(`HD jargon leaked: ${foundHD.length > 0 ? foundHD.join(', ') : 'NONE (Good!)'}`);
+    console.log(`Saju jargon leaked: ${foundSaju.length > 0 ? foundSaju.join(', ') : 'NONE (Good!)'}`);
 
     console.log("\n" + "=".repeat(60));
     console.log("TEST COMPLETE");
@@ -195,11 +187,6 @@ async function runTest() {
 
   } catch (error) {
     console.error("\nERROR:", error);
-
-    if (error instanceof Error && error.message.includes("GEMINI_API_KEY")) {
-      console.log("\n[!] GEMINI_API_KEY not set. Using mock report instead.");
-      console.log("    Set GEMINI_API_KEY environment variable to test real generation.");
-    }
   }
 }
 
