@@ -134,7 +134,8 @@ const initPromise = (async () => {
     throw err;
   });
 
-  if (process.env.NODE_ENV === "production") {
+  // Vercel CDN handles static files — only serve locally
+  if (process.env.NODE_ENV === "production" && !process.env.VERCEL) {
     serveStatic(app);
   }
 })();
