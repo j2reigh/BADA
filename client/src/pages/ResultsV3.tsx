@@ -126,7 +126,7 @@ function Card({
 
 function CardLabel({ children }: { children: React.ReactNode }) {
   return (
-    <span className="text-xs uppercase tracking-[0.3em] text-white/50 mb-6" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+    <span className="text-xs uppercase tracking-[0.3em] text-white/60 mb-6" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
       {children}
     </span>
   );
@@ -218,7 +218,7 @@ function BlueprintCard({
         <div className="w-8 h-px bg-white/10 mb-6" />
         <p className="text-lg font-light text-white/90 leading-relaxed">{text}</p>
         {accent && (
-          <p className="mt-6 text-base text-[#ABBBD5]/70 font-light leading-relaxed">{accent}</p>
+          <p className="mt-6 text-base text-[#ABBBD5]/80 font-light leading-relaxed">{accent}</p>
         )}
       </div>
     </Card>
@@ -251,7 +251,7 @@ function BlueprintFacetsCard({
         <CardLabel>your blueprint</CardLabel>
 
         {/* Slide indicators with swipe hint */}
-        <div className="flex items-center gap-2 mb-6" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+        <div className="flex items-center gap-3 mb-6" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
           <span className="text-white/20 text-xs">‹</span>
           {facets.map((f, i) => (
             <button
@@ -259,10 +259,10 @@ function BlueprintFacetsCard({
               onClick={() => {
                 scrollRef.current?.scrollTo({ left: i * (scrollRef.current?.clientWidth || 0), behavior: "smooth" });
               }}
-              className={`text-[10px] uppercase tracking-wider transition-all duration-300 px-2 py-1 rounded-full ${
+              className={`text-xs uppercase tracking-wider transition-all duration-300 px-3 py-1.5 rounded-full ${
                 activeSlide === i
                   ? "text-[#ABBBD5] font-medium bg-[#ABBBD5]/10"
-                  : "text-white/30"
+                  : "text-white/35"
               }`}
             >
               {f.label}
@@ -275,7 +275,7 @@ function BlueprintFacetsCard({
         <div
           ref={scrollRef}
           className="w-full overflow-x-auto snap-x snap-mandatory scrollbar-hide"
-          style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
+          style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none", touchAction: "pan-x" }}
         >
           <div className="flex w-[300%]">
             {facets.map((f, i) => (
@@ -285,11 +285,7 @@ function BlueprintFacetsCard({
                     ? "bg-[#ABBBD5]/8 border-[#ABBBD5]/20"
                     : "bg-white/3 border-white/8"
                 }`}>
-                  <p className={`text-base font-light leading-relaxed text-left ${
-                    activeSlide === i
-                      ? "text-white/90"
-                      : "text-white/60"
-                  }`}>
+                  <p className="text-base font-light leading-relaxed text-left text-white/85">
                     {f.text}
                   </p>
                 </div>
@@ -367,7 +363,7 @@ function CostCard({
         )}
         <span className="text-3xl mb-4">{emoji}</span>
         <h3 className="text-lg font-medium text-white/90 mb-4">{title}</h3>
-        <p className="text-base font-light text-white/70 leading-relaxed">
+        <p className="text-base font-light text-white/80 leading-relaxed">
           {firstSentences(description, 2)}
         </p>
         {tip && (
@@ -393,40 +389,75 @@ function ActionCard({
   neuroExplanation: string;
   shifts: Array<{ name: string; text: string; when: string }>;
 }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [activeSlide, setActiveSlide] = useState(0);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const idx = Math.round(el.scrollLeft / el.clientWidth);
+      setActiveSlide(idx);
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <Card bg="bg-gradient-to-b from-[#182339] to-[#1e2a45]">
       <div className="relative flex flex-col items-center text-center w-full max-w-sm">
         <CardLabel>this week</CardLabel>
 
-        {/* Zoom-in breadcrumb */}
-        <div className="flex items-center gap-2 mb-6" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-          <span className="text-xs text-white/30 uppercase tracking-wider">Decade</span>
-          <span className="text-white/25">›</span>
-          <span className="text-xs text-white/30 uppercase tracking-wider">{new Date().getFullYear()}</span>
-          <span className="text-white/25">›</span>
-          <span className="text-xs text-[#ABBBD5] uppercase tracking-wider font-medium">This week</span>
-        </div>
-
-        <p className="text-lg text-[#ABBBD5] font-light mb-6 leading-relaxed">
+        <p className="text-lg text-[#ABBBD5] font-light mb-4 leading-relaxed">
           {question}
         </p>
-        <div className="w-8 h-px bg-white/15 mb-6" />
-        <p className="text-sm text-white/60 font-light leading-relaxed mb-6">
+        <p className="text-sm text-white/50 font-light leading-relaxed mb-6">
           {neuroExplanation}
         </p>
-        <div className="w-full space-y-3">
+
+        {/* Protocol tab indicators */}
+        <div className="flex items-center gap-2 mb-5" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+          <span className="text-white/20 text-xs">‹</span>
           {shifts.map((s, i) => (
-            <div key={i} className="w-full px-5 py-4 rounded-2xl bg-white/5 border border-white/10 text-left">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs text-[#ABBBD5]/50 font-mono">{String(i + 1).padStart(2, '0')}</span>
-                <h3 className="text-base font-medium text-white/90">{s.name}</h3>
-              </div>
-              <p className="text-sm font-light text-white/70 leading-relaxed mb-2">{firstSentences(s.text, 2)}</p>
-              <p className="text-xs text-[#ABBBD5]/60 font-mono">{s.when}</p>
-            </div>
+            <button
+              key={i}
+              onClick={() => {
+                scrollRef.current?.scrollTo({ left: i * (scrollRef.current?.clientWidth || 0), behavior: "smooth" });
+              }}
+              className={`text-[10px] uppercase tracking-wider transition-all duration-300 px-2 py-1 rounded-full ${
+                activeSlide === i
+                  ? "text-[#ABBBD5] font-medium bg-[#ABBBD5]/10"
+                  : "text-white/30"
+              }`}
+            >
+              {String(i + 1).padStart(2, '0')}
+            </button>
           ))}
+          <span className="text-white/20 text-xs">›</span>
         </div>
 
+        {/* Protocol carousel */}
+        <div
+          ref={scrollRef}
+          className="w-full overflow-x-auto snap-x snap-mandatory scrollbar-hide"
+          style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none", touchAction: "pan-x" }}
+        >
+          <div className="flex w-[300%]">
+            {shifts.map((s, i) => (
+              <div key={i} className="w-1/3 snap-center flex-shrink-0 px-2">
+                <div className={`rounded-2xl px-5 py-6 border transition-all duration-300 text-left ${
+                  activeSlide === i
+                    ? "bg-white/5 border-white/15"
+                    : "bg-white/3 border-white/8"
+                }`}>
+                  <h3 className="text-base font-medium text-white/90 mb-3">{s.name}</h3>
+                  <p className="text-sm font-light text-white/80 leading-relaxed mb-3">{s.text}</p>
+                  <p className="text-xs text-[#ABBBD5]/50 font-mono">{s.when}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </Card>
   );
@@ -447,14 +478,14 @@ function EnergyCard({
           {question}
         </p>
         <div className="w-full px-5 py-4 rounded-xl bg-white/5 border border-white/10">
-          <span className="text-xs uppercase tracking-[0.2em] text-[#879DC6]/40 block mb-3" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+          <span className="text-xs uppercase tracking-[0.2em] text-[#879DC6]/50 block mb-3" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
             Neuroscience
           </span>
           <div className="space-y-3 text-left">
             {insight.split(/(?<=[.!?。])\s+/).filter(Boolean).map((sentence, i) => (
               <div key={i} className="flex gap-3 items-start">
                 <span className="text-[#879DC6]/30 text-xs mt-1 shrink-0 font-mono">{String(i + 1).padStart(2, '0')}</span>
-                <p className="text-sm text-white/70 font-light leading-relaxed">{sentence}</p>
+                <p className="text-sm text-white/80 font-light leading-relaxed">{sentence}</p>
               </div>
             ))}
           </div>
@@ -552,7 +583,7 @@ function ChapterCard({
         <div
           ref={scrollRef}
           className="w-full overflow-x-auto snap-x snap-mandatory scrollbar-hide"
-          style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
+          style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none", touchAction: "pan-x" }}
         >
           <div className="flex w-[300%]">
             {slides.map((s, i) => (
@@ -577,7 +608,7 @@ function ChapterCard({
                   <p className={`font-light leading-relaxed ${
                     i === 1
                       ? "text-base text-white/90"
-                      : "text-sm text-white/60"
+                      : "text-sm text-white/70"
                   }`}>
                     {s.text}
                   </p>
