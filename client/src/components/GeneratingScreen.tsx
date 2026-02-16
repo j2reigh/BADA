@@ -114,7 +114,7 @@ export default function GeneratingScreen({ isComplete, isError, errorMessage, on
       <div className="relative z-10 w-full max-w-md px-8">
         {/* BADA Logo */}
         <div className="text-center mb-16">
-          <span className="text-xl font-semibold tracking-tight text-white">BADA</span>
+          <img src="/logo-badaone.svg" alt="bada.one" className="h-5 mx-auto" />
         </div>
 
         {/* Steps */}

@@ -307,8 +307,8 @@ export default function Survey() {
       />
 
       <header className="fixed top-0 left-0 right-0 p-6 flex justify-center items-center z-50">
-        <a href="/" className="text-xl font-semibold tracking-tight mix-blend-difference text-white">
-          BADA
+        <a href="/" className="mix-blend-difference">
+          <img src="/logo-badaone.svg" alt="bada.one" className="h-5" />
         </a>
       </header>
 
