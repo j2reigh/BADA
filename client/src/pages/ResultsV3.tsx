@@ -35,10 +35,6 @@ interface V3CardContent {
   costMoney?: { title: string; text: string };
   brainScan?: {
     question: string;
-    alarm: number;
-    drive: number;
-    stability: number;
-    remaining: number;
     insight: string;
   };
   chapter?: {
@@ -295,40 +291,11 @@ function ActionCard({
   );
 }
 
-function ScanBar({
-  label,
-  value,
-  color,
-}: {
-  label: string;
-  value: number;
-  color: string;
-}) {
-  return (
-    <div>
-      <div className="flex justify-between items-baseline mb-1.5">
-        <span className="text-xs text-white/70 font-medium">{label}</span>
-        <span className="text-xs text-white/60" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{value}%</span>
-      </div>
-      <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-        <div
-          className={`h-full rounded-full bg-gradient-to-r ${color}`}
-          style={{ width: `${Math.min(value, 100)}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
 function EnergyCard({
   question,
   insight,
 }: {
   question: string;
-  alarm: number;
-  drive: number;
-  stability: number;
-  remaining: number;
   insight: string;
 }) {
   return (
@@ -616,11 +583,9 @@ function LockCard({
 
   const translations = {
     en: {
-      left: "mirror",
-      right: "blueprint",
-      line1: "You've seen the gap.",
-      line2: "Now see what it's costing you.",
-      contents: "Your brain scan · 3 hidden costs · Your 10-year chapter · This week's protocol",
+      headline: "what you see ≠ what's there",
+      line1: "If those 3 cards hit close,",
+      line2: "the next 10 show you why.",
       cta: "Unlock",
       or: "or",
       placeholder: "Enter code",
@@ -633,11 +598,9 @@ function LockCard({
       ],
     },
     ko: {
-      left: "거울",
-      right: "설계도",
-      line1: "간극은 확인했습니다.",
-      line2: "이제 그 대가를 확인하세요.",
-      contents: "브레인 스캔 · 3가지 비용 분석 · 10년 챕터 · 이번 주 프로토콜",
+      headline: "보이는 나 ≠ 진짜 나",
+      line1: "3장이 찔렸다면,",
+      line2: "다음 10장은 그 이유입니다.",
       cta: "잠금 해제",
       or: "또는",
       placeholder: "코드 입력",
@@ -650,11 +613,9 @@ function LockCard({
       ],
     },
     id: {
-      left: "cermin",
-      right: "cetak biru",
-      line1: "Kamu sudah melihat kesenjangannya.",
-      line2: "Sekarang lihat apa yang kamu bayar.",
-      contents: "Brain scan · 3 biaya tersembunyi · Chapter 10 tahun · Protokol minggu ini",
+      headline: "yang kamu lihat ≠ yang sebenarnya",
+      line1: "Kalau 3 kartu tadi terasa tepat,",
+      line2: "10 kartu berikutnya jelaskan kenapa.",
       cta: "Buka",
       or: "atau",
       placeholder: "Masukkan kode",
@@ -702,21 +663,15 @@ function LockCard({
           <Lock className="w-5 h-5 text-white/40" />
         </div>
 
-        <div className="flex items-center gap-4 mb-6">
-          <span className="text-lg text-white/60 font-light">{t.left}</span>
-          <span className="text-2xl text-[#879DC6]">≠</span>
-          <span className="text-lg text-white/60 font-light">{t.right}</span>
-        </div>
+        <p className="text-lg text-white/60 font-light tracking-wide mb-8">
+          {t.headline}
+        </p>
 
         <p className="text-base text-white/70 font-light leading-relaxed mb-1">
           {t.line1}
         </p>
-        <p className="text-base text-white/70 font-light leading-relaxed">
+        <p className="text-base text-white/70 font-light leading-relaxed mb-8">
           {t.line2}
-        </p>
-
-        <p className="text-xs text-white/30 font-light tracking-wide leading-relaxed mt-4 mb-8">
-          {t.contents}
         </p>
 
         <p className="text-3xl text-white font-light mb-4">$2.9</p>
@@ -897,7 +852,7 @@ export default function ResultsV3() {
     {
       key: "brain-scan",
       render: () => v3.brainScan ? (
-        <EnergyCard question={v3.brainScan.question} alarm={v3.brainScan.alarm} drive={v3.brainScan.drive} stability={v3.brainScan.stability} remaining={v3.brainScan.remaining} insight={v3.brainScan.insight} />
+        <EnergyCard question={v3.brainScan.question} insight={v3.brainScan.insight} />
       ) : null,
     },
     {

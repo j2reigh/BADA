@@ -18,7 +18,7 @@ const rootDir = path.join(__dirname, '..');
 // 허용된 MD 파일 위치 규칙
 const ALLOWED_PATTERNS = {
   // 루트에 허용된 파일들
-  root: ['README.md'],
+  root: ['README.md', 'CLAUDE.md'],
   
   // 폴더별 허용 패턴
   'docs/': [
