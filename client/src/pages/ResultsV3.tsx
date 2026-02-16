@@ -117,8 +117,7 @@ function Card({
       {children}
       {/* Watermark — visible in screenshots */}
       <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-1.5 opacity-25 pointer-events-none">
-        <img src="/logowhite.svg" alt="" className="h-3.5" />
-        <span className="text-[10px] text-white/80 font-light tracking-wide" style={{ fontFamily: "'Inter', sans-serif" }}>bada.one</span>
+        <img src="/logo-badaone.svg" alt="bada.one" className="h-3.5" />
       </div>
     </div>
   );

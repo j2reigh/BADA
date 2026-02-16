@@ -44,7 +44,7 @@ class ErrorBoundary extends Component<Props, State> {
         >
           {/* Logo - fixed top left */}
           <div className="fixed top-0 left-0 right-0 z-50 px-6 h-16 flex items-center">
-            <img src="/logowhite.svg" alt="BADA" className="h-5" />
+            <img src="/logo-badaone.svg" alt="bada.one" className="h-5" />
           </div>
 
           <div className="max-w-md w-full text-center">
