@@ -6,6 +6,9 @@ import { registerRoutes } from "./routes";
 
 const app = express();
 
+// Vercel runs behind a reverse proxy — required for correct IP in rate limiting
+app.set("trust proxy", 1);
+
 // ==========================================
 // SECURITY HEADERS (Helmet)
 // ==========================================
