@@ -22,6 +22,7 @@ interface V3CardContent {
   blueprintQuestion: string;
   blueprintText: string;
   blueprintAccent: string;
+  blueprintFacets?: Array<{ label: string; text: string }>;
   collisionQuestion?: string;
   collisionText?: string;
   collisionAccent?: string;
@@ -46,10 +47,12 @@ interface V3CardContent {
     nextLabel: string;
     nextText: string;
     accent: string;
+    strategy?: string;
   };
   yearQuestion?: string;
   yearText?: string;
   yearAccent?: string;
+  yearStrategy?: string;
   actionQuestion?: string;
   actionNeuro?: string;
   shift?: { name: string; text: string; when: string };  // legacy
@@ -171,6 +174,45 @@ function InsightCard({
   );
 }
 
+function BlueprintCard({
+  question,
+  text,
+  accent,
+  facets,
+}: {
+  question: string;
+  text: string;
+  accent?: string;
+  facets?: Array<{ label: string; text: string }>;
+}) {
+  return (
+    <Card>
+      <div className="relative flex flex-col items-center text-center w-full max-w-sm">
+        <CardLabel>your blueprint</CardLabel>
+        <p className="text-xl text-[#879DC6] font-light mb-6 leading-relaxed">{question}</p>
+        <div className="w-8 h-px bg-white/10 mb-6" />
+        <p className="text-base font-light text-white/90 leading-relaxed">{text}</p>
+        {accent && (
+          <p className="mt-4 text-sm text-[#ABBBD5]/70 font-light leading-relaxed">{accent}</p>
+        )}
+        {facets && facets.length > 0 && (
+          <div className="mt-6 w-full space-y-3">
+            {facets.map((f, i) => (
+              <div key={i} className="w-full px-4 py-4 rounded-xl bg-white/5 border border-white/10 text-left">
+                <span className="text-xs uppercase tracking-[0.2em] text-[#ABBBD5]/50 block mb-2"
+                  style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                  {f.label}
+                </span>
+                <p className="text-sm text-white/80 font-light leading-relaxed">{f.text}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+}
+
 function EvidenceCard({
   label,
   question,
@@ -256,15 +298,11 @@ function CostCard({
 function ActionCard({
   question,
   neuroExplanation,
-  ritualName,
-  description,
-  when,
+  shifts,
 }: {
   question: string;
   neuroExplanation: string;
-  ritualName: string;
-  description: string;
-  when: string;
+  shifts: Array<{ name: string; text: string; when: string }>;
 }) {
   return (
     <Card bg="bg-gradient-to-b from-[#182339] to-[#1e2a45]">
@@ -284,17 +322,20 @@ function ActionCard({
           {question}
         </p>
         <div className="w-8 h-px bg-white/15 mb-6" />
-        <p className="text-sm text-white/60 font-light leading-relaxed mb-8">
+        <p className="text-sm text-white/60 font-light leading-relaxed mb-6">
           {neuroExplanation}
         </p>
-        <div className="w-full px-5 py-5 rounded-2xl bg-white/5 border border-white/10 mb-4">
-          <h3 className="text-lg font-medium text-white/90 mb-3">{ritualName}</h3>
-          <p className="text-sm font-light text-white/70 leading-relaxed">
-            {firstSentences(description, 2)}
-          </p>
-        </div>
-        <div className="px-4 py-2.5 rounded-xl bg-white/5 border border-white/10">
-          <p className="text-xs text-[#ABBBD5]/70 font-light" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{when}</p>
+        <div className="w-full space-y-3">
+          {shifts.map((s, i) => (
+            <div key={i} className="w-full px-5 py-4 rounded-2xl bg-white/5 border border-white/10 text-left">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs text-[#ABBBD5]/50 font-mono">{String(i + 1).padStart(2, '0')}</span>
+                <h3 className="text-base font-medium text-white/90">{s.name}</h3>
+              </div>
+              <p className="text-sm font-light text-white/70 leading-relaxed mb-2">{firstSentences(s.text, 2)}</p>
+              <p className="text-xs text-[#ABBBD5]/60 font-mono">{s.when}</p>
+            </div>
+          ))}
         </div>
 
       </div>
@@ -338,6 +379,7 @@ interface ChapterData {
   nextLabel: string;
   nextText: string;
   accent: string;
+  strategy?: string;
 }
 
 function ChapterCard({
@@ -458,6 +500,16 @@ function ChapterCard({
           </p>
         )}
 
+        {chapter.strategy && (
+          <div className="mt-4 w-full px-4 py-4 rounded-xl bg-white/5 border border-white/10 text-left">
+            <span className="text-xs uppercase tracking-[0.2em] text-[#ABBBD5]/50 block mb-2"
+              style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+              your move
+            </span>
+            <p className="text-sm text-white/80 font-light leading-relaxed">{chapter.strategy}</p>
+          </div>
+        )}
+
       </div>
     </Card>
   );
@@ -467,10 +519,12 @@ function YearCard({
   question,
   text,
   accent,
+  strategy,
 }: {
   question: string;
   text: string;
   accent: string;
+  strategy?: string;
 }) {
   return (
     <Card bg="bg-gradient-to-b from-[#182339] to-[#1e2a45]">
@@ -498,6 +552,15 @@ function YearCard({
             <p className="text-sm text-[#ABBBD5]/80 font-light leading-relaxed">
               {accent}
             </p>
+          </div>
+        )}
+        {strategy && (
+          <div className="mt-4 w-full px-4 py-4 rounded-xl bg-[#ABBBD5]/8 border border-[#ABBBD5]/15 text-left">
+            <span className="text-xs uppercase tracking-[0.2em] text-[#ABBBD5]/50 block mb-2"
+              style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+              your move
+            </span>
+            <p className="text-sm text-[#ABBBD5]/80 font-light leading-relaxed">{strategy}</p>
           </div>
         )}
 
@@ -605,7 +668,7 @@ function LockCard({
         { key: "q2", q: "Is this fortune telling?", a: "No. Nothing is predicted. We show patterns in how you operate — not what will happen to you." },
         { key: "q4", q: "What do I get for $2.9?", a: "10 more cards: why your patterns exist, what they cost you at work, in relationships, and with money, your 10-year chapter, and one thing to change this week." },
         { key: "q6", q: "Is my data safe?", a: "Your birth data is used only to generate your report. We don't sell or share it." },
-        { key: "contact", q: "Contact", a: "Questions, feedback, or just want to say hi?" },
+        { key: "contact", q: "How do I reach you?", a: "Questions, feedback, or just want to say hi?" },
       ],
     },
     ko: {
@@ -620,7 +683,7 @@ function LockCard({
         { key: "q2", q: "점술인가요?", a: "아닙니다. 아무것도 예측하지 않습니다. 무슨 일이 일어날지가 아니라, 당신이 어떻게 작동하는지의 패턴을 보여줍니다." },
         { key: "q4", q: "$2.9으로 뭘 더 보나요?", a: "10장 추가: 패턴이 왜 존재하는지, 직장·관계·돈에서 치르는 대가, 10년 챕터, 이번 주 바꿀 수 있는 한 가지." },
         { key: "q6", q: "데이터는 안전한가요?", a: "생년월일은 리포트 생성에만 사용됩니다. 판매하거나 공유하지 않습니다." },
-        { key: "contact", q: "연락처", a: "질문, 피드백, 또는 그냥 인사하고 싶으신가요?" },
+        { key: "contact", q: "어디로 연락하나요?", a: "질문, 피드백, 또는 그냥 인사하고 싶으신가요?" },
       ],
     },
     id: {
@@ -635,7 +698,7 @@ function LockCard({
         { key: "q2", q: "Apakah ini ramalan?", a: "Tidak. Tidak ada yang diprediksi. Kami menunjukkan pola cara kerjamu — bukan apa yang akan terjadi." },
         { key: "q4", q: "Apa yang saya dapat dengan $2.9?", a: "10 kartu lagi: kenapa polamu ada, biayanya di kerja, hubungan, dan uang, chapter 10 tahunmu, dan satu hal yang bisa diubah minggu ini." },
         { key: "q6", q: "Apakah data saya aman?", a: "Data kelahiranmu hanya digunakan untuk membuat laporanmu. Kami tidak menjual atau membagikannya." },
-        { key: "contact", q: "Kontak", a: "Pertanyaan, masukan, atau sekadar ingin menyapa?" },
+        { key: "contact", q: "Bagaimana cara menghubungi?", a: "Pertanyaan, masukan, atau sekadar ingin menyapa?" },
       ],
     },
   };
@@ -848,7 +911,12 @@ export default function ResultsV3() {
     {
       key: "blueprint",
       render: () => (
-        <InsightCard label="Your blueprint" question={v3.blueprintQuestion} text={v3.blueprintText} accent={v3.blueprintAccent} />
+        <BlueprintCard
+          question={v3.blueprintQuestion}
+          text={v3.blueprintText}
+          accent={v3.blueprintAccent}
+          facets={v3.blueprintFacets}
+        />
       ),
     },
   ];
@@ -899,13 +967,17 @@ export default function ResultsV3() {
     {
       key: "year",
       render: () => (v3.yearQuestion && v3.yearText) ? (
-        <YearCard question={v3.yearQuestion} text={v3.yearText} accent={v3.yearAccent || ""} />
+        <YearCard question={v3.yearQuestion} text={v3.yearText} accent={v3.yearAccent || ""} strategy={v3.yearStrategy} />
       ) : null,
     },
     {
       key: "action",
-      render: () => v3.shift ? (
-        <ActionCard question={v3.actionQuestion || ""} neuroExplanation={v3.actionNeuro || ""} ritualName={v3.shift.name} description={v3.shift.text} when={v3.shift.when} />
+      render: () => (v3.shifts || v3.shift) ? (
+        <ActionCard
+          question={v3.actionQuestion || ""}
+          neuroExplanation={v3.actionNeuro || ""}
+          shifts={v3.shifts || (v3.shift ? [v3.shift] : [])}
+        />
       ) : null,
     },
     {

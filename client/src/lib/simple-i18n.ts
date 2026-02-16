@@ -201,7 +201,7 @@ export const translations = {
     'faq.q5.a': 'Yes. Your report link doesn\'t expire. Bookmark it or check your email — we send it when your report is ready.',
     'faq.q6.q': 'Is my data safe?',
     'faq.q6.a': 'Your birth data is used only to generate your report. We don\'t sell or share it.',
-    'faq.contact.title': 'Contact',
+    'faq.contact.title': 'How do I reach you?',
     'faq.contact.desc': 'Questions, feedback, or just want to say hi?',
     'faq.cta': 'Start your analysis',
 
@@ -412,7 +412,7 @@ export const translations = {
     'faq.q5.a': '네. 리포트 링크는 만료되지 않습니다. 북마크하거나 이메일을 확인하세요 — 리포트 완성 시 보내드립니다.',
     'faq.q6.q': '데이터는 안전한가요?',
     'faq.q6.a': '생년월일은 리포트 생성에만 사용됩니다. 판매하거나 공유하지 않습니다.',
-    'faq.contact.title': '연락처',
+    'faq.contact.title': '어디로 연락하나요?',
     'faq.contact.desc': '질문, 피드백, 또는 그냥 인사하고 싶으신가요?',
     'faq.cta': '분석 시작하기',
 
@@ -623,7 +623,7 @@ export const translations = {
     'faq.q5.a': 'Ya. Link laporanmu tidak kedaluwarsa. Bookmark atau cek emailmu — kami kirim saat laporanmu siap.',
     'faq.q6.q': 'Apakah data saya aman?',
     'faq.q6.a': 'Data kelahiranmu hanya digunakan untuk membuat laporanmu. Kami tidak menjual atau membagikannya.',
-    'faq.contact.title': 'Kontak',
+    'faq.contact.title': 'Bagaimana cara menghubungi?',
     'faq.contact.desc': 'Pertanyaan, masukan, atau sekadar ingin menyapa?',
     'faq.cta': 'Mulai analisismu',
 
