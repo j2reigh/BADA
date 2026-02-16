@@ -13,32 +13,44 @@
 
 ## 🔄 최근 회고 (최신순)
 
-### 2026-02-16 (B) - 리포트 솔루션 강화 + Blueprint 다각화
+### 2026-02-16 (B) - 리포트 솔루션 강화 + Blueprint 다각화 + UI 폴리시 + 브랜딩
 **Agent:** Claude
 
 #### 👍 Keep (계속 할 것)
 - **진단:솔루션 비율 역전:** 기존 9:1(진단:솔루션) → Cost tip 3개 + Protocol 3개 + Chapter/Year 전략 2개 + Blueprint facets 3개 = 솔루션 11개 추가. "$2.9인데 $10 밸류" 목표에 실질적 전진
 - **`responseMimeType: "application/json"` 발견:** 한국어 Gemini 출력에서 JSON 파싱 실패가 반복됐는데 control character 제거, JSON repair 등 삽질 후 이 한 줄이 근본 해결. 향후 Gemini JSON 생성은 항상 이 옵션 사용
-- **하위호환 즉시 고려:** `shifts || shift ? [shift] : []`, `blueprintFacets?` optional chaining 등 기존 DB 리포트가 깨지지 않도록 모든 신규 필드에 fallback 적용
-- **유저 피드백 즉시 반영 사이클:** Blueprint 스와이프 → 화살표 힌트 추가, DO/DON'T 가독성 → StrategyBlock 분리, closingLine 누락 → MANDATORY FIELDS 추가, 숫자 노출 → NUMERIC DATA BAN, 한국어 말투 → -다 체 금지 — 모두 즉시 수정
+- **유저 피드백 즉시 반영 연속 사이클:** Blueprint 2페이지 분리, Protocol 스와이프 캐러셀, Neuroscience 불렛 포인트, 가독성 opacity 조정, favicon/로고 교체 — 유저 스크린샷 기반으로 5회 연속 피드백→수정→배포 사이클 완료
+- **터치 스와이프 근본 수정:** `touchAction: "pan-x"` 를 모든 캐러셀에 추가하여 세로 스냅 스크롤 안에서 가로 스와이프가 네이티브로 동작
+- **Blueprint 데이터 소스 정리:** facets 프롬프트에서 "Survey vs Design gaps" 참조 제거 → Blueprint는 사주+HD만 사용하는 원칙 확립
 
 #### 🤔 Problem (문제점)
 - **Gemini JSON 파싱 삽질 30분:** control char replace → structural newline 파괴 → 원복 → repair logic → 결국 `responseMimeType`이 정답. 공식 문서를 먼저 확인했으면 바로 해결
-- **maxOutputTokens 미리 계산 안 함:** 한국어 + 확장 필드(tip 3개, shifts 3개, strategy 2개, facets 3개)로 토큰이 8192를 넘을 것은 예측 가능했음. 사전에 16384로 올렸어야
-- **free user 응답에 blueprintFacets 누락:** routes.ts에서 free preview 필드 목록을 수동 관리하는 구조라 새 필드 추가 시 빠뜨림. allowlist 패턴의 고질적 문제
+- **maxOutputTokens 미리 계산 안 함:** 한국어 + 확장 필드로 8192 초과 예측 가능했으나 사전 조정 안 함
+- **free user 응답에 blueprintFacets 누락:** routes.ts에서 free preview 필드 목록 수동 관리 → 새 필드 추가 시 빠뜨림
+- **캐러셀 inline style vs Tailwind class:** BlueprintFacetsCard에서 inline `style={{ width }}` 사용했다가 ChapterCard의 `w-[300%]` + `w-1/3` 패턴과 불일치 → 통일 필요했음
+- **Vercel CDN 캐시 전파 지연:** 배포 직후 무료/유료 페이지 간 다른 버전이 렌더링됨 — CDN 엣지 전파 시간차
 
 #### 💡 Try (시도할 것)
-- **Gemini API 옵션 먼저 확인:** 파싱 문제 발생 시 코드 레벨 workaround 전에 API 설정(`responseMimeType`, `responseSchema` 등) 확인
-- **토큰 예산 사전 산정:** 필드 확장 시 기존 few-shot + 신규 필드 예상 토큰 수 계산 후 maxOutputTokens 조정
-- **free/paid 필드 분리 자동화:** 수동 allowlist 대신 `freeFields` 상수를 한 곳에서 관리하는 구조 고려
+- **Gemini API 옵션 먼저 확인:** 파싱 문제 시 코드 workaround 전에 API 설정 확인
+- **캐러셀 패턴 통일:** 수평 스크롤 캐러셀은 `w-[N00%]` + `w-1/N` + `touchAction: "pan-x"` 패턴으로 표준화
+- **가독성 opacity 기준선:** body text = `/80` 이상, secondary = `/70`, label/mono = `/60`. `/50` 이하는 가능한 지양
+- **브랜드 에셋 중앙 관리:** `client/public/` 에 logo-badaone.svg, favicon.svg 확정. 이후 변경 시 한 곳만 교체
 
 #### 📦 산출물
-- `lib/gemini_client.ts`: V3CardContent 인터페이스 확장(tip, shifts, strategy, yearStrategy, blueprintFacets), Gemini `responseMimeType: "application/json"` + `maxOutputTokens: 16384`, COST CARD TIPS / PROTOCOL RULES / CHAPTER-YEAR STRATEGY / BLUEPRINT FACETS 프롬프트 가이드, NUMERIC DATA BAN, MANDATORY FIELDS, 한국어 -다 체 금지, HD 추가 데이터(gates, circuitries, channels_short, variables, determination, activations)
-- `client/src/pages/ResultsV3.tsx`: CostCard tip 블록, ActionCard shifts 3개 렌더링, StrategyBlock(DO/DON'T 분리), ChapterCard strategy, YearCard strategy, BlueprintCard facets 스와이프 캐러셀(화살표 힌트), "At work" → "In your org"
+- `lib/gemini_client.ts`: V3CardContent 인터페이스 확장, Gemini `responseMimeType: "application/json"` + `maxOutputTokens: 16384`, 프롬프트 가이드 4종, NUMERIC DATA BAN, MANDATORY FIELDS, 한국어 -다 체 금지, HD 추가 데이터, Blueprint facets에서 survey 참조 제거
+- `client/src/pages/ResultsV3.tsx`: CostCard tip, ActionCard 스와이프 캐러셀, StrategyBlock, ChapterCard strategy, YearCard strategy, BlueprintCard 2페이지 분리, BlueprintFacetsCard 캐러셀, EnergyCard 넘버드 불렛, 전체 opacity 가독성 개선, touchAction pan-x, 로고 교체
+- `client/src/pages/Landing.tsx`: 로고 교체 (logowhite → logo-badaone)
+- `client/src/components/ErrorBoundary.tsx`: 로고 교체
+- `client/index.html`: favicon SVG 교체
+- `client/public/favicon.svg`, `client/public/logo-badaone.svg`: 브랜드 에셋 추가
 - `server/routes.ts`: free preview에 blueprintFacets 추가
 
 #### 커밋 이력
-- (uncommitted) feat: 리포트 솔루션 강화 + Blueprint 다각화 (수정 A-D 전체)
+- `40a8ea5` feat: strengthen report solutions + diversify Blueprint card
+- `63d02f8` fix: split Blueprint into 2 pages + remove survey ref from facets
+- `956a242` fix: split neuroscience insight into numbered bullet points
+- `45d764a` fix: protocol carousel + touch swipe + readability improvements
+- `d3e002b` fix: update favicon + replace logo with badaone brand asset
 
 ---
 
