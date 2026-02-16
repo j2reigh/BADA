@@ -671,8 +671,24 @@ export async function registerRoutes(
         currency,
       } = req.body;
 
-      // Try to find report_id from custom fields (if set up) or fallback to email lookup
-      let targetReportId = req.body.report_id ||
+      // Extract url_params — Gumroad sends URL query params here
+      // With extended: false, it may come as url_params[report_id] or as a parsed object
+      let urlParams: Record<string, string> = {};
+      if (typeof req.body.url_params === "string") {
+        try { urlParams = JSON.parse(req.body.url_params); } catch {}
+      } else if (req.body.url_params && typeof req.body.url_params === "object") {
+        urlParams = req.body.url_params;
+      }
+      // Also check flat keys like "url_params[report_id]" (extended: false format)
+      if (!urlParams.report_id && req.body["url_params[report_id]"]) {
+        urlParams.report_id = req.body["url_params[report_id]"];
+      }
+
+      console.log("[Gumroad] url_params:", urlParams);
+
+      // Try: url_params.report_id → custom_fields.report_id → body.report_id → email fallback
+      let targetReportId = urlParams.report_id ||
+        req.body.report_id ||
         (req.body.custom_fields && req.body.custom_fields.report_id);
 
       if (!targetReportId) {
