@@ -783,8 +783,8 @@ function LockCard({
   const translations = {
     en: {
       headline: "what you see ≠ what's there",
-      line1: "If those 3 cards hit close,",
-      line2: "the next 10 show you why.",
+      line1: "If those 3 cards resonated,",
+      line2: "the remaining 10 explain why you can't help but feel that way.",
       cta: "Unlock",
       or: "or",
       placeholder: "Enter code",
@@ -798,8 +798,8 @@ function LockCard({
     },
     ko: {
       headline: "보이는 나 ≠ 진짜 나",
-      line1: "3장이 찔렸다면,",
-      line2: "다음 10장은 그 이유입니다.",
+      line1: "3장이 공감되었다면,",
+      line2: "나머지 10장은 당신이 그렇게 느낄 수밖에 없는 원리를 설명합니다.",
       cta: "잠금 해제",
       or: "또는",
       placeholder: "코드 입력",
@@ -813,8 +813,8 @@ function LockCard({
     },
     id: {
       headline: "yang kamu lihat ≠ yang sebenarnya",
-      line1: "Kalau 3 kartu tadi terasa tepat,",
-      line2: "10 kartu berikutnya jelaskan kenapa.",
+      line1: "Kalau 3 kartu tadi terasa pas,",
+      line2: "10 kartu sisanya menjelaskan kenapa kamu pasti merasakan itu.",
       cta: "Buka",
       or: "atau",
       placeholder: "Masukkan kode",
