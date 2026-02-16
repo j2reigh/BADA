@@ -13,37 +13,39 @@
 
 ## 🔄 최근 회고 (최신순)
 
-### 2026-02-16 - 랜딩 개선 + GA4 + 이메일 플로우 재설계 + LockCard 메시징 정합
+### 2026-02-16 - 랜딩 개선 + GA4 + 이메일 플로우 재설계 + 메시징 전면 정합
 **Agent:** Claude
 
 #### 👍 Keep (계속 할 것)
-- **기획 → 구현 일관성:** 메시징 일관성 분석 문서(P0~P3)를 작성한 뒤, LockCard를 문서 기준으로 정확히 수정. "what you see ≠ what's there" / "보이는 나 ≠ 진짜 나" 등 기획 문구가 그대로 코드에 반영됨
+- **기획 → 구현 일관성:** 메시징 일관성 분석 문서(P0~P3) 기준으로 LockCard, FAQ 순차 수정. 기획 문구가 그대로 코드에 반영됨
+- **FAQ 전면 개편 — 고객 관점 전환:** "사주가 뭔지 설명하는 FAQ"에서 "고객 불안을 해소하는 FAQ"로 리프레이밍. 유저의 "faq의 목표는 사람들의 불안을 없애서 결제전환 시키는 것" 인사이트를 즉시 반영하여 11개 → 6개로 압축
 - **이메일 플로우 기획 문서화:** Option A~E 비교 분석 후 유저와 함께 Option E(passive lead validation) 결정. co-star 레퍼런스, Resend 도메인 인증 확인까지 기획에 포함
-- **Sample Cards 캐러셀 구현:** 유저의 "남의 리포트 몰래 보는 느낌" 아이디어를 embla-carousel + JetBrains Mono 카드로 즉시 구현. 기존 설치된 라이브러리 활용
-- **Traffic light 브랜치 룰 문서화:** 유저가 제안한 🔴🟡🟢 규칙을 ai-workflow에 정리하고 CLAUDE.md에도 반영하여 세션 간 지속
+- **Sample Cards 캐러셀 구현:** 유저의 "남의 리포트 몰래 보는 느낌" 아이디어를 embla-carousel + JetBrains Mono 카드로 즉시 구현
+- **CLAUDE.md 세션 루틴 정립:** 세션 시작(회고 읽기) → 작업(신호등 규칙) → 종료(회고 업데이트) 사이클 문서화
 
 #### 🤔 Problem (문제점)
-- **브랜치 규칙 첫 위반:** routes.ts 변경(이메일 플로우)을 main에 직접 커밋함. 🟡 노란불 규칙 위반. Vercel auto-deploy 상태에서 서버 코드 변경은 feature branch가 맞았음
-- **Vercel 배포 상태 인식 누락:** "아직 배포 안 됐으니 main 직접 OK"라고 잘못 판단 → 유저가 "지금 Vercel로 배포하고 있어. 상황 파악 좀" 으로 바로잡음. 프로젝트 인프라 상태를 세션 시작 시 확인해야 함
-- **서양 점성술 birth time 오류:** "사주가 birth time을 더 정밀하게 쓴다"고 잘못 설명 → 유저가 "서양 점성술도 시간 쓰던데?" 로 바로잡음. 도메인 지식 불확실하면 단정하지 말 것
+- **브랜치 규칙 첫 위반:** routes.ts 변경(이메일 플로우)을 main에 직접 커밋함. 🟡 노란불 규칙 위반
+- **Vercel 배포 상태 인식 누락:** "아직 배포 안 됐으니 main 직접 OK"라고 잘못 판단 → 유저가 바로잡음
+- **서양 점성술 birth time 오류:** 도메인 지식 불확실한데 단정 → 유저가 바로잡음
 
 #### 💡 Try (시도할 것)
-- **세션 시작 시 인프라 체크:** `git remote -v`, Vercel 연동 상태, 현재 브랜치를 첫 5분 안에 확인하여 배포 상태 오판 방지
-- **🟡 노란불 파일 변경 시 자동 리마인드:** routes.ts, shared components 수정 전 "이거 feature branch에서 해야 하지 않나?" 자기 점검
-- **도메인 비교 시 "~일 수 있다" 표현 사용:** 사주 vs 서양 점성술 같은 도메인 지식은 확인 없이 단정하지 않기
+- **세션 시작 시 인프라 체크:** git remote, Vercel 상태, 현재 브랜치 확인
+- **🟡 노란불 파일 변경 시 자기 점검:** "이거 feature branch에서 해야 하지 않나?"
+- **"고객이 이걸 물어볼까?" 필터:** FAQ, 카피 작성 시 우리가 하고 싶은 말 vs 고객이 궁금한 것 구분
 
 #### 📦 산출물
 - `client/src/pages/Landing.tsx`: Sample Cards 캐러셀 (5장), VibeCheck 섹션 숨김, 모바일 hero 순서 수정
-- `client/src/lib/simple-i18n.ts`: sample cards i18n 키 (EN/KO/ID)
+- `client/src/lib/simple-i18n.ts`: FAQ 11→6개 전면 개편 (EN/KO/ID), sample cards i18n
 - `client/index.html`: GA4 스크립트 (G-7J946D2YP4)
 - `client/src/pages/Survey.tsx`: birth date auto-advance 제거, 이메일 인증 스킵
 - `server/routes.ts`: 이메일 인증 엔드포인트 제거, non-blocking report link email 발송
 - `lib/email.ts`: verification → report link email 전면 재작성 (다크 테마 템플릿)
-- `client/src/pages/ResultsV3.tsx`: LockCard 3개 국어 메시징 정합 (P0)
+- `client/src/pages/ResultsV3.tsx`: LockCard 메시징 정합 + 인라인 FAQ 동기화
+- `client/src/pages/FAQ.tsx`: 11→6개 항목 수 조정
 - `scripts/check-md-structure.js`: CLAUDE.md root 허용
-- `.ai-workflow/plans/2026-02-16-[UX]-email-flow-redesign.md`: 신규 기획 문서
-- `.ai-workflow/plans/2026-01-31-[INFRA]-deployment-strategy.md`: traffic light 규칙 추가
-- `CLAUDE.md`: 프로젝트 컨텍스트 자동 로딩용 신규 파일
+- `.ai-workflow/plans/2026-02-16-[UX]-email-flow-redesign.md`: 이메일 플로우 기획
+- `.ai-workflow/plans/2026-02-16-[COPY]-faq-redesign.md`: FAQ 개편 기획
+- `CLAUDE.md`: 프로젝트 컨텍스트 + 세션 루틴
 
 #### 커밋 이력
 - `41629b2` feat: sample card carousel + hide community section
@@ -53,6 +55,10 @@
 - `1fd6d25` feat: replace email verification with report link email (Option E)
 - `3dc0454` docs: update branch strategy with traffic light rules
 - `03eeb6f` fix: update LockCard copy to match messaging consistency plan
+- `36e5670` docs: add 2026-02-16 session retrospective
+- `47c9c97` docs: add session routine to CLAUDE.md
+- `5bd6034` fix: redesign FAQ from 11 to 6 questions
+- `5db9d02` fix: update contact FAQ question to conversational tone
 
 ---
 
