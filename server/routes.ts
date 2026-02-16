@@ -434,6 +434,7 @@ export async function registerRoutes(
             blueprintQuestion: cards.blueprintQuestion,
             blueprintText: cards.blueprintText,
             blueprintAccent: cards.blueprintAccent,
+            blueprintFacets: cards.blueprintFacets,
           };
         }
       } else {

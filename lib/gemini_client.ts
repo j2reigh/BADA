@@ -186,6 +186,7 @@ ANTI-TRANSLATION RULES:
 - Avoid calque (loan-translation) from English
 - Tone: direct, diagnostic, conversational (B1-B2 native reading level). NOT warm or poetic.
 - No hedging: never use "might", "probably", "perhaps", "could". Use declarative statements.
+${language === 'ko' ? `- KOREAN SPEECH LEVEL: MUST use polite endings (-요 or -ㅂ니다/-습니다) for ALL sentences. NEVER use plain form (-다 체). BAD: "당신은 이렇게 행동한다." GOOD: "당신은 이렇게 행동해요." or "당신은 이렇게 행동합니다."` : ''}
 - For neuroscience terms ONLY: keep English term + native explanation
   e.g., "Amygdala(뇌의 경보 시스템)" / "Amygdala(sistem alarm otak)"
 - Any English reference text provided in this prompt is for MEANING only — rewrite it naturally in ${langName}, do not translate word-by-word
@@ -227,7 +228,8 @@ export async function generateLifeBlueprintReport(
       sajuResult,
       effectiveHdData,
       surveyScores,
-      birthDate || "1996-09-18"
+      birthDate || "1996-09-18",
+      "female"
     );
     console.log("[Gemini] Behavior Patterns Translated");
 
@@ -265,7 +267,7 @@ export async function generateLifeBlueprintReport(
 // PAGE 1: Identity (Nature Landscape Theme)
 // ==========================================
 async function generatePage1(sajuResult: SajuResult, surveyScores: SurveyScores, userName: string, archetype?: ContentArchetype, langInstruction?: string, language: string = "en") {
-  const model = client!.getGenerativeModel({ model: "gemini-2.5-flash" });
+  const model = client!.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
   const dayMasterGan = sajuResult.fourPillars.day.gan;
   const dayMasterInfo = DAY_MASTER_MAP[dayMasterGan];
@@ -347,7 +349,7 @@ OUTPUT (JSON Only):
 // PAGE 2: Hardware (Deep Nature Analysis)
 // ==========================================
 async function generatePage2(sajuResult: SajuResult, identityTitle: string, userName: string, archetype?: ContentArchetype, langInstruction?: string, language: string = "en") {
-  const model = client!.getGenerativeModel({ model: "gemini-2.5-flash" });
+  const model = client!.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
   const dayMasterGan = sajuResult.fourPillars.day.gan;
   const dayMasterInfo = DAY_MASTER_MAP[dayMasterGan];
@@ -418,7 +420,7 @@ OUTPUT (JSON Only):
 // PAGE 3: Operating System (Neuroscience)
 // ==========================================
 async function generatePage3(surveyScores: SurveyScores, userName: string, langInstruction?: string) {
-  const model = client!.getGenerativeModel({ model: "gemini-2.5-flash" });
+  const model = client!.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
   // No sajuResult passed here in original signature, but we need OpAnalysis
   // We can assume surveyScores actually contains the analysis if we refactored, 
@@ -479,7 +481,7 @@ OUTPUT (JSON Only):
 // PAGE 4: Friction Map (Life Application)
 // ==========================================
 async function generatePage4(sajuResult: SajuResult, page2: any, page3: any, userName: string, langInstruction?: string) {
-  const model = client!.getGenerativeModel({ model: "gemini-2.5-flash" });
+  const model = client!.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
   const systemPrompt = `You are a "Life Diagnostician" creating Page 4: The Friction Map.
 
@@ -533,7 +535,7 @@ OUTPUT (JSON Only):
 // PAGE 5: Action Protocol (Science-Backed)
 // ==========================================
 async function generatePage5(sajuResult: SajuResult, page3: any, page4: any, surveyScores: SurveyScores, userName: string, langInstruction?: string) {
-  const model = client!.getGenerativeModel({ model: "gemini-2.5-flash" });
+  const model = client!.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
   const elementCounts = sajuResult.elementCounts;
   const missingElements = Object.entries(elementCounts)
@@ -542,7 +544,8 @@ async function generatePage5(sajuResult: SajuResult, page3: any, page4: any, sur
   const weakElements = Object.entries(elementCounts)
     .filter(([, count]) => (count as number) === 1)
     .map(([el]) => el);
-  const elementNeeded = missingElements.length > 0 ? missingElements[0] : (weakElements.length > 0 ? weakElements[0] : "balance");
+  const dominantEl = Object.entries(elementCounts).sort(([, a], [, b]) => (b as number) - (a as number))[0][0];
+  const elementNeeded = missingElements.length > 0 ? missingElements[0] : (weakElements.length > 0 ? weakElements[0] : dominantEl);
 
   const elementTips: Record<string, string[]> = {
     wood: ["morning walks in nature", "green plants in workspace", "stretching exercises"],
@@ -550,7 +553,6 @@ async function generatePage5(sajuResult: SajuResult, page3: any, page4: any, sur
     earth: ["grounding routines", "stable meal times", "earthy colors in environment"],
     metal: ["decluttering spaces", "precision activities", "white/metallic aesthetics"],
     water: ["staying hydrated", "flowing movements like swimming", "blue/black color accents"],
-    balance: ["varied activities", "flexible routines", "connecting with all elements"]
   };
 
   const opAnalysis = (sajuResult as any).operatingAnalysis;
@@ -589,10 +591,9 @@ async function generatePage5(sajuResult: SajuResult, page3: any, page4: any, sur
     earth: { colors: "Brown, beige, terracotta, mustard — grounding tones", activities: "Cooking, pottery, stable routines, grounding exercises", avoid: "Constant travel, unstable schedules, skipping meals" },
     metal: { colors: "White, silver, gray, metallic — clean sharp tones", activities: "Decluttering, precision activities, martial arts, organizing", avoid: "Chaotic environments, hoarding, lack of structure" },
     water: { colors: "Black, navy, dark blue — wear these as daily anchors, not occasionally", activities: "Swimming, surfing, or any water-adjacent activity. Literal water contact", avoid: "Desert climates, overheated rooms, too much caffeine, too many deadlines simultaneously" },
-    balance: { colors: "Varied palette — rotate through all element colors weekly", activities: "Diverse mix of activities, flexible routines", avoid: "Overcommitting to one element's activities" }
   };
 
-  const prescription = elementPrescription[elementNeeded] || elementPrescription.balance;
+  const prescription = elementPrescription[elementNeeded] || elementPrescription[dominantEl] || elementPrescription.water;
 
   const levelTransitionContext = isMaxLevel
     ? `- Current State: Level ${levelNum} (${levelName}) — MAXIMUM LEVEL, Alignment: ${alignmentType}
@@ -684,12 +685,33 @@ OUTPUT (JSON Only):
 }
 
 function parseJSON(text: string): any {
+  let cleaned = text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
+
   try {
-    const cleaned = text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
     return JSON.parse(cleaned);
   } catch (e) {
-    console.error("JSON Parse Error:", text.slice(0, 500));
-    throw new Error("JSON_PARSE_ERROR: Failed to parse Gemini response");
+    console.error("JSON Parse Error (first 300):", cleaned.slice(0, 300));
+    console.error("JSON tail (last 200):", cleaned.slice(-200));
+    console.error("JSON total length:", cleaned.length);
+
+    // Attempt to repair truncated JSON by closing open braces/brackets
+    try {
+      let repaired = cleaned;
+      const quotes = (repaired.match(/"/g) || []).length;
+      if (quotes % 2 !== 0) repaired += '"';
+      const openBraces = (repaired.match(/{/g) || []).length;
+      const closeBraces = (repaired.match(/}/g) || []).length;
+      const openBrackets = (repaired.match(/\[/g) || []).length;
+      const closeBrackets = (repaired.match(/]/g) || []).length;
+      repaired = repaired.replace(/,\s*$/, '');
+      for (let i = 0; i < openBrackets - closeBrackets; i++) repaired += ']';
+      for (let i = 0; i < openBraces - closeBraces; i++) repaired += '}';
+      const result = JSON.parse(repaired);
+      console.log("[JSON Repair] Successfully repaired truncated JSON");
+      return result;
+    } catch (repairErr) {
+      throw new Error("JSON_PARSE_ERROR: Failed to parse Gemini response");
+    }
   }
 }
 
@@ -766,7 +788,7 @@ async function generatePage1_v3(
   langInstruction?: string,
   language: string = "en"
 ) {
-  const model = client!.getGenerativeModel({ model: "gemini-2.5-flash" });
+  const model = client!.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
   const dayMasterGan = sajuResult.fourPillars.day.gan;
   const dayMasterInfo = DAY_MASTER_MAP[dayMasterGan];
@@ -854,7 +876,7 @@ async function generatePage2_v3(
   langInstruction?: string,
   language: string = "en"
 ) {
-  const model = client!.getGenerativeModel({ model: "gemini-2.5-flash" });
+  const model = client!.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
   const dayMasterGan = sajuResult.fourPillars.day.gan;
   const dayMasterInfo = DAY_MASTER_MAP[dayMasterGan];
@@ -916,7 +938,7 @@ async function generatePage3_v3(
   userName: string,
   langInstruction?: string
 ) {
-  const model = client!.getGenerativeModel({ model: "gemini-2.5-flash" });
+  const model = client!.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
   const systemPrompt = `You are writing Page 3: How You Operate for ${userName}.
 
@@ -994,7 +1016,7 @@ async function generatePage4_v3(
   userName: string,
   langInstruction?: string
 ) {
-  const model = client!.getGenerativeModel({ model: "gemini-2.5-flash" });
+  const model = client!.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
   const systemPrompt = `You are writing Page 4: Where You Get Stuck for ${userName}.
 
@@ -1064,7 +1086,7 @@ async function generatePage5_v3(
   userName: string,
   langInstruction?: string
 ) {
-  const model = client!.getGenerativeModel({ model: "gemini-2.5-flash" });
+  const model = client!.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
   const elementCounts = sajuResult.elementCounts;
   const missingElements = Object.entries(elementCounts)
@@ -1073,7 +1095,8 @@ async function generatePage5_v3(
   const weakElements = Object.entries(elementCounts)
     .filter(([, count]) => (count as number) === 1)
     .map(([el]) => el);
-  const elementNeeded = missingElements.length > 0 ? missingElements[0] : (weakElements.length > 0 ? weakElements[0] : "balance");
+  const dominantEl = Object.entries(elementCounts).sort(([, a], [, b]) => (b as number) - (a as number))[0][0];
+  const elementNeeded = missingElements.length > 0 ? missingElements[0] : (weakElements.length > 0 ? weakElements[0] : dominantEl);
 
   const opAnalysis = (sajuResult as any).operatingAnalysis;
   const levelNum = opAnalysis?.level || 1;
@@ -1085,7 +1108,6 @@ async function generatePage5_v3(
     earth: "Regular meals at same times. Grounding routines. Earthy colors in your space.",
     metal: "Declutter one area per week. Precision activities. Clean lines in environment.",
     water: "Stay near actual water when possible. Hydrate before big conversations. Dark blue or black as default colors.",
-    balance: "Rotate activities. Do not over-index on any one thing.",
   };
 
   const systemPrompt = `You are writing Page 5: Action Protocol for ${userName}.
@@ -1120,7 +1142,7 @@ AGE CONTEXT:
 ${behaviors.ageContext}
 
 ELEMENT LIFESTYLE TIPS:
-${elementTips[elementNeeded] || elementTips.balance}
+${elementTips[elementNeeded] || elementTips[dominantEl] || elementTips.water}
 
 ---
 
@@ -1302,23 +1324,23 @@ export interface V3CardContent {
   blueprintQuestion: string;
   blueprintText: string;
   blueprintAccent: string;
+  blueprintFacets?: Array<{
+    label: string;
+    text: string;
+  }>;
   collisionQuestion: string;
   collisionText: string;
   collisionAccent: string;
   evidenceQuestion: string;
   evidence: string[];
   costCareerQuestion: string;
-  costCareer: { title: string; text: string };
+  costCareer: { title: string; text: string; tip: string };
   costRelationshipQuestion: string;
-  costRelationship: { title: string; text: string };
+  costRelationship: { title: string; text: string; tip: string };
   costMoneyQuestion: string;
-  costMoney: { title: string; text: string };
+  costMoney: { title: string; text: string; tip: string };
   brainScan: {
     question: string;
-    alarm: number;
-    drive: number;
-    stability: number;
-    remaining: number;
     insight: string;
   };
   // Timeline cards (대운 → 세운 → Protocol)
@@ -1331,13 +1353,15 @@ export interface V3CardContent {
     nextLabel: string;      // e.g. "Ages 35-44"
     nextText: string;       // 1-2 sentences, plain language
     accent: string;         // transition insight
+    strategy: string;       // DO/DON'T for current chapter
   };
   yearQuestion: string;
   yearText: string;
   yearAccent: string;
+  yearStrategy: string;
   actionQuestion: string;
   actionNeuro: string;
-  shift: { name: string; text: string; when: string };
+  shifts: Array<{ name: string; text: string; when: string }>;
   closingLine: string;
 }
 
@@ -1362,8 +1386,11 @@ export async function generateV3Cards(
   }
 
   const model = client.getGenerativeModel({
-    model: "gemini-2.5-flash",
-    generationConfig: { maxOutputTokens: 8192 },
+    model: "gemini-3-flash-preview",
+    generationConfig: {
+      maxOutputTokens: 16384,
+      responseMimeType: "application/json",
+    },
   });
   const langInstruction = getLanguageInstruction(language);
 
@@ -1412,7 +1439,26 @@ The user has THREE data sources:
 2. SAJU = how they were born to operate (structural blueprint)
 3. HD = their energy design (how energy flows through their system)
 
-The insight lives in the GAPs between these three. When self-perception ≠ structural design ≠ energy blueprint, that's where behavioral patterns hide. Your job: find the collision across all three, name it, prove it with behavioral evidence, show the cost in career/relationships/money, then give one neural protocol to interrupt the pattern.
+HOW TO FIND THE COLLISION:
+Compare these 3 layers for THIS person:
+
+1. SURVEY says: "${surveyScores.typeName}" — they see themselves as ${surveyScores.threatClarity === 1 ? 'HIGH' : 'LOW'} threat sensitivity, ${surveyScores.environmentStable === 1 ? 'STABLE' : 'VOLATILE'} environment, ${surveyScores.agencyActive === 1 ? 'ACTIVE' : 'PASSIVE'} agency
+2. SAJU says: Day Master is ${dayMasterInfo.name} (${dayMasterInfo.archetype}). Dominant Ten God is ${tenGods?.dominant || 'N/A'}. Elements: ${missingElements.length > 0 ? 'missing ' + missingElements.join(', ') : 'no missing'}${excessElements.length > 0 ? ', excess ' + excessElements.join(', ') : ''}
+3. HD says: ${hdData ? `${hdData.type} type, ${hdData.authority} authority, open centers = ${ALL_HD_CENTERS.filter(c => !hdData.centers.includes(c)).join(', ')}` : 'N/A'}
+
+WHERE TO LOOK FOR GAPS:
+- Self-image vs structural design: Do they think they're X but were built for Y?
+- Energy direction: Where do they THINK their energy goes vs where it ACTUALLY goes?
+- Decision making: How do they THINK they decide vs their designed authority?
+- Strengths misread as weaknesses (or vice versa)
+- What they suppress that their design needs to express
+
+COLLISION QUALITY CHECK:
+- If your collision card could apply to anyone, it's too generic. Rewrite.
+- Name a SPECIFIC behavior. "You say yes to projects before checking if you actually want them."
+- The collision should make the reader feel slightly uncomfortable because it's true.
+
+Your job: find the collision across all three, name it, prove it with behavioral evidence, show the cost in career/relationships/money, then give one neural protocol to interrupt the pattern.
 
 STRUCTURE: Every card is Q→A. The question hooks. The answer delivers.
 LENGTH: 2-3 sentences per field. Brevity = precision. No filler.
@@ -1423,6 +1469,12 @@ The user has ZERO knowledge of saju, astrology, or Human Design. The following t
 - Element jargon: "wood chapter", "fire energy", "earth element", "water element", "metal element", "double dose of fire", "missing wood"
 - HD terms: gates, channels, centers, definition, authority, profile, type
 - Any Chinese/Korean characters (甲, 午, 丙, etc.)
+
+NUMERIC DATA BAN — CRITICAL:
+Never include raw numbers, percentages, or scores in the output. No "operating rate", "가동률", "60%", "strength score", etc.
+The data section below contains numbers for YOUR analysis only. Convert everything to behavioral descriptions.
+BAD: "Your operating rate is 60%." / "가동률 60%"
+GOOD: "Your system is running, but leaking energy in specific places."
 
 INSTEAD: Translate everything into plain behavioral language or natural metaphors:
 - "편관 energy" → "external pressure pushing you to perform"
@@ -1455,6 +1507,16 @@ ${excessElements.length > 0 ? `Excess elements (≥3): ${excessElements.join(", 
 Ten Gods: dominant=${tenGods?.dominant || "N/A"}
 Distribution: ${tenGodsStr}
 
+TEN GODS INTERPRETATION (for YOUR understanding only — NEVER use these terms in output):
+- 비견/겁재 (Peer): competitive drive, self-reliance, tendency to compare
+- 식신/상관 (Output): creative expression, communication, challenging authority
+- 편재/정재 (Wealth): resource management, practical pursuits, financial patterns
+- 편관/정관 (Power): external pressure, discipline, structure-seeking
+- 편인/정인 (Resource): learning patterns, knowledge absorption, overthinking
+
+This person's dominant Ten God is ${tenGods?.dominant || "N/A"}. Use this to understand their core behavioral drive.
+Their distribution is: ${tenGodsStr}. Look for imbalances — heavy in one area means energy concentrates there.
+
 ═══════════════════════════════
 SURVEY DATA (Self-Perception)
 ═══════════════════════════════
@@ -1482,18 +1544,18 @@ Design vs Perception Gaps: ${behaviors.designVsPerception.join(" | ")}
 BRAIN SCAN (neuroscience interpretation only)
 ═══════════════════════════════
 
-Survey energy signals:
-- Threat sensitivity: ${surveyScores.threatScore}/3 (${surveyScores.threatClarity === 1 ? 'HIGH' : 'LOW'})
-- Drive output: ${surveyScores.agencyScore}/3 (${surveyScores.agencyActive === 1 ? 'ACTIVE' : 'PASSIVE'})
-- Environment stability: ${surveyScores.environmentScore}/2 (${surveyScores.environmentStable === 1 ? 'STABLE' : 'VOLATILE'})
+BRAIN SCAN CARD:
+Write 4-5 sentences explaining how this person's brain operates.
+Use neuroscience terms (amygdala, prefrontal cortex, dopamine pathways, default mode network).
+Connect brain mechanics to the collision you identified.
 
-For "brainScan.insight": Write 3-4 sentences explaining how THIS person's brain operates using neuroscience. Reference specific brain systems (amygdala, prefrontal cortex, dopamine pathways, default mode network) to explain their behavioral patterns. Connect the brain mechanics to the collision you identified. Be specific to their data, not generic.
+Base your analysis on these behavioral signals:
+- Threat response: ${surveyScores.threatClarity === 1 ? 'HIGH' : 'LOW'} — ${surveyScores.threatClarity === 1 ? 'their alarm system fires frequently, scanning for threats others miss' : 'their alarm system runs cool, potentially missing real signals'}
+- Initiative: ${surveyScores.agencyActive === 1 ? 'ACTIVE' : 'PASSIVE'} — ${surveyScores.agencyActive === 1 ? 'high drive to act and shape their environment' : 'tendency to wait, observe, and conserve energy'}
+- Environment processing: ${surveyScores.environmentStable === 1 ? 'STABLE' : 'VOLATILE'} — ${surveyScores.environmentStable === 1 ? 'they seek and maintain predictable conditions' : 'they operate in or create unstable conditions'}
 
-Still include alarm/drive/stability/remaining numbers in brainScan (use these exact values):
-- alarm: ${Math.round((surveyScores.threatScore / 3) * 80 + 15)}
-- drive: ${Math.round((surveyScores.agencyScore / 3) * 80 + 15)}
-- stability: ${Math.round((surveyScores.environmentScore / 2) * 60 + 20)}
-- remaining: ${Math.max(5, 100 - Math.round((Math.round((surveyScores.threatScore / 3) * 80 + 15) + Math.round((surveyScores.agencyScore / 3) * 80 + 15) + Math.round((surveyScores.environmentScore / 2) * 60 + 20)) / 3))}
+Do NOT include numeric scores. Explain in behavioral terms only.
+brainScan output should contain ONLY "question" and "insight" fields. No alarm/drive/stability/remaining numbers.
 
 ═══════════════════════════════
 HD DATA (Human Design Blueprint)
@@ -1507,8 +1569,16 @@ Definition: ${hdData.definition}
 Defined Centers: ${hdData.centers.join(", ")}
 Open Centers: ${ALL_HD_CENTERS.filter(c => !hdData.centers.includes(c)).join(", ")}
 Channels: ${hdData.channels_long.join(", ")}
+Channels (short): ${hdData.channels_short?.join(", ") || "N/A"}
+Gates: ${(hdData as any).gates?.join(", ") || "N/A"}
+Circuitries: ${(hdData as any).circuitries || "N/A"}
+Variables: ${(hdData as any).variables || "N/A"}
+Determination: ${(hdData as any).determination || "N/A"}
 Incarnation Cross: ${hdData.incarnation_cross || "N/A"}
-Signature: ${hdData.signature}
+${(hdData as any).activations ? `
+Design Activations: ${JSON.stringify((hdData as any).activations.design)}
+Personality Activations: ${JSON.stringify((hdData as any).activations.personality)}
+` : ''}Signature: ${hdData.signature}
 Not-Self Theme: ${hdData.not_self_theme}
 Environment: ${hdData.environment || "N/A"}
 Cognition: ${hdData.cognition || "N/A"}
@@ -1591,6 +1661,11 @@ DO NOT copy this content. Use it ONLY to calibrate tone and specificity.
   "blueprintQuestion": "What if you were never meant to move this fast?",
   "blueprintText": "You were designed to be a mountain. Patient. Immovable. Deliberate. Your power comes from staying still while everything else moves around you.",
   "blueprintAccent": "Your internal fire is extreme, but you have zero cooling mechanism. You have no flexibility element. Adapting to change doesn't come naturally. Your system is overdriven.",
+  "blueprintFacets": [
+    { "label": "Core Drive", "text": "You optimize for control, not success. Every decision runs through a filter: 'Can I manage this outcome?' You mistake this for ambition, but it's actually your need to never be caught off-guard." },
+    { "label": "Hidden Talent", "text": "You read systems faster than people. Give you any organization, business, or group dynamic and you'll spot the structural flaw within minutes. You dismiss this as 'obvious' — it's not. Most people can't do it." },
+    { "label": "Blind Spot", "text": "You absorb other people's stress and mistake it for your own. You walk into a tense room and leave carrying weight that was never yours. This is why you feel exhausted after social events that 'shouldn't' be tiring." }
+  ],
   "collisionQuestion": "So what breaks when a mountain tries to sprint?",
   "collisionText": "You think speed is your strength. Your design says it's your biggest leak. You were built to be a mountain, not a sprinter. Every time you rush to fix something, you're overriding the system that gives you your actual power: patience.",
   "collisionAccent": "The gap: you act like fire, but you were built from earth. That mismatch is where your energy disappears.",
@@ -1601,12 +1676,12 @@ DO NOT copy this content. Use it ONLY to calibrate tone and specificity.
     "You finish other people's tasks 'because it's faster.' Then resent that no one does the same for you."
   ],
   "costCareerQuestion": "Why do you keep hitting the same ceiling?",
-  "costCareer": { "title": "At work", "text": "You become indispensable, then trapped. You built the system, now you're the only one who can maintain it. That's not success. That's a cage you constructed yourself." },
+  "costCareer": { "title": "In your organization", "text": "You become indispensable, then trapped. You built the system, now you're the only one who can maintain it. That's not success. That's a cage you constructed yourself.", "tip": "This week: before saying yes to any new request, reply with 'Let me check my capacity and get back to you by tomorrow.' Not to stall. To break the auto-yes reflex." },
   "costRelationshipQuestion": "Why do the people closest to you seem distant?",
-  "costRelationship": { "title": "In relationships", "text": "You show up as the strong one. Always capable, never needing. People stop asking if you're okay because you trained them not to. The fortress works. That's the problem." },
+  "costRelationship": { "title": "In relationships", "text": "You show up as the strong one. Always capable, never needing. People stop asking if you're okay because you trained them not to. The fortress works. That's the problem.", "tip": "Pick one person this week and say 'I'm actually not fine today.' One sentence. That's it. Your fortress has a door — use it." },
   "costMoneyQuestion": "Why does money come in and leave just as fast?",
-  "costMoney": { "title": "With money", "text": "You earn and spend in the same motion. Money comes in through effort, leaks out through the constant maintenance of problems you anticipated but didn't need to solve." },
-  "brainScan": { "question": "Where is all your energy actually going?", "alarm": 68, "drive": 68, "stability": 20, "remaining": 48, "insight": "Your amygdala fires at nearly double the baseline rate, keeping your threat-detection system permanently on. This hijacks your prefrontal cortex into reactive problem-solving mode instead of strategic thinking. Meanwhile, your dopamine pathways are locked in a production loop: finish one task, crave the next, repeat. The result is a brain running two expensive programs simultaneously with almost nothing left for the default mode network, the system that handles creativity, self-reflection, and genuine rest." },
+  "costMoney": { "title": "With money", "text": "You earn and spend in the same motion. Money comes in through effort, leaks out through the constant maintenance of problems you anticipated but didn't need to solve.", "tip": "Before any purchase over $30 this week, wait 24 hours. Not to save money. To notice whether you're buying to solve a problem or to feel productive." },
+  "brainScan": { "question": "Where is all your energy actually going?", "insight": "Your amygdala fires at nearly double the baseline rate, keeping your threat-detection system permanently on. This hijacks your prefrontal cortex into reactive problem-solving mode instead of strategic thinking. Meanwhile, your dopamine pathways are locked in a production loop: finish one task, crave the next, repeat. The result is a brain running two expensive programs simultaneously with almost nothing left for the default mode network, the system that handles creativity, self-reflection, and genuine rest." },
   "chapter": {
     "question": "What chapter of your life are you actually in?",
     "previousLabel": "Ages 15-24",
@@ -1615,22 +1690,91 @@ DO NOT copy this content. Use it ONLY to calibrate tone and specificity.
     "currentText": "A decade of being tested. Outside forces are pushing against your natural tendencies. This isn't comfortable. It's not supposed to be. This is the decade where you find out what you're actually made of.",
     "nextLabel": "Ages 35-44",
     "nextText": "A decade of building. The pressure you're feeling now becomes the foundation for real, tangible results.",
-    "accent": "You went from learning the rules to being forced to break them. Next comes building something real with what survived."
+    "accent": "You went from learning the rules to being forced to break them. Next comes building something real with what survived.",
+    "strategy": "DO: Say no to safety-seeking decisions. This decade rewards risk. DON'T: Build another backup plan. The pressure you feel isn't a sign to retreat — it's the signal to push."
   },
   "yearQuestion": "What is 2026 actually asking of you?",
   "yearText": "This year is offering you a pause button in the middle of a pressure decade. Your system wants to sprint. But 2026 is handing you a library card, not running shoes. The energy this year supports reflection, intuition, and unconventional learning.",
   "yearAccent": "2026 is not asking you to do more. It's asking you to understand more before you act.",
+  "yearStrategy": "DO: Use 2026 to study, not to launch. Take one course, read deeply, talk to mentors. DON'T: Start a new project before June. The urge to build is real but premature — this year's energy is for loading, not firing.",
   "actionQuestion": "Can your brain actually rewire this?",
   "actionNeuro": "Your amygdala triggers threat responses 3x above baseline. Your prefrontal cortex compensates by staying in control mode. This is why you crash by 3pm. The protocol below interrupts this loop at the neural level.",
-  "shift": { "name": "The Pause Protocol", "text": "Before any decision this week, wait 10 minutes. Not to think. To let the first impulse pass. Your mountain doesn't need to respond to every tremor. The right answer comes after the shaking stops.", "when": "Starting tomorrow. 7 days." },
+  "shifts": [
+    { "name": "The Pause Protocol", "text": "Before any decision this week, wait 10 minutes. Not to think. To let the first impulse pass. Your mountain doesn't need to respond to every tremor. The right answer comes after the shaking stops.", "when": "Every decision point. 7 days." },
+    { "name": "The Capacity Check", "text": "Before saying yes to anything new, write down your current 3 active commitments. If you can't drop one, the answer is no.", "when": "When asked for help. Ongoing." },
+    { "name": "The Fortress Door", "text": "Tell one person per day something you haven't said out loud yet. Not a confession. Just an unfiltered thought.", "when": "Evening. 7 days." }
+  ],
   "closingLine": "Your system isn't broken. It's overclocked. Dial it back 30% and watch what happens."
 }
+
+═══════════════════════════════
+CARD-SPECIFIC RULES
+═══════════════════════════════
+
+COST CARD TIPS — CRITICAL:
+Each cost card MUST include a "tip" field. This is the SOLUTION, not more diagnosis.
+Rules for tips:
+- Start with "This week:" or a specific timeframe
+- One concrete action, not a mindset shift
+- Must be doable in under 5 minutes
+- Specific enough that the reader knows EXACTLY what to do
+- Connected to the cost it follows (career tip for career cost, etc.)
+BAD: "Try to be more assertive at work" (vague, mindset)
+GOOD: "Next time your boss adds to your plate, say: 'I can do that if I drop X. Which matters more?'" (specific, actionable)
+
+PROTOCOL RULES (shifts array):
+Generate EXACTLY 3 protocols. Each must:
+1. Have a memorable name (2-3 words)
+2. Be completable in under 5 minutes per instance
+3. Target a DIFFERENT aspect of the collision (one behavioral, one relational, one environmental)
+4. Include a specific trigger ("when X happens, do Y") not just a general habit
+5. First protocol = highest impact, most urgent
+
+CHAPTER/YEAR STRATEGY — CRITICAL:
+- chapter.strategy: 2-3 sentences. DO [specific action for this decade's energy] + DON'T [specific trap to avoid].
+- yearStrategy: 2-3 sentences. DO [specific action for this year] + DON'T [specific trap].
+- These must be ACTIONABLE, not motivational. Bad: "Trust the process." Good: "Spend 30 minutes weekly journaling what you're learning, not what you're achieving."
+- Connect the strategy to the collision — the strategy should address the gap you identified.
+
+BLUEPRINT FACETS — MULTI-DIMENSIONAL VIEW:
+In addition to blueprintText (core identity summary), generate blueprintFacets — an array of EXACTLY 3 objects:
+
+1. "Core Drive" — What fundamentally moves this person. Combine:
+   - Day Master archetype (strength/weakness)
+   - Dominant Ten God (where energy concentrates)
+   - HD Motivation vs Transference (genuine drive vs distorted drive)
+   Write what they're ACTUALLY optimizing for, even if they don't realize it.
+
+2. "Hidden Talent" — What they're naturally gifted at but may undervalue. Combine:
+   - HD Channels (specific talent circuits)
+   - HD Incarnation Cross (life theme)
+   - Saju element excess (where energy is abundant)
+   - HD Defined Centers (consistent energy output)
+   Write a specific skill or capacity, not a generic trait.
+
+3. "Blind Spot" — What they consistently miss or misread. Combine:
+   - HD Open Centers (where they absorb/amplify others)
+   - Saju missing elements (structural gap)
+   - HD Not-Self Theme (emotional signal of misalignment)
+   - Survey vs Design gaps (self-perception error)
+   Write the specific pattern they don't see, not just "you have a blind spot."
+
+Each facet: 2-3 sentences. Behavioral language only. No jargon.
 
 ═══════════════════════════════
 YOUR TASK
 ═══════════════════════════════
 
 Generate V3CardContent JSON for ${userName} using THEIR data above. Find THEIR specific collision between survey self-perception and saju design. The collision should feel unavoidable and specific to this person's data combination.
+
+MANDATORY FIELDS — DO NOT SKIP:
+You MUST include ALL of these fields in your JSON output. If ANY is missing, the report is broken:
+- "shifts": array of EXACTLY 3 protocol objects [{name, text, when}, ...]
+- "closingLine": ONE powerful sentence that compresses all your advice into a single takeaway. This is the last thing the user reads. Make it unforgettable.
+- "blueprintFacets": array of EXACTLY 3 facet objects [{label, text}, ...]
+- "yearStrategy": DO/DON'T strategy for this year
+- chapter must include "strategy" field
+- All cost cards (costCareer, costRelationship, costMoney) must include "tip" field
 
 Output ONLY valid JSON matching the structure above. No markdown, no explanation.`;
 

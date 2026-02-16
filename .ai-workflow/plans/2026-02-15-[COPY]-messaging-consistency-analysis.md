@@ -292,23 +292,7 @@ $2.9
 
 LockCard 컴포넌트 내부에 인라인 번역 객체 사용 (ResultsV3는 i18n 시스템 미사용이므로):
 
-```typescript
-const texts: Record<string, {...}> = {
-  en: { left: "mirror", right: "blueprint",
-        line1: "You've seen the gap.",
-        line2: "Now see what it's costing you.",
-        count: "10 cards", cta: "Unlock", ... },
-  ko: { left: "거울", right: "설계도",
-        line1: "간극은 확인했습니다.",
-        line2: "이제 그 대가를 확인하세요.",
-        count: "10장", cta: "잠금 해제", ... },
-  id: { left: "cermin", right: "cetak biru",
-        line1: "Kamu sudah melihat kesenjangannya.",
-        line2: "Sekarang lihat apa yang kamu bayar.",
-        count: "10 kartu", cta: "Buka", ... },
-};
-const t = texts[language] || texts.en;
-```
+
 
 ---
 

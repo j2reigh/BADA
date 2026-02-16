@@ -293,7 +293,8 @@ export function translateToBehaviors(
   saju: SajuResult,
   hd: HumanDesignData,
   survey: SurveyScores,
-  birthDate: string
+  birthDate: string,
+  gender: string = "female"
 ): BehaviorPatterns {
 
   const age = calculateAge(birthDate);
@@ -392,35 +393,29 @@ export function translateToBehaviors(
   };
 
   // Age Context with Luck Cycle
-  const luckCycle = calculateLuckCycle(birthDate, '12:00', 'F'); // TODO: pass actual gender
+  const luckCycle = calculateLuckCycle(birthDate, '12:00', gender === 'female' ? 'F' : 'M');
 
   let ageContext = '';
-  let baseAgeContext = '';
 
-  // Base life stage context
-  if (age < 25) {
-    baseAgeContext = `At ${age}, you are in the experimentation phase. This is the time to try things, fail, and learn what does not work. Mistakes are not setbacks. They are data.`;
-  } else if (age < 30) {
-    baseAgeContext = `At ${age}, you are transitioning out of pure experimentation. The lessons from your early twenties are starting to crystallize.`;
-  } else if (age < 35) {
-    baseAgeContext = `At ${age}, you are entering a more observational phase. Less trial and error, more strategic watching.`;
-  } else if (age < 40) {
-    baseAgeContext = `At ${age}, you have enough experience to see patterns others miss. Your role is shifting from student to guide.`;
-  } else if (age < 50) {
-    baseAgeContext = `At ${age}, you are in your authority years. The experiments are done. You know what works for you.`;
-  } else {
-    baseAgeContext = `At ${age}, your accumulated wisdom is your biggest asset. You have lived through enough cycles to see the long game.`;
-  }
-
-  // Add luck cycle context if available
+  // Prioritize luck cycle data for age context when available
   if (luckCycle) {
-    const daYunContext = `You are currently in a ${luckCycle.currentDaYun.ganElement} chapter (ages ${luckCycle.currentDaYun.startAge}-${luckCycle.currentDaYun.endAge}), which emphasizes ${luckCycle.currentDaYun.ganMeaning}. The ten god relationship is ${luckCycle.currentDaYun.tenGodGan} (天干) / ${luckCycle.currentDaYun.tenGodZhi} (地支).`;
-    const seUnContext = `This year (${luckCycle.currentSeUn.year}) carries ${luckCycle.currentSeUn.ganElement} energy: ${luckCycle.currentSeUn.ganMeaning}.`;
     const phaseContext = `You are ${luckCycle.cyclePhase}`;
-
-    ageContext = `${baseAgeContext} ${daYunContext} ${seUnContext} ${phaseContext}`;
+    ageContext = `At ${age}, you are in a ${luckCycle.currentDaYun.ganElement} chapter (${luckCycle.currentDaYun.ganMeaning}). ${phaseContext} This chapter runs from age ${luckCycle.currentDaYun.startAge} to ${luckCycle.currentDaYun.endAge}. This year (${luckCycle.currentSeUn.year}) carries ${luckCycle.currentSeUn.ganElement} energy: ${luckCycle.currentSeUn.ganMeaning}.`;
   } else {
-    ageContext = baseAgeContext;
+    // Fallback: generic age brackets when no luck cycle data
+    if (age < 25) {
+      ageContext = `At ${age}, you are in the experimentation phase. This is the time to try things, fail, and learn what does not work. Mistakes are not setbacks. They are data.`;
+    } else if (age < 30) {
+      ageContext = `At ${age}, you are transitioning out of pure experimentation. The lessons from your early twenties are starting to crystallize.`;
+    } else if (age < 35) {
+      ageContext = `At ${age}, you are entering a more observational phase. Less trial and error, more strategic watching.`;
+    } else if (age < 40) {
+      ageContext = `At ${age}, you have enough experience to see patterns others miss. Your role is shifting from student to guide.`;
+    } else if (age < 50) {
+      ageContext = `At ${age}, you are in your authority years. The experiments are done. You know what works for you.`;
+    } else {
+      ageContext = `At ${age}, your accumulated wisdom is your biggest asset. You have lived through enough cycles to see the long game.`;
+    }
   }
 
   // Design vs Perception Gap

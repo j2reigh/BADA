@@ -13,6 +13,35 @@
 
 ## 🔄 최근 회고 (최신순)
 
+### 2026-02-16 (B) - 리포트 솔루션 강화 + Blueprint 다각화
+**Agent:** Claude
+
+#### 👍 Keep (계속 할 것)
+- **진단:솔루션 비율 역전:** 기존 9:1(진단:솔루션) → Cost tip 3개 + Protocol 3개 + Chapter/Year 전략 2개 + Blueprint facets 3개 = 솔루션 11개 추가. "$2.9인데 $10 밸류" 목표에 실질적 전진
+- **`responseMimeType: "application/json"` 발견:** 한국어 Gemini 출력에서 JSON 파싱 실패가 반복됐는데 control character 제거, JSON repair 등 삽질 후 이 한 줄이 근본 해결. 향후 Gemini JSON 생성은 항상 이 옵션 사용
+- **하위호환 즉시 고려:** `shifts || shift ? [shift] : []`, `blueprintFacets?` optional chaining 등 기존 DB 리포트가 깨지지 않도록 모든 신규 필드에 fallback 적용
+- **유저 피드백 즉시 반영 사이클:** Blueprint 스와이프 → 화살표 힌트 추가, DO/DON'T 가독성 → StrategyBlock 분리, closingLine 누락 → MANDATORY FIELDS 추가, 숫자 노출 → NUMERIC DATA BAN, 한국어 말투 → -다 체 금지 — 모두 즉시 수정
+
+#### 🤔 Problem (문제점)
+- **Gemini JSON 파싱 삽질 30분:** control char replace → structural newline 파괴 → 원복 → repair logic → 결국 `responseMimeType`이 정답. 공식 문서를 먼저 확인했으면 바로 해결
+- **maxOutputTokens 미리 계산 안 함:** 한국어 + 확장 필드(tip 3개, shifts 3개, strategy 2개, facets 3개)로 토큰이 8192를 넘을 것은 예측 가능했음. 사전에 16384로 올렸어야
+- **free user 응답에 blueprintFacets 누락:** routes.ts에서 free preview 필드 목록을 수동 관리하는 구조라 새 필드 추가 시 빠뜨림. allowlist 패턴의 고질적 문제
+
+#### 💡 Try (시도할 것)
+- **Gemini API 옵션 먼저 확인:** 파싱 문제 발생 시 코드 레벨 workaround 전에 API 설정(`responseMimeType`, `responseSchema` 등) 확인
+- **토큰 예산 사전 산정:** 필드 확장 시 기존 few-shot + 신규 필드 예상 토큰 수 계산 후 maxOutputTokens 조정
+- **free/paid 필드 분리 자동화:** 수동 allowlist 대신 `freeFields` 상수를 한 곳에서 관리하는 구조 고려
+
+#### 📦 산출물
+- `lib/gemini_client.ts`: V3CardContent 인터페이스 확장(tip, shifts, strategy, yearStrategy, blueprintFacets), Gemini `responseMimeType: "application/json"` + `maxOutputTokens: 16384`, COST CARD TIPS / PROTOCOL RULES / CHAPTER-YEAR STRATEGY / BLUEPRINT FACETS 프롬프트 가이드, NUMERIC DATA BAN, MANDATORY FIELDS, 한국어 -다 체 금지, HD 추가 데이터(gates, circuitries, channels_short, variables, determination, activations)
+- `client/src/pages/ResultsV3.tsx`: CostCard tip 블록, ActionCard shifts 3개 렌더링, StrategyBlock(DO/DON'T 분리), ChapterCard strategy, YearCard strategy, BlueprintCard facets 스와이프 캐러셀(화살표 힌트), "At work" → "In your org"
+- `server/routes.ts`: free preview에 blueprintFacets 추가
+
+#### 커밋 이력
+- (uncommitted) feat: 리포트 솔루션 강화 + Blueprint 다각화 (수정 A-D 전체)
+
+---
+
 ### 2026-02-16 - 랜딩 개선 + GA4 + 이메일 플로우 재설계 + 메시징 전면 정합
 **Agent:** Claude
 

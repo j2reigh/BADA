@@ -12,6 +12,32 @@ function firstSentences(text: string | undefined, count: number): string {
   return sentences.slice(0, count).join(" ").trim();
 }
 
+/** Split strategy text into DO / DON'T bullet points */
+function StrategyBlock({ text }: { text: string }) {
+  // Split on DON'T / 피해야 할 일 patterns
+  const doMatch = text.match(/^(?:DO:|수행해야 할 일:)\s*/i);
+  const dontSplit = text.split(/(?:DON'T:|피해야 할 일:)\s*/i);
+
+  if (dontSplit.length >= 2) {
+    const doText = dontSplit[0].replace(/^(?:DO:|수행해야 할 일:)\s*/i, '').trim();
+    const dontText = dontSplit[1].trim();
+    return (
+      <div className="space-y-3">
+        <div className="flex gap-2 items-start">
+          <span className="text-[#6BCB77] text-xs font-mono mt-0.5 shrink-0">DO</span>
+          <p className="text-sm text-white/80 font-light leading-relaxed text-left">{doText}</p>
+        </div>
+        <div className="flex gap-2 items-start">
+          <span className="text-[#FF6B6B] text-xs font-mono mt-0.5 shrink-0">DON'T</span>
+          <p className="text-sm text-white/80 font-light leading-relaxed text-left">{dontText}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return <p className="text-sm text-white/80 font-light leading-relaxed">{text}</p>;
+}
+
 // ─── V3 Card Content Type ───
 
 interface V3CardContent {
@@ -185,6 +211,22 @@ function BlueprintCard({
   accent?: string;
   facets?: Array<{ label: string; text: string }>;
 }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [activeSlide, setActiveSlide] = useState(0);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const idx = Math.round(el.scrollLeft / el.clientWidth);
+      setActiveSlide(idx);
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const hasFacets = facets && facets.length > 0;
+
   return (
     <Card>
       <div className="relative flex flex-col items-center text-center w-full max-w-sm">
@@ -195,18 +237,57 @@ function BlueprintCard({
         {accent && (
           <p className="mt-4 text-sm text-[#ABBBD5]/70 font-light leading-relaxed">{accent}</p>
         )}
-        {facets && facets.length > 0 && (
-          <div className="mt-6 w-full space-y-3">
-            {facets.map((f, i) => (
-              <div key={i} className="w-full px-4 py-4 rounded-xl bg-white/5 border border-white/10 text-left">
-                <span className="text-xs uppercase tracking-[0.2em] text-[#ABBBD5]/50 block mb-2"
-                  style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+
+        {hasFacets && (
+          <>
+            {/* Slide indicators with swipe hint */}
+            <div className="flex items-center gap-2 mt-6 mb-4" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+              <span className="text-white/20 text-xs">‹</span>
+              {facets.map((f, i) => (
+                <button
+                  key={i}
+                  onClick={() => {
+                    scrollRef.current?.scrollTo({ left: i * (scrollRef.current?.clientWidth || 0), behavior: "smooth" });
+                  }}
+                  className={`text-[10px] uppercase tracking-wider transition-all duration-300 px-2 py-1 rounded-full ${
+                    activeSlide === i
+                      ? "text-[#ABBBD5] font-medium bg-[#ABBBD5]/10"
+                      : "text-white/30"
+                  }`}
+                >
                   {f.label}
-                </span>
-                <p className="text-sm text-white/80 font-light leading-relaxed">{f.text}</p>
+                </button>
+              ))}
+              <span className="text-white/20 text-xs">›</span>
+            </div>
+
+            {/* Horizontal carousel */}
+            <div
+              ref={scrollRef}
+              className="w-full overflow-x-auto snap-x snap-mandatory scrollbar-hide"
+              style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
+            >
+              <div className={`flex`} style={{ width: `${facets.length * 100}%` }}>
+                {facets.map((f, i) => (
+                  <div key={i} className="snap-center flex-shrink-0 px-2" style={{ width: `${100 / facets.length}%` }}>
+                    <div className={`rounded-2xl px-5 py-6 border transition-all duration-300 ${
+                      activeSlide === i
+                        ? "bg-[#ABBBD5]/8 border-[#ABBBD5]/20"
+                        : "bg-white/3 border-white/8"
+                    }`}>
+                      <p className={`font-light leading-relaxed text-left ${
+                        activeSlide === i
+                          ? "text-sm text-white/90"
+                          : "text-sm text-white/60"
+                      }`}>
+                        {f.text}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          </>
         )}
       </div>
     </Card>
@@ -501,12 +582,12 @@ function ChapterCard({
         )}
 
         {chapter.strategy && (
-          <div className="mt-4 w-full px-4 py-4 rounded-xl bg-white/5 border border-white/10 text-left">
-            <span className="text-xs uppercase tracking-[0.2em] text-[#ABBBD5]/50 block mb-2"
+          <div className="mt-4 w-full px-4 py-4 rounded-xl bg-white/5 border border-white/10">
+            <span className="text-xs uppercase tracking-[0.2em] text-[#ABBBD5]/50 block mb-3"
               style={{ fontFamily: "'JetBrains Mono', monospace" }}>
               your move
             </span>
-            <p className="text-sm text-white/80 font-light leading-relaxed">{chapter.strategy}</p>
+            <StrategyBlock text={chapter.strategy} />
           </div>
         )}
 
@@ -555,12 +636,12 @@ function YearCard({
           </div>
         )}
         {strategy && (
-          <div className="mt-4 w-full px-4 py-4 rounded-xl bg-[#ABBBD5]/8 border border-[#ABBBD5]/15 text-left">
-            <span className="text-xs uppercase tracking-[0.2em] text-[#ABBBD5]/50 block mb-2"
+          <div className="mt-4 w-full px-4 py-4 rounded-xl bg-[#ABBBD5]/8 border border-[#ABBBD5]/15">
+            <span className="text-xs uppercase tracking-[0.2em] text-[#ABBBD5]/50 block mb-3"
               style={{ fontFamily: "'JetBrains Mono', monospace" }}>
               your move
             </span>
-            <p className="text-sm text-[#ABBBD5]/80 font-light leading-relaxed">{strategy}</p>
+            <StrategyBlock text={strategy} />
           </div>
         )}
 
@@ -943,7 +1024,7 @@ export default function ResultsV3() {
     {
       key: "cost-career",
       render: () => v3.costCareer ? (
-        <CostCard label="At work" question={v3.costCareerQuestion || ""} emoji="💼" title={v3.costCareer.title} description={v3.costCareer.text} tip={v3.costCareer.tip} />
+        <CostCard label="In your org" question={v3.costCareerQuestion || ""} emoji="💼" title={v3.costCareer.title} description={v3.costCareer.text} tip={v3.costCareer.tip} />
       ) : null,
     },
     {
