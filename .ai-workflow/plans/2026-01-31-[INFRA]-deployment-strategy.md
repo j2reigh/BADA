@@ -127,26 +127,49 @@ main ──────→ Production 배포 (https://bada.xyz)
 
 **이게 사실상 스테이징 역할을 한다.** 별도 스테이징 환경 안 만들어도 됨.
 
+### 브랜치 vs Main 직통 기준 (Preview URL 찍먹 전략)
+
+> Main 보호 = 내 멘탈 보호. 유저 없어도 배포 터지면 몰입 깨진다.
+
+| 작업 종류 | 방식 | 이유 |
+|-----------|------|------|
+| **Config 수정** (vercel.json, package.json, 빌드 스크립트) | **무조건 브랜치** | 배포 터질 확률 99%. Preview URL에서 먼저 확인 |
+| **큰 기능 추가** | **브랜치 권장** | 코드 꼬였을 때 브랜치 버리는 게 reset보다 빠름 |
+| **UI/텍스트/CSS 수정** | **Main 직통** | 에러 날 확률 적음. 바로 커밋 & 푸시 |
+
 ### 작업 흐름
 
+**브랜치 작업 (Config/큰 기능):**
 ```bash
-# 1. 기능 브랜치 생성
-git checkout -b feature/payment-flow
+# 1. 브랜치 생성
+git switch -c feat/bundling-fix
 
 # 2. 작업 & 커밋 & 푸시
-git push origin feature/payment-flow
-# → Vercel이 자동으로 Preview 배포 (테스트용 URL 생성)
+git push origin feat/bundling-fix
+# → Vercel이 Preview URL 자동 생성. 들어가서 확인.
 
-# 3. Preview URL에서 확인
-
-# 4. main에 머지 (GitHub PR 또는 로컬 머지)
-git checkout main && git merge feature/payment-flow
+# 3. 잘 되면 바로 합치기
+git switch main
+git merge feat/bundling-fix
 git push origin main
-# → Vercel이 자동으로 Production 재배포
+# → Production 자동 재배포
 
-# 5. 브랜치 정리
-git branch -d feature/payment-flow
+# 4. 브랜치 정리
+git branch -d feat/bundling-fix
 ```
+
+**Main 직통 (UI/텍스트):**
+```bash
+git add <files> && git commit -m "fix: ..."
+git push origin main
+# → Production 바로 반영
+```
+
+### Claude 작업 규칙
+
+- 커밋까지만 한다. **push는 유저가 직접** 하거나 명시적으로 요청했을 때만.
+- Config/빌드 수정이 포함되면 **먼저 브랜치 생성** 후 진행.
+- UI/텍스트 수정은 main에 바로 커밋 OK.
 
 ---
 

@@ -10,7 +10,7 @@ import { analyzeOperatingState } from "../lib/operating_logic"; // v2.3 Integrat
 import { generateV3Cards, type SurveyScores } from "../lib/gemini_client";
 import { translateToBehaviors, calculateLuckCycle, type HumanDesignData } from "../lib/behavior_translator";
 import { fetchHumanDesign } from "../lib/hd_client";
-import { sendVerificationEmail } from "../lib/email";
+import { sendReportLinkEmail } from "../lib/email";
 import { db } from "./db";
 import { type InsertBirthPattern, type InsertSajuResult } from "@shared/schema";
 
@@ -210,7 +210,8 @@ export async function registerRoutes(
           sajuData,
           hdData,
           surveyScoresForReport,
-          input.birthDate
+          input.birthDate,
+          input.gender
         );
         console.log("[Assessment] Behavior patterns translated");
 
@@ -267,9 +268,16 @@ export async function registerRoutes(
       });
       console.log("[Assessment] Saju result saved:", sajuResult.id);
 
-      // Email verification disabled — users go directly to results.
-      // TODO: Redesign email flow (feedback modal → email collection → notifications)
-      const emailSent = false;
+      // Send report link email (non-blocking — don't wait for result)
+      sendReportLinkEmail(lead.email, sajuResult.id, input.name).then(
+        (result) => {
+          if (result.success) {
+            console.log(`[Assessment] Report link email sent to ${lead.email}`);
+          } else {
+            console.error(`[Assessment] Report link email failed: ${result.error}`);
+          }
+        }
+      );
 
       console.log("[Assessment] Submission complete!");
       res.status(201).json({
@@ -277,8 +285,6 @@ export async function registerRoutes(
         reportId: sajuResult.id,
         leadId: lead.id,
         email: lead.email,
-        isVerified: lead.isVerified,
-        emailSent,
       });
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -333,90 +339,8 @@ export async function registerRoutes(
     }
   });
 
-  // Resend verification email
-  app.post("/api/verification/resend", async (req, res) => {
-    try {
-      const { leadId } = req.body;
-
-      if (!leadId) {
-        return res.status(400).json({ message: "Lead ID required" });
-      }
-
-      const lead = await storage.getLeadById(leadId);
-      if (!lead) {
-        return res.status(404).json({ message: "Lead not found" });
-      }
-
-      if (lead.isVerified) {
-        return res.status(400).json({ message: "Already verified" });
-      }
-
-      // Regenerate token and send email
-      const updatedLead = await storage.regenerateVerificationToken(leadId);
-      if (!updatedLead) {
-        return res.status(500).json({ message: "Failed to regenerate token" });
-      }
-
-      const emailResult = await sendVerificationEmail(
-        updatedLead.email,
-        updatedLead.verificationToken,
-        updatedLead.id
-      );
-
-      res.json({ success: emailResult.success, email: updatedLead.email });
-    } catch (err) {
-      console.error("Resend verification error:", err);
-      res.status(500).json({ message: "Failed to resend verification" });
-    }
-  });
-
-  // Update email (for typo correction)
-  app.post("/api/verification/update-email", async (req, res) => {
-    try {
-      const { leadId, newEmail } = req.body;
-
-      if (!leadId || !newEmail) {
-        return res.status(400).json({ message: "Lead ID and new email required" });
-      }
-
-      const lead = await storage.getLeadById(leadId);
-      if (!lead) {
-        return res.status(404).json({ message: "Lead not found" });
-      }
-
-      if (lead.isVerified) {
-        return res.status(400).json({ message: "Cannot change verified email" });
-      }
-
-      // Check if new email already exists
-      const existingLead = await storage.getLeadByEmail(newEmail);
-      if (existingLead && existingLead.id !== leadId) {
-        return res.status(400).json({ message: "Email already in use" });
-      }
-
-      // Update email and regenerate token
-      const updatedLead = await storage.updateLeadEmail(leadId, newEmail);
-      if (!updatedLead) {
-        return res.status(500).json({ message: "Failed to update email" });
-      }
-
-      // Send verification to new email
-      const emailResult = await sendVerificationEmail(
-        updatedLead.email,
-        updatedLead.verificationToken,
-        updatedLead.id
-      );
-
-      res.json({
-        success: emailResult.success,
-        email: updatedLead.email,
-        message: "Email updated. Check your inbox."
-      });
-    } catch (err) {
-      console.error("Update email error:", err);
-      res.status(500).json({ message: "Failed to update email" });
-    }
-  });
+  // Legacy verification endpoints removed — email verification no longer used.
+  // Report link email is sent non-blocking on submit instead.
 
   // Get wait page data
   app.get("/api/wait/:reportId", async (req, res) => {
@@ -579,7 +503,8 @@ export async function registerRoutes(
         sajuData,
         hdData,
         surveyScores,
-        birthDate
+        birthDate,
+        userInput.gender || "female"
       );
 
       // Calculate luck cycle (대운/세운) with 십신
