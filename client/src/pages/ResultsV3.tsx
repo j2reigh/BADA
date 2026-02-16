@@ -446,13 +446,18 @@ function EnergyCard({
         <p className="text-lg text-[#879DC6] font-light mb-8 leading-relaxed text-center">
           {question}
         </p>
-        <div className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10">
-          <span className="text-xs uppercase tracking-[0.2em] text-[#879DC6]/40 block mb-2" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+        <div className="w-full px-5 py-4 rounded-xl bg-white/5 border border-white/10">
+          <span className="text-xs uppercase tracking-[0.2em] text-[#879DC6]/40 block mb-3" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
             Neuroscience
           </span>
-          <p className="text-sm text-white/70 font-light leading-relaxed">
-            {insight}
-          </p>
+          <div className="space-y-3 text-left">
+            {insight.split(/(?<=[.!?。])\s+/).filter(Boolean).map((sentence, i) => (
+              <div key={i} className="flex gap-3 items-start">
+                <span className="text-[#879DC6]/30 text-xs mt-1 shrink-0 font-mono">{String(i + 1).padStart(2, '0')}</span>
+                <p className="text-sm text-white/70 font-light leading-relaxed">{sentence}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </Card>
