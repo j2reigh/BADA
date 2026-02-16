@@ -60,8 +60,7 @@ async function buildAll() {
     logLevel: "info",
   });
 
-  // Build Vercel serverless handler (pre-bundled)
-  // This solves ERR_MODULE_NOT_FOUND issues with ESM imports at runtime
+  // Build Vercel serverless handler (fully self-contained bundle)
   console.log("building vercel handler...");
   await esbuild({
     entryPoints: ["server/vercel_entry.ts"],
@@ -74,38 +73,10 @@ async function buildAll() {
       "process.env.VERCEL": '"1"',
     },
     banner: {
-      js: [
-        'import { createRequire } from "module";',
-        'const require = createRequire(import.meta.url);',
-      ].join("\\n"),
+      js: 'import { createRequire } from "module";\nconst require = createRequire(import.meta.url);',
     },
     minify: true,
-    external: [], // bundle everything for Vercel (except native modules if any)
-    logLevel: "info",
-  });
-
-
-  // Build Vercel serverless handler
-  console.log("building vercel handler...");
-  await esbuild({
-    entryPoints: ["server/vercel_entry.ts"],
-    platform: "node",
-    bundle: true,
-    format: "esm",
-    outfile: "api/index.js",
-    sourcemap: true,
-    define: {
-      "process.env.NODE_ENV": '"production"',
-      "process.env.VERCEL": '"1"',
-    },
-    banner: {
-      js: [
-        'import { createRequire } from "module";',
-        'const require = createRequire(import.meta.url);',
-      ].join("\\n"),
-    },
-    minify: false,
-    external: allDeps,
+    external: [],
     logLevel: "info",
   });
 
