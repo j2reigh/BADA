@@ -28,11 +28,11 @@ interface V3CardContent {
   evidenceQuestion?: string;
   evidence?: string[];
   costCareerQuestion?: string;
-  costCareer?: { title: string; text: string };
+  costCareer?: { title: string; text: string; tip?: string };
   costRelationshipQuestion?: string;
-  costRelationship?: { title: string; text: string };
+  costRelationship?: { title: string; text: string; tip?: string };
   costMoneyQuestion?: string;
-  costMoney?: { title: string; text: string };
+  costMoney?: { title: string; text: string; tip?: string };
   brainScan?: {
     question: string;
     insight: string;
@@ -52,7 +52,8 @@ interface V3CardContent {
   yearAccent?: string;
   actionQuestion?: string;
   actionNeuro?: string;
-  shift?: { name: string; text: string; when: string };
+  shift?: { name: string; text: string; when: string };  // legacy
+  shifts?: Array<{ name: string; text: string; when: string }>;
   closingLine?: string;
 }
 
@@ -212,12 +213,14 @@ function CostCard({
   emoji,
   title,
   description,
+  tip,
 }: {
   label: string;
   question?: string;
   emoji: string;
   title: string;
   description: string;
+  tip?: string;
 }) {
   return (
     <Card>
@@ -236,7 +239,15 @@ function CostCard({
         <p className="text-base font-light text-white/70 leading-relaxed">
           {firstSentences(description, 2)}
         </p>
-
+        {tip && (
+          <div className="mt-6 w-full px-4 py-4 rounded-xl bg-white/5 border border-white/10 text-left">
+            <span className="text-xs uppercase tracking-[0.2em] text-[#ABBBD5]/50 block mb-2"
+              style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+              try this
+            </span>
+            <p className="text-sm text-white/80 font-light leading-relaxed">{tip}</p>
+          </div>
+        )}
       </div>
     </Card>
   );
@@ -591,9 +602,9 @@ function LockCard({
       placeholder: "Enter code",
       apply: "Apply",
       faq: [
-        { key: "q2", q: "Is this fortune telling?", a: "No.\n\nNothing is predicted. No \"good\" or \"bad\" outcomes.\nWe don't tell you what will happen.\n\nWe show how your energy tends to move — so you can work with it, not against it." },
-        { key: "q8", q: "What do I actually get?", a: "3 free cards (mirror + blueprint), then 10 more with payment — brain scan, behavioral proof, 3 hidden costs, your 10-year chapter, and a weekly protocol." },
-        { key: "q10", q: "Is my data safe?", a: "Your birth data is used to generate your report. That's it.\n\nWe don't sell data. We don't share it with third parties.\nEmail is used only for report delivery." },
+        { key: "q2", q: "Is this fortune telling?", a: "No. Nothing is predicted. We show patterns in how you operate — not what will happen to you." },
+        { key: "q4", q: "What do I get for $2.9?", a: "10 more cards: why your patterns exist, what they cost you at work, in relationships, and with money, your 10-year chapter, and one thing to change this week." },
+        { key: "q6", q: "Is my data safe?", a: "Your birth data is used only to generate your report. We don't sell or share it." },
         { key: "contact", q: "Contact", a: "Questions, feedback, or just want to say hi?" },
       ],
     },
@@ -606,9 +617,9 @@ function LockCard({
       placeholder: "코드 입력",
       apply: "적용",
       faq: [
-        { key: "q2", q: "점술인가요?", a: "아닙니다.\n\n아무것도 예측하지 않습니다. \"좋은\" 결과도 \"나쁜\" 결과도 없습니다.\n무슨 일이 일어날지 말해주지 않습니다.\n\n당신의 에너지가 어떻게 움직이는 경향이 있는지 보여줍니다 — 그래서 그것에 맞서지 않고 함께 할 수 있도록." },
-        { key: "q8", q: "실제로 무엇을 받나요?", a: "무료 3장 (거울 + 설계도), 결제 시 10장 추가 — 브레인 스캔, 행동 증거, 3가지 비용 분석, 10년 챕터, 주간 프로토콜." },
-        { key: "q10", q: "데이터는 안전한가요?", a: "출생 데이터는 리포트 생성에만 사용됩니다. 그뿐입니다.\n\n데이터를 판매하지 않습니다. 제3자와 공유하지 않습니다.\n이메일은 리포트 전달에만 사용됩니다." },
+        { key: "q2", q: "점술인가요?", a: "아닙니다. 아무것도 예측하지 않습니다. 무슨 일이 일어날지가 아니라, 당신이 어떻게 작동하는지의 패턴을 보여줍니다." },
+        { key: "q4", q: "$2.9으로 뭘 더 보나요?", a: "10장 추가: 패턴이 왜 존재하는지, 직장·관계·돈에서 치르는 대가, 10년 챕터, 이번 주 바꿀 수 있는 한 가지." },
+        { key: "q6", q: "데이터는 안전한가요?", a: "생년월일은 리포트 생성에만 사용됩니다. 판매하거나 공유하지 않습니다." },
         { key: "contact", q: "연락처", a: "질문, 피드백, 또는 그냥 인사하고 싶으신가요?" },
       ],
     },
@@ -621,9 +632,9 @@ function LockCard({
       placeholder: "Masukkan kode",
       apply: "Terapkan",
       faq: [
-        { key: "q2", q: "Apakah ini ramalan?", a: "Tidak.\n\nTidak ada yang diprediksi. Tidak ada hasil \"baik\" atau \"buruk\".\nKami tidak memberitahu apa yang akan terjadi.\n\nKami menunjukkan bagaimana energimu cenderung bergerak — agar kamu bisa bekerja bersamanya, bukan melawannya." },
-        { key: "q8", q: "Apa yang sebenarnya saya dapat?", a: "3 kartu gratis (cermin + cetak biru), lalu 10 kartu tambahan — brain scan, bukti perilaku, 3 biaya tersembunyi, chapter 10 tahun, dan protokol mingguan." },
-        { key: "q10", q: "Apakah data saya aman?", a: "Data kelahiranmu digunakan untuk membuat laporanmu. Itu saja.\n\nKami tidak menjual data. Kami tidak membagikannya dengan pihak ketiga.\nEmail hanya digunakan untuk pengiriman laporan." },
+        { key: "q2", q: "Apakah ini ramalan?", a: "Tidak. Tidak ada yang diprediksi. Kami menunjukkan pola cara kerjamu — bukan apa yang akan terjadi." },
+        { key: "q4", q: "Apa yang saya dapat dengan $2.9?", a: "10 kartu lagi: kenapa polamu ada, biayanya di kerja, hubungan, dan uang, chapter 10 tahunmu, dan satu hal yang bisa diubah minggu ini." },
+        { key: "q6", q: "Apakah data saya aman?", a: "Data kelahiranmu hanya digunakan untuk membuat laporanmu. Kami tidak menjual atau membagikannya." },
         { key: "contact", q: "Kontak", a: "Pertanyaan, masukan, atau sekadar ingin menyapa?" },
       ],
     },
@@ -864,19 +875,19 @@ export default function ResultsV3() {
     {
       key: "cost-career",
       render: () => v3.costCareer ? (
-        <CostCard label="At work" question={v3.costCareerQuestion || ""} emoji="💼" title={v3.costCareer.title} description={v3.costCareer.text} />
+        <CostCard label="At work" question={v3.costCareerQuestion || ""} emoji="💼" title={v3.costCareer.title} description={v3.costCareer.text} tip={v3.costCareer.tip} />
       ) : null,
     },
     {
       key: "cost-relationship",
       render: () => v3.costRelationship ? (
-        <CostCard label="In relationships" question={v3.costRelationshipQuestion || ""} emoji="💬" title={v3.costRelationship.title} description={v3.costRelationship.text} />
+        <CostCard label="In relationships" question={v3.costRelationshipQuestion || ""} emoji="💬" title={v3.costRelationship.title} description={v3.costRelationship.text} tip={v3.costRelationship.tip} />
       ) : null,
     },
     {
       key: "cost-money",
       render: () => v3.costMoney ? (
-        <CostCard label="With money" question={v3.costMoneyQuestion || ""} emoji="💰" title={v3.costMoney.title} description={v3.costMoney.text} />
+        <CostCard label="With money" question={v3.costMoneyQuestion || ""} emoji="💰" title={v3.costMoney.title} description={v3.costMoney.text} tip={v3.costMoney.tip} />
       ) : null,
     },
     {
