@@ -81,8 +81,19 @@
   }
 
   body {
-    @apply bg-background text-foreground antialiased selection:bg-[#879DC6]/30 selection:text-[#182339];
+    @apply bg-background text-foreground antialiased;
     font-family: var(--font-sans);
+  }
+
+  ::selection {
+    background: rgba(135, 157, 198, 0.3);
+    color: #182339;
+  }
+
+  input::selection,
+  textarea::selection {
+    background: rgba(135, 157, 198, 0.4);
+    color: #182339;
   }
 
   h1,
