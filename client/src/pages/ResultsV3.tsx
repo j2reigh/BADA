@@ -200,16 +200,36 @@ function InsightCard({
   );
 }
 
+/** Blueprint page 1: identity summary (question + text + accent) */
 function BlueprintCard({
   question,
   text,
   accent,
-  facets,
 }: {
   question: string;
   text: string;
   accent?: string;
-  facets?: Array<{ label: string; text: string }>;
+}) {
+  return (
+    <Card>
+      <div className="relative flex flex-col items-center text-center w-full max-w-sm">
+        <CardLabel>your blueprint</CardLabel>
+        <p className="text-xl text-[#879DC6] font-light mb-6 leading-relaxed">{question}</p>
+        <div className="w-8 h-px bg-white/10 mb-6" />
+        <p className="text-lg font-light text-white/90 leading-relaxed">{text}</p>
+        {accent && (
+          <p className="mt-6 text-base text-[#ABBBD5]/70 font-light leading-relaxed">{accent}</p>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+/** Blueprint page 2: facets carousel (Core Drive / Hidden Talent / Blind Spot) */
+function BlueprintFacetsCard({
+  facets,
+}: {
+  facets: Array<{ label: string; text: string }>;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeSlide, setActiveSlide] = useState(0);
@@ -225,70 +245,58 @@ function BlueprintCard({
     return () => el.removeEventListener("scroll", onScroll);
   }, []);
 
-  const hasFacets = facets && facets.length > 0;
-
   return (
     <Card>
       <div className="relative flex flex-col items-center text-center w-full max-w-sm">
         <CardLabel>your blueprint</CardLabel>
-        <p className="text-xl text-[#879DC6] font-light mb-6 leading-relaxed">{question}</p>
-        <div className="w-8 h-px bg-white/10 mb-6" />
-        <p className="text-base font-light text-white/90 leading-relaxed">{text}</p>
-        {accent && (
-          <p className="mt-4 text-sm text-[#ABBBD5]/70 font-light leading-relaxed">{accent}</p>
-        )}
 
-        {hasFacets && (
-          <>
-            {/* Slide indicators with swipe hint */}
-            <div className="flex items-center gap-2 mt-6 mb-4" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-              <span className="text-white/20 text-xs">‹</span>
-              {facets.map((f, i) => (
-                <button
-                  key={i}
-                  onClick={() => {
-                    scrollRef.current?.scrollTo({ left: i * (scrollRef.current?.clientWidth || 0), behavior: "smooth" });
-                  }}
-                  className={`text-[10px] uppercase tracking-wider transition-all duration-300 px-2 py-1 rounded-full ${
-                    activeSlide === i
-                      ? "text-[#ABBBD5] font-medium bg-[#ABBBD5]/10"
-                      : "text-white/30"
-                  }`}
-                >
-                  {f.label}
-                </button>
-              ))}
-              <span className="text-white/20 text-xs">›</span>
-            </div>
-
-            {/* Horizontal carousel */}
-            <div
-              ref={scrollRef}
-              className="w-full overflow-x-auto snap-x snap-mandatory scrollbar-hide"
-              style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
+        {/* Slide indicators with swipe hint */}
+        <div className="flex items-center gap-2 mb-6" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+          <span className="text-white/20 text-xs">‹</span>
+          {facets.map((f, i) => (
+            <button
+              key={i}
+              onClick={() => {
+                scrollRef.current?.scrollTo({ left: i * (scrollRef.current?.clientWidth || 0), behavior: "smooth" });
+              }}
+              className={`text-[10px] uppercase tracking-wider transition-all duration-300 px-2 py-1 rounded-full ${
+                activeSlide === i
+                  ? "text-[#ABBBD5] font-medium bg-[#ABBBD5]/10"
+                  : "text-white/30"
+              }`}
             >
-              <div className={`flex`} style={{ width: `${facets.length * 100}%` }}>
-                {facets.map((f, i) => (
-                  <div key={i} className="snap-center flex-shrink-0 px-2" style={{ width: `${100 / facets.length}%` }}>
-                    <div className={`rounded-2xl px-5 py-6 border transition-all duration-300 ${
-                      activeSlide === i
-                        ? "bg-[#ABBBD5]/8 border-[#ABBBD5]/20"
-                        : "bg-white/3 border-white/8"
-                    }`}>
-                      <p className={`font-light leading-relaxed text-left ${
-                        activeSlide === i
-                          ? "text-sm text-white/90"
-                          : "text-sm text-white/60"
-                      }`}>
-                        {f.text}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+              {f.label}
+            </button>
+          ))}
+          <span className="text-white/20 text-xs">›</span>
+        </div>
+
+        {/* Horizontal carousel */}
+        <div
+          ref={scrollRef}
+          className="w-full overflow-x-auto snap-x snap-mandatory scrollbar-hide"
+          style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
+        >
+          <div className="flex w-[300%]">
+            {facets.map((f, i) => (
+              <div key={i} className="w-1/3 snap-center flex-shrink-0 px-2">
+                <div className={`rounded-2xl px-5 py-6 border transition-all duration-300 ${
+                  activeSlide === i
+                    ? "bg-[#ABBBD5]/8 border-[#ABBBD5]/20"
+                    : "bg-white/3 border-white/8"
+                }`}>
+                  <p className={`text-base font-light leading-relaxed text-left ${
+                    activeSlide === i
+                      ? "text-white/90"
+                      : "text-white/60"
+                  }`}>
+                    {f.text}
+                  </p>
+                </div>
               </div>
-            </div>
-          </>
-        )}
+            ))}
+          </div>
+        </div>
       </div>
     </Card>
   );
@@ -996,9 +1004,14 @@ export default function ResultsV3() {
           question={v3.blueprintQuestion}
           text={v3.blueprintText}
           accent={v3.blueprintAccent}
-          facets={v3.blueprintFacets}
         />
       ),
+    },
+    {
+      key: "blueprint-facets",
+      render: () => v3.blueprintFacets && v3.blueprintFacets.length > 0 ? (
+        <BlueprintFacetsCard facets={v3.blueprintFacets} />
+      ) : null,
     },
   ];
 

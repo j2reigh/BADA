@@ -1756,7 +1756,6 @@ In addition to blueprintText (core identity summary), generate blueprintFacets â
    - HD Open Centers (where they absorb/amplify others)
    - Saju missing elements (structural gap)
    - HD Not-Self Theme (emotional signal of misalignment)
-   - Survey vs Design gaps (self-perception error)
    Write the specific pattern they don't see, not just "you have a blind spot."
 
 Each facet: 2-3 sentences. Behavioral language only. No jargon.
