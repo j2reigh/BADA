@@ -685,7 +685,19 @@ OUTPUT (JSON Only):
 }
 
 function parseJSON(text: string): any {
+  // Strip markdown fences
   let cleaned = text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
+  // Strip BOM and zero-width characters
+  cleaned = cleaned.replace(/^\uFEFF/, '').replace(/[\u200B-\u200D\uFEFF\u00A0]/g, '');
+  // Strip control characters except normal whitespace (tab, newline, carriage return)
+  cleaned = cleaned.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+
+  // Extract JSON object if surrounded by non-JSON text
+  const jsonStart = cleaned.indexOf('{');
+  const jsonEnd = cleaned.lastIndexOf('}');
+  if (jsonStart > 0 && jsonEnd > jsonStart) {
+    cleaned = cleaned.slice(jsonStart, jsonEnd + 1);
+  }
 
   try {
     return JSON.parse(cleaned);
@@ -693,6 +705,7 @@ function parseJSON(text: string): any {
     console.error("JSON Parse Error (first 300):", cleaned.slice(0, 300));
     console.error("JSON tail (last 200):", cleaned.slice(-200));
     console.error("JSON total length:", cleaned.length);
+    console.error("JSON Parse Error detail:", e instanceof Error ? e.message : String(e));
 
     // Attempt to repair truncated JSON by closing open braces/brackets
     try {
@@ -717,7 +730,8 @@ function parseJSON(text: string): any {
 
 /**
  * Wrapper for Gemini generateContent with retry + JSON parsing
- * Retries on: rate limits, timeouts, server errors, JSON parse failures
+ * Retries on: rate limits, timeouts, server errors
+ * JSON_PARSE_ERROR is NOT retried — same prompt produces same format, retrying wastes time
  */
 async function generateWithRetry(
   model: ReturnType<NonNullable<typeof client>["getGenerativeModel"]>,
@@ -735,7 +749,7 @@ async function generateWithRetry(
     },
     {
       maxRetries,
-      retryableErrors: ['RATE_LIMIT', 'RESOURCE_EXHAUSTED', 'UNAVAILABLE', 'DEADLINE_EXCEEDED', 'INTERNAL', 'timeout', '429', '500', '503', 'JSON_PARSE_ERROR']
+      retryableErrors: ['RATE_LIMIT', 'RESOURCE_EXHAUSTED', 'UNAVAILABLE', 'DEADLINE_EXCEEDED', 'INTERNAL', 'timeout', '429', '500', '503']
     }
   );
 }
