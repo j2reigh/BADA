@@ -267,25 +267,9 @@ export async function registerRoutes(
       });
       console.log("[Assessment] Saju result saved:", sajuResult.id);
 
-      // 7. Send verification email (only if not already verified)
-      let emailSent = false;
-      if (!lead.isVerified) {
-        console.log("[Assessment] Sending verification email...");
-        const emailResult = await sendVerificationEmail(
-          lead.email,
-          lead.verificationToken,
-          lead.id
-        );
-
-        if (!emailResult.success) {
-          console.error("[Assessment] Failed to send verification email:", emailResult.error);
-        } else {
-          console.log("[Assessment] Verification email sent successfully");
-          emailSent = emailResult.success;
-        }
-      } else {
-        console.log("[Assessment] Lead already verified, skipping verification email");
-      }
+      // Email verification disabled — users go directly to results.
+      // TODO: Redesign email flow (feedback modal → email collection → notifications)
+      const emailSent = false;
 
       console.log("[Assessment] Submission complete!");
       res.status(201).json({

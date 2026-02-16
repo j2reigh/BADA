@@ -234,11 +234,7 @@ export default function Survey() {
         const result = await response.json();
         console.log("Assessment submitted:", result);
         // Store navigation target, let GeneratingScreen finish animation first
-        if (result.isVerified) {
-          pendingNavRef.current = `/results/${result.reportId}`;
-        } else {
-          pendingNavRef.current = `/wait/${result.reportId}`;
-        }
+        pendingNavRef.current = `/results/${result.reportId}`;
         setIsApiComplete(true);
       } else {
         const error = await response.json();
