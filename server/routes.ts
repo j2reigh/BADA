@@ -7,7 +7,7 @@ import { z } from "zod";
 import { getCorrectedKST } from "../lib/time_utils";
 import { calculateSaju } from "../lib/saju_calculator";
 import { analyzeOperatingState } from "../lib/operating_logic"; // v2.3 Integration
-import { generateV3Cards, type SurveyScores } from "../lib/gemini_client";
+import { generateV3Cards, repairV3Cards, type SurveyScores } from "../lib/gemini_client";
 import { translateToBehaviors, calculateLuckCycle, type HumanDesignData } from "../lib/behavior_translator";
 import { fetchHumanDesign } from "../lib/hd_client";
 import { sendReportLinkEmail } from "../lib/email";
@@ -528,6 +528,46 @@ export async function registerRoutes(
     } catch (err) {
       console.error("V3 Cards generation error:", err);
       res.status(500).json({ message: "Failed to generate V3 cards", error: String(err) });
+    }
+  });
+
+  // Repair incomplete V3 report — regenerate only missing fields
+  app.post("/api/results/:reportId/repair", async (req, res) => {
+    try {
+      const { reportId } = req.params;
+
+      const sajuResult = await storage.getSajuResultById(reportId);
+      if (!sajuResult) {
+        return res.status(404).json({ message: "Report not found" });
+      }
+
+      const reportData = sajuResult.reportData as any;
+      if (!reportData?.v3Cards) {
+        return res.status(400).json({ message: "No v3Cards data to repair" });
+      }
+
+      const existing = reportData.v3Cards;
+      const requiredFields = ['hookQuestion', 'mirrorQuestion', 'mirrorText', 'blueprintQuestion', 'blueprintText', 'closingLine', 'shifts', 'actionQuestion', 'actionNeuro'];
+      const missing = requiredFields.filter(f => !existing[f]);
+
+      if (missing.length === 0) {
+        return res.json({ message: "No missing fields", repaired: [] });
+      }
+
+      console.log(`[Repair] Report ${reportId} missing: ${missing.join(', ')}`);
+
+      const userInput = sajuResult.userInput as any;
+      const sajuData = sajuResult.sajuData as any;
+      const language = (sajuResult as any).language || "en";
+
+      const patch = await repairV3Cards(existing, missing, userInput, sajuData, language);
+      await storage.patchReportData(reportId, patch);
+
+      console.log(`[Repair] Report ${reportId} patched: ${Object.keys(patch).join(', ')}`);
+      res.json({ message: "Report repaired", repaired: Object.keys(patch) });
+    } catch (err) {
+      console.error("Repair error:", err);
+      res.status(500).json({ message: "Failed to repair report", error: String(err) });
     }
   });
 

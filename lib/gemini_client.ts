@@ -1794,6 +1794,70 @@ Output ONLY valid JSON matching the structure above. No markdown, no explanation
   console.log(`[Gemini] Generating V3 Cards for ${userName}...`);
 
   const v3Content = await generateWithRetry(model, systemPrompt, "Generate V3 Card Content JSON.") as V3CardContent;
+
+  // Validate required fields — prevent saving truncated JSON from repair
+  const requiredFields = ['hookQuestion', 'mirrorQuestion', 'mirrorText', 'blueprintQuestion', 'blueprintText', 'closingLine', 'shifts'] as const;
+  const missing = requiredFields.filter(f => !v3Content[f]);
+  if (missing.length > 0) {
+    console.error(`[Gemini] V3 Cards missing required fields: ${missing.join(', ')}`);
+    throw new Error(`V3_INCOMPLETE: Missing required fields: ${missing.join(', ')}`);
+  }
+
   console.log("[Gemini] V3 Cards Generated");
   return v3Content;
+}
+
+/**
+ * Repair incomplete V3 report — regenerate only missing fields
+ * Uses existing report context so repaired fields stay consistent
+ */
+export async function repairV3Cards(
+  existing: Partial<V3CardContent>,
+  missingFields: string[],
+  userInput: any,
+  sajuData: any,
+  language: string
+): Promise<Partial<V3CardContent>> {
+  if (!client) throw new Error("Gemini API key not configured");
+
+  const model = client.getGenerativeModel({
+    model: "gemini-2.5-flash-preview-05-20",
+    generationConfig: { temperature: 0.8 },
+  });
+
+  const existingSummary = JSON.stringify(existing, null, 2).slice(0, 3000);
+
+  const systemPrompt = `You are repairing an incomplete personality report. The report was generated but some fields were lost due to truncation.
+
+EXISTING REPORT DATA (do NOT change these — match their tone, language, and style):
+${existingSummary}
+
+USER DATA:
+- Name: ${userInput.name || "Friend"}
+- Language: ${language}
+- Birth date: ${userInput.birthDate}
+
+MISSING FIELDS TO GENERATE:
+${missingFields.map(f => `- "${f}"`).join('\n')}
+
+FIELD SPECIFICATIONS:
+- "closingLine": ONE powerful sentence that compresses the report's insight into a single takeaway. Match the existing report's tone.
+- "actionQuestion": A provocative question introducing the protocol/action section.
+- "actionNeuro": 1-2 sentences explaining the neuroscience behind the recommended shifts.
+- "shifts": Array of EXACTLY 3 objects: [{"name": "Protocol Name", "text": "What to do and why", "when": "When and how long"}]
+
+Output ONLY a valid JSON object containing the missing fields. No markdown, no explanation. Match the language of the existing report (${language}).`;
+
+  console.log(`[Gemini] Repairing V3 Cards — missing: ${missingFields.join(', ')}`);
+
+  const patch = await generateWithRetry(model, systemPrompt, `Generate ONLY these missing fields as JSON: ${missingFields.join(', ')}`);
+
+  // Validate that we got the fields we asked for
+  const stillMissing = missingFields.filter(f => !patch[f]);
+  if (stillMissing.length > 0) {
+    console.warn(`[Gemini] Repair still missing: ${stillMissing.join(', ')}`);
+  }
+
+  console.log(`[Gemini] Repair complete — generated: ${Object.keys(patch).join(', ')}`);
+  return patch;
 }

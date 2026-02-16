@@ -38,6 +38,7 @@ export interface IStorage {
   getSajuResultById(id: string): Promise<SajuResult | undefined>;
   getSajuResultsByLeadId(leadId: string): Promise<SajuResult[]>;
   unlockReport(id: string): Promise<SajuResult | undefined>;
+  patchReportData(id: string, patch: Record<string, any>): Promise<SajuResult | undefined>;
 
   // Unlock code methods
   getValidCode(code: string): Promise<ValidCode | undefined>;
@@ -212,6 +213,19 @@ export class DatabaseStorage implements IStorage {
     const [result] = await db
       .update(sajuResults)
       .set({ isPaid: true })
+      .where(eq(sajuResults.id, id))
+      .returning();
+    return result;
+  }
+
+  async patchReportData(id: string, patch: Record<string, any>): Promise<SajuResult | undefined> {
+    if (!db) throw new Error("Database not initialized");
+    const existing = await this.getSajuResultById(id);
+    if (!existing) return undefined;
+    const merged = { ...((existing.reportData as any)?.v3Cards || {}), ...patch };
+    const [result] = await db
+      .update(sajuResults)
+      .set({ reportData: { v3Cards: merged } })
       .where(eq(sajuResults.id, id))
       .returning();
     return result;
@@ -410,6 +424,16 @@ export class MemStorage implements IStorage {
     const result = this.sajuResults.get(id);
     if (result) {
       result.isPaid = true;
+      this.sajuResults.set(id, result);
+    }
+    return result;
+  }
+
+  async patchReportData(id: string, patch: Record<string, any>): Promise<SajuResult | undefined> {
+    const result = this.sajuResults.get(id);
+    if (result) {
+      const existing = (result.reportData as any)?.v3Cards || {};
+      result.reportData = { v3Cards: { ...existing, ...patch } };
       this.sajuResults.set(id, result);
     }
     return result;
