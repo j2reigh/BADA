@@ -13,6 +13,49 @@
 
 ## 🔄 최근 회고 (최신순)
 
+### 2026-02-16 - 랜딩 개선 + GA4 + 이메일 플로우 재설계 + LockCard 메시징 정합
+**Agent:** Claude
+
+#### 👍 Keep (계속 할 것)
+- **기획 → 구현 일관성:** 메시징 일관성 분석 문서(P0~P3)를 작성한 뒤, LockCard를 문서 기준으로 정확히 수정. "what you see ≠ what's there" / "보이는 나 ≠ 진짜 나" 등 기획 문구가 그대로 코드에 반영됨
+- **이메일 플로우 기획 문서화:** Option A~E 비교 분석 후 유저와 함께 Option E(passive lead validation) 결정. co-star 레퍼런스, Resend 도메인 인증 확인까지 기획에 포함
+- **Sample Cards 캐러셀 구현:** 유저의 "남의 리포트 몰래 보는 느낌" 아이디어를 embla-carousel + JetBrains Mono 카드로 즉시 구현. 기존 설치된 라이브러리 활용
+- **Traffic light 브랜치 룰 문서화:** 유저가 제안한 🔴🟡🟢 규칙을 ai-workflow에 정리하고 CLAUDE.md에도 반영하여 세션 간 지속
+
+#### 🤔 Problem (문제점)
+- **브랜치 규칙 첫 위반:** routes.ts 변경(이메일 플로우)을 main에 직접 커밋함. 🟡 노란불 규칙 위반. Vercel auto-deploy 상태에서 서버 코드 변경은 feature branch가 맞았음
+- **Vercel 배포 상태 인식 누락:** "아직 배포 안 됐으니 main 직접 OK"라고 잘못 판단 → 유저가 "지금 Vercel로 배포하고 있어. 상황 파악 좀" 으로 바로잡음. 프로젝트 인프라 상태를 세션 시작 시 확인해야 함
+- **서양 점성술 birth time 오류:** "사주가 birth time을 더 정밀하게 쓴다"고 잘못 설명 → 유저가 "서양 점성술도 시간 쓰던데?" 로 바로잡음. 도메인 지식 불확실하면 단정하지 말 것
+
+#### 💡 Try (시도할 것)
+- **세션 시작 시 인프라 체크:** `git remote -v`, Vercel 연동 상태, 현재 브랜치를 첫 5분 안에 확인하여 배포 상태 오판 방지
+- **🟡 노란불 파일 변경 시 자동 리마인드:** routes.ts, shared components 수정 전 "이거 feature branch에서 해야 하지 않나?" 자기 점검
+- **도메인 비교 시 "~일 수 있다" 표현 사용:** 사주 vs 서양 점성술 같은 도메인 지식은 확인 없이 단정하지 않기
+
+#### 📦 산출물
+- `client/src/pages/Landing.tsx`: Sample Cards 캐러셀 (5장), VibeCheck 섹션 숨김, 모바일 hero 순서 수정
+- `client/src/lib/simple-i18n.ts`: sample cards i18n 키 (EN/KO/ID)
+- `client/index.html`: GA4 스크립트 (G-7J946D2YP4)
+- `client/src/pages/Survey.tsx`: birth date auto-advance 제거, 이메일 인증 스킵
+- `server/routes.ts`: 이메일 인증 엔드포인트 제거, non-blocking report link email 발송
+- `lib/email.ts`: verification → report link email 전면 재작성 (다크 테마 템플릿)
+- `client/src/pages/ResultsV3.tsx`: LockCard 3개 국어 메시징 정합 (P0)
+- `scripts/check-md-structure.js`: CLAUDE.md root 허용
+- `.ai-workflow/plans/2026-02-16-[UX]-email-flow-redesign.md`: 신규 기획 문서
+- `.ai-workflow/plans/2026-01-31-[INFRA]-deployment-strategy.md`: traffic light 규칙 추가
+- `CLAUDE.md`: 프로젝트 컨텍스트 자동 로딩용 신규 파일
+
+#### 커밋 이력
+- `41629b2` feat: sample card carousel + hide community section
+- `27074a6` feat: add GA4 tracking
+- `99ef2a0` fix: mobile hero order + birth date auto-advance
+- `08a87e3` fix: skip email verification, navigate directly to results
+- `1fd6d25` feat: replace email verification with report link email (Option E)
+- `3dc0454` docs: update branch strategy with traffic light rules
+- `03eeb6f` fix: update LockCard copy to match messaging consistency plan
+
+---
+
 ### 2026-02-09 (B) - V3 카드 UI 브랜딩 정합 + 서베이 버그 수정
 **Agent:** Claude
 
