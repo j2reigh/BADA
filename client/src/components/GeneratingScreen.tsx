@@ -5,6 +5,7 @@ interface GeneratingScreenProps {
   isComplete: boolean;
   isError?: boolean;
   errorMessage?: string;
+  retryCount?: number;
   onFinished: () => void;
   onRetry?: () => void;
 }
@@ -25,12 +26,22 @@ const INSIGHTS = [
   "Almost there — preparing your personalized action guide.",
 ];
 
-export default function GeneratingScreen({ isComplete, isError, errorMessage, onFinished, onRetry }: GeneratingScreenProps) {
+export default function GeneratingScreen({ isComplete, isError, errorMessage, retryCount, onFinished, onRetry }: GeneratingScreenProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [progress, setProgress] = useState(0);
   const [insightIndex, setInsightIndex] = useState(0);
   const [isDone, setIsDone] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
+
+  // Reset internal state on retry (retryCount changes)
+  useEffect(() => {
+    if (retryCount && retryCount > 0) {
+      setCurrentStep(0);
+      setProgress(0);
+      setIsDone(false);
+      setIsRetrying(false);
+    }
+  }, [retryCount]);
 
   // Step progression (timer-based simulation)
   useEffect(() => {

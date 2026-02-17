@@ -250,10 +250,10 @@ export default function Survey() {
       <AnimatePresence>
         {isSubmitting && (
           <GeneratingScreen
-            key={retryAttempt}
             isComplete={isApiComplete}
             isError={!!submitError}
             errorMessage={submitError || undefined}
+            retryCount={retryAttempt}
             onFinished={handleGeneratingFinished}
             onRetry={() => {
               setSubmitError(null);
