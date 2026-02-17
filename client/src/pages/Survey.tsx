@@ -105,7 +105,7 @@ export default function Survey() {
   const handleOptionSelect = (value: string) => {
     if (question) {
       setAnswers((prev) => ({ ...prev, [question.id]: value }));
-      // Auto-advance to next question after a short delay
+      (document.activeElement as HTMLElement)?.blur();
       setTimeout(() => {
         handleNext();
       }, 400);
@@ -141,6 +141,7 @@ export default function Survey() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isApiComplete, setIsApiComplete] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [retryAttempt, setRetryAttempt] = useState(0);
   const pendingNavRef = useRef<string | null>(null);
   const [showTimeModal, setShowTimeModal] = useState(false);
   const [open, setOpen] = useState(false);
@@ -249,14 +250,16 @@ export default function Survey() {
       <AnimatePresence>
         {isSubmitting && (
           <GeneratingScreen
+            key={retryAttempt}
             isComplete={isApiComplete}
             isError={!!submitError}
             errorMessage={submitError || undefined}
             onFinished={handleGeneratingFinished}
             onRetry={() => {
-              setIsSubmitting(false);
               setSubmitError(null);
               setIsApiComplete(false);
+              setRetryAttempt(a => a + 1);
+              handleBirthPatternSubmit();
             }}
           />
         )}

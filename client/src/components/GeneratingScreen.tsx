@@ -30,6 +30,7 @@ export default function GeneratingScreen({ isComplete, isError, errorMessage, on
   const [progress, setProgress] = useState(0);
   const [insightIndex, setInsightIndex] = useState(0);
   const [isDone, setIsDone] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
 
   // Step progression (timer-based simulation)
   useEffect(() => {
@@ -225,10 +226,14 @@ export default function GeneratingScreen({ isComplete, isError, errorMessage, on
             </p>
             {onRetry && (
               <button
-                onClick={onRetry}
-                className="px-10 py-3.5 rounded-full bg-white text-[#182339] font-medium text-sm hover:bg-white/90 transition-colors"
+                onClick={() => {
+                  setIsRetrying(true);
+                  onRetry();
+                }}
+                disabled={isRetrying}
+                className="px-10 py-3.5 rounded-full bg-white text-[#182339] font-medium text-sm hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Try again
+                {isRetrying ? "Retrying..." : "Try again"}
               </button>
             )}
           </div>
