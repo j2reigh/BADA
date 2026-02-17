@@ -144,11 +144,17 @@ export const calculateSaju = (dateStr: string, timeStr: string, timezone?: strin
       // or rely on a helper if available.
       // Let's create a local map for Chinese -> Korean as saju_constants seems to have English structures
       const CH2KO_GENERATOR: Record<string, string> = {
+        // Traditional Chinese (번체)
         "比肩": "비견", "劫財": "겁재",
         "食神": "식신", "傷官": "상관",
         "偏財": "편재", "正財": "정재",
         "七殺": "편관", "正官": "정관",
-        "偏印": "편인", "正印": "정인"
+        "偏印": "편인", "正印": "정인",
+        // Simplified Chinese (간체) — lunar-typescript 지지 십신에서 리턴
+        "劫财": "겁재",
+        "伤官": "상관",
+        "偏财": "편재", "正财": "정재",
+        "七杀": "편관",
       };
 
       return {
