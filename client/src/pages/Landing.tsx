@@ -1,5 +1,5 @@
 import { motion, useScroll, useTransform, useInView } from "framer-motion";
-import { ArrowRight, ArrowDown, Menu, X, ExternalLink } from "lucide-react";
+import { ArrowRight, ArrowDown, ExternalLink } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { Link } from "wouter";
 import TypewriterText from "@/components/landing/TypewriterText";
@@ -17,8 +17,6 @@ import {
 type TranslateFn = (key: string, params?: Record<string, any>) => string;
 
 function Header({ t }: { t: TranslateFn }) {
-  const [menuOpen, setMenuOpen] = useState(false);
-
   return (
     <header className="fixed top-0 left-0 right-0 z-50 transition-colors duration-500">
       <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
@@ -29,18 +27,8 @@ function Header({ t }: { t: TranslateFn }) {
         <nav className="hidden md:flex items-center gap-8 mix-blend-difference text-white">
           <a href="#problem" className="text-sm hover:opacity-70 transition-opacity">{t('landing.nav.problem')}</a>
           <a href="#solution" className="text-sm hover:opacity-70 transition-opacity">{t('landing.nav.solution')}</a>
-          {/* <a href="#community" className="text-sm hover:opacity-70 transition-opacity">{t('landing.nav.community')}</a> */}
           <Link href="/faq" className="text-sm hover:opacity-70 transition-opacity">{t('faq.title')}</Link>
         </nav>
-
-        <div className="flex items-center gap-4">
-          <button
-            className="md:hidden p-2 mix-blend-difference text-white"
-            onClick={() => setMenuOpen(!menuOpen)}
-          >
-            {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
-        </div>
       </div>
     </header>
   );
