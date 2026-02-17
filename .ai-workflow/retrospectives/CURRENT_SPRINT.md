@@ -13,6 +13,39 @@
 
 ## 🔄 최근 회고 (최신순)
 
+### 2026-02-17 - 프로덕션 500 에러 근본 원인 발견 + 에러 가시성 인프라 구축
+**Agent:** Claude
+
+#### 👍 Keep (계속 할 것)
+- **에러 가시성이 근본 원인을 드러냄:** "Report not found" 하나로 퉁치던 에러를 상태별 구분 + 디버그 텍스트로 바꾸자마자 500 에러가 보였고, API 직접 호출로 **Vercel 환경변수 전체 누락**이라는 진짜 원인 발견
+- **MemStorage fallback 동작 이해:** env 없으면 `db=null` → `MemStorage` fallback → 같은 서버리스 인스턴스 살아있는 동안만 데이터 존재 → cold start 후 전부 소실. "잠깐 보였다 사라짐"의 정확한 메커니즘
+- **방어적 retry 인프라:** 4xx는 즉시 실패, 그 외 2회 자동 재시도 + 수동 Retry 버튼. 향후 일시적 네트워크 문제에 대한 보험
+
+#### 🤔 Problem (문제점)
+- **🔴 Vercel 환경변수 전체 누락 (Human 실수):** 초기 배포 시 설정했다고 생각했으나 실제로는 저장 안 됨. 이후 모든 유저 데이터가 DB에 저장되지 않고 MemStorage에서 소실됨 — 기존 리포트 데이터 전부 유실
+- **"모바일 이슈"로 오진:** PC에서는 로컬 dev 서버(localhost)를 보고 있었기 때문에 정상으로 착각. 실제론 프로덕션 전체가 500이었음. 프로덕션 URL로 직접 테스트했으면 즉시 발견 가능했음
+- **curl 200 주장과 모순:** 초기 컨텍스트에서 "curl로 200"이라 했지만 실제 프로덕션 curl은 500. 로컬 curl이었을 가능성 높음
+- **에러 메시지에 상세 정보 없었음:** catch 블록이 generic "Failed to get results"만 반환 → 프론트도 백도 원인 파악 불가
+
+#### 💡 Try (시도할 것)
+- **🔴 배포 직후 프로덕션 스모크 테스트 필수:** `curl https://bada.one/api/results/{실제ID}` 한 번이면 발견 가능. 배포 체크리스트에 추가
+- **env 체크 startup 로그:** 서버 시작 시 필수 env 존재 여부를 로그로 출력 (값은 마스킹). "DB: ✅ connected" / "DB: ❌ MemStorage fallback" 수준
+- **프론트엔드 에러는 항상 상세 표시:** generic 메시지 지양. 최소한 디버그용 상세를 저 opacity로 노출
+- **로컬 vs 프로덕션 혼동 방지:** 버그 리포트 시 어느 환경에서 테스트했는지 명시적으로 구분
+
+#### 📦 산출물
+- `client/src/pages/ResultsV3.tsx`: 에러 상태별 구분 (네트워크/404/403) + Retry 버튼 + 디버그 텍스트
+- `client/src/lib/queryClient.ts`: retry 2회 (4xx 제외) + exponential backoff
+- `server/app.ts`: Helmet crossOriginResourcePolicy same-site
+- `server/routes.ts`: results API 500 응답에 errorType + detail 필드 추가
+- **Vercel 환경변수 6개 설정:** SUPABASE_DATABASE_URL, DATABASE_URL, GEMINI_API_KEY, RESEND_API_KEY, RESEND_FROM_EMAIL, HD_API_KEY
+
+#### 커밋 이력
+- `cfe2535` fix: improve mobile error handling — retry, error differentiation, CORP header
+- `7bb464c` fix: expose error type and detail in results API 500 response
+
+---
+
 ### 2026-02-16 (B) - 리포트 솔루션 강화 + Blueprint 다각화 + UI 폴리시 + 브랜딩
 **Agent:** Claude
 
