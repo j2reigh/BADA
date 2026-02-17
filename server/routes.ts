@@ -7,7 +7,7 @@ import { z } from "zod";
 import { getCorrectedKST, calculateTrueSolarTime } from "../lib/time_utils";
 import { calculateSaju, type SajuOptions } from "../lib/saju_calculator";
 import { analyzeOperatingState } from "../lib/operating_logic"; // v2.3 Integration
-import { generateV3Cards, repairV3Cards, type SurveyScores } from "../lib/gemini_client";
+import { generateV3Cards, repairV3Cards, getPromptHash, type SurveyScores } from "../lib/gemini_client";
 import { translateToBehaviors, calculateLuckCycle, type HumanDesignData } from "../lib/behavior_translator";
 import { fetchHumanDesign } from "../lib/hd_client";
 import { sendReportLinkEmail } from "../lib/email";
@@ -111,7 +111,38 @@ export async function registerRoutes(
       const lead = await storage.upsertLead(input.email, input.marketingConsent);
       console.log("[Assessment] Lead created/updated:", lead.id);
 
-      // 2. Build coordinates for True Solar Time (if available)
+      // 2. Dedup check — same birth data within 24h or same prompt version → return existing
+      const existingReports = await storage.getSajuResultsByLeadId(lead.id);
+      const matchingReport = existingReports.find((r) => {
+        const ui = r.userInput as any;
+        return (
+          ui.birthDate === input.birthDate &&
+          ui.birthTime === (input.birthTime || null) &&
+          ui.birthCity === input.birthCity
+        );
+      });
+
+      if (matchingReport) {
+        const ageMs = Date.now() - new Date(matchingReport.createdAt!).getTime();
+        const isWithin24h = ageMs < 24 * 60 * 60 * 1000;
+        const reportPromptHash = (matchingReport.reportData as any)?.v3Cards?._promptHash;
+        const currentHash = getPromptHash();
+
+        if (isWithin24h || reportPromptHash === currentHash) {
+          console.log(
+            `[Assessment] Dedup hit — returning existing report ${matchingReport.id} (${isWithin24h ? "within 24h" : "same prompt hash"})`
+          );
+          return res.status(200).json({
+            success: true,
+            reportId: matchingReport.slug || matchingReport.id,
+            leadId: lead.id,
+            email: lead.email,
+            deduplicated: true,
+          });
+        }
+      }
+
+      // 3. Build coordinates for True Solar Time
       const hasCoordinates = input.latitude !== undefined && input.longitude !== undefined
         && input.latitude !== 0 && input.longitude !== 0;
       const coordinates = hasCoordinates
@@ -128,7 +159,7 @@ export async function registerRoutes(
         console.log("[Assessment] True Solar Time:", solarTimeConversion.debug);
       }
 
-      // 3. Calculate Saju (Four Pillars)
+      // 4. Calculate Saju (Four Pillars)
       console.log("[Assessment] Calculating Saju...");
       let sajuData: any = null;
       let reportData: any = null;
@@ -258,7 +289,7 @@ export async function registerRoutes(
         return res.status(500).json({ message: "REPORT_GENERATION_FAILED", stage: "gemini" });
       }
 
-      // 6. Create saju result record
+      // 7. Create saju result record
       console.log("[Assessment] Creating saju result record...");
       const userInput = {
         name: input.name,
@@ -689,7 +720,7 @@ export async function registerRoutes(
 
       // If report_id exists but points to a non-existent report, fall back to email lookup
       if (targetReportId) {
-        const exists = await storage.getSajuResultById(targetReportId);
+        const exists = await resolveReport(targetReportId);
         if (!exists && email) {
           console.log(`[Gumroad] report_id "${targetReportId}" not found, falling back to email lookup for: ${email}`);
           targetReportId = null;
@@ -711,8 +742,8 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Missing required fields or cannot link payment to report" });
       }
 
-      // Check report existence
-      const sajuResult = await storage.getSajuResultById(targetReportId);
+      // Check report existence (supports both UUID and slug)
+      const sajuResult = await resolveReport(targetReportId);
       if (!sajuResult) {
         console.error("[Gumroad] Report not found:", targetReportId);
         return res.status(404).json({ error: "Report not found" });
@@ -720,14 +751,14 @@ export async function registerRoutes(
 
       // Already paid?
       if (sajuResult.isPaid) {
-        console.log("[Gumroad] Report already paid:", targetReportId);
+        console.log("[Gumroad] Report already paid:", sajuResult.id);
         return res.status(200).json({ message: "Already paid" });
       }
 
-      // Unlock report
-      await storage.unlockReport(targetReportId);
+      // Unlock report (use resolved UUID, not slug)
+      await storage.unlockReport(sajuResult.id);
 
-      console.log(`[Gumroad] ✅ Report ${targetReportId} unlocked successfully`);
+      console.log(`[Gumroad] ✅ Report ${sajuResult.id} (${targetReportId}) unlocked successfully`);
       console.log(`[Gumroad] 💰 Sale ID: ${sale_id}, Price: ${price} ${currency}`);
 
       res.status(200).json({ success: true, message: "Report unlocked" });

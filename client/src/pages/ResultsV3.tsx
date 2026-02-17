@@ -401,7 +401,7 @@ function CostCard({
               style={{ fontFamily: "'JetBrains Mono', monospace" }}>
               try this
             </span>
-            <p className="text-sm text-white/80 font-light leading-relaxed">{tip}</p>
+            <p className="text-[15px] text-white/80 font-light leading-relaxed">{tip}</p>
           </div>
         )}
       </div>
@@ -435,7 +435,7 @@ function RechargeCard({
               style={{ fontFamily: "'JetBrains Mono', monospace" }}>
               try this
             </span>
-            <p className="text-sm text-white/80 font-light leading-relaxed">{tip}</p>
+            <p className="text-[15px] text-white/80 font-light leading-relaxed">{tip}</p>
           </div>
         )}
       </div>
@@ -548,7 +548,7 @@ function EnergyCard({
             {insight.split(/(?<=[.!?。])\s+/).filter(Boolean).map((sentence, i) => (
               <div key={i} className="flex gap-3 items-start">
                 <span className="text-[#879DC6]/30 text-xs mt-1 shrink-0 font-mono">{String(i + 1).padStart(2, '0')}</span>
-                <p className="text-sm text-white/80 font-light leading-relaxed">{sentence}</p>
+                <p className="text-[15px] text-white/80 font-light leading-relaxed">{sentence}</p>
               </div>
             ))}
           </div>
@@ -672,8 +672,8 @@ function ChapterCard({
                   </div>
                   <p className={`font-light leading-relaxed ${
                     i === 1
-                      ? "text-base text-white/90"
-                      : "text-sm text-white/70"
+                      ? "text-[17px] text-white/90"
+                      : "text-[15px] text-white/70"
                   }`}>
                     {s.text}
                   </p>
@@ -685,21 +685,32 @@ function ChapterCard({
 
         {/* Transition insight */}
         {chapter.accent && (
-          <p className="mt-6 text-sm text-[#ABBBD5]/70 font-light leading-relaxed text-center px-2">
+          <p className="mt-6 text-[15px] text-[#ABBBD5]/70 font-light leading-relaxed text-center px-2">
             {chapter.accent}
           </p>
         )}
 
-        {(chapter.strategyDo || chapter.strategy) && (
-          <div className="mt-4 w-full px-4 py-4 rounded-xl bg-white/5 border border-white/10">
-            <span className="text-xs uppercase tracking-[0.2em] text-[#ABBBD5]/50 block mb-3"
-              style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-              your move
-            </span>
-            <StrategyBlock doText={chapter.strategyDo} dontText={chapter.strategyDont} legacy={chapter.strategy} />
-          </div>
-        )}
+      </div>
+    </Card>
+  );
+}
 
+function ChapterStrategyCard({
+  chapter,
+}: {
+  chapter: ChapterData;
+}) {
+  if (!chapter.strategyDo && !chapter.strategy) return null;
+  return (
+    <Card bg="bg-gradient-to-b from-[#1e2a45] to-[#182339]">
+      <div className="relative flex flex-col items-center w-full max-w-sm">
+        <CardLabel>your move</CardLabel>
+        <p className="text-xl text-[#ABBBD5] font-light mb-8 leading-relaxed text-center">
+          {chapter.currentLabel ? `${chapter.currentLabel} — what to do now` : "What to do with this decade"}
+        </p>
+        <div className="w-full px-5 py-5 rounded-xl bg-white/5 border border-white/10">
+          <StrategyBlock doText={chapter.strategyDo} dontText={chapter.strategyDont} legacy={chapter.strategy} />
+        </div>
       </div>
     </Card>
   );
@@ -709,16 +720,10 @@ function YearCard({
   question,
   text,
   accent,
-  strategy,
-  strategyDo,
-  strategyDont,
 }: {
   question: string;
   text: string;
   accent: string;
-  strategy?: string;
-  strategyDo?: string;
-  strategyDont?: string;
 }) {
   return (
     <Card bg="bg-gradient-to-b from-[#182339] to-[#1e2a45]">
@@ -743,21 +748,37 @@ function YearCard({
         </p>
         {accent && (
           <div className="mt-6 px-4 py-3 rounded-xl bg-[#ABBBD5]/8 border border-[#ABBBD5]/15">
-            <p className="text-sm text-[#ABBBD5]/80 font-light leading-relaxed">
+            <p className="text-[15px] text-[#ABBBD5]/80 font-light leading-relaxed">
               {accent}
             </p>
           </div>
         )}
-        {(strategyDo || strategy) && (
-          <div className="mt-4 w-full px-4 py-4 rounded-xl bg-[#ABBBD5]/8 border border-[#ABBBD5]/15">
-            <span className="text-xs uppercase tracking-[0.2em] text-[#ABBBD5]/50 block mb-3"
-              style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-              your move
-            </span>
-            <StrategyBlock doText={strategyDo} dontText={strategyDont} legacy={strategy} />
-          </div>
-        )}
 
+      </div>
+    </Card>
+  );
+}
+
+function YearStrategyCard({
+  strategy,
+  strategyDo,
+  strategyDont,
+}: {
+  strategy?: string;
+  strategyDo?: string;
+  strategyDont?: string;
+}) {
+  if (!strategyDo && !strategy) return null;
+  return (
+    <Card bg="bg-gradient-to-b from-[#1e2a45] to-[#182339]">
+      <div className="relative flex flex-col items-center w-full max-w-sm">
+        <CardLabel>your move</CardLabel>
+        <p className="text-xl text-[#ABBBD5] font-light mb-8 leading-relaxed text-center">
+          {new Date().getFullYear()} — what to do now
+        </p>
+        <div className="w-full px-5 py-5 rounded-xl bg-[#ABBBD5]/8 border border-[#ABBBD5]/15">
+          <StrategyBlock doText={strategyDo} dontText={strategyDont} legacy={strategy} />
+        </div>
       </div>
     </Card>
   );
@@ -1202,9 +1223,21 @@ export default function ResultsV3() {
       ) : null,
     },
     {
+      key: "chapter-strategy",
+      render: () => v3.chapter ? (
+        <ChapterStrategyCard chapter={v3.chapter} />
+      ) : null,
+    },
+    {
       key: "year",
       render: () => (v3.yearQuestion && v3.yearText) ? (
-        <YearCard question={v3.yearQuestion} text={v3.yearText} accent={v3.yearAccent || ""} strategy={v3.yearStrategy} strategyDo={v3.yearStrategyDo} strategyDont={v3.yearStrategyDont} />
+        <YearCard question={v3.yearQuestion} text={v3.yearText} accent={v3.yearAccent || ""} />
+      ) : null,
+    },
+    {
+      key: "year-strategy",
+      render: () => (v3.yearStrategy || v3.yearStrategyDo) ? (
+        <YearStrategyCard strategy={v3.yearStrategy} strategyDo={v3.yearStrategyDo} strategyDont={v3.yearStrategyDont} />
       ) : null,
     },
     {
