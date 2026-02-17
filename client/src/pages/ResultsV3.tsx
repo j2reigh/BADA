@@ -1003,9 +1003,27 @@ export default function ResultsV3() {
   }
 
   if (error || !report) {
+    const errMsg = error?.message || "No data received";
+    const isNotFound = errMsg.includes("404");
+    const is403 = errMsg.includes("403");  // should redirect, but fallback
     return (
-      <div className="h-[100dvh] flex items-center justify-center bg-[#182339]">
-        <p className="text-white/50 text-sm">Report not found.</p>
+      <div className="h-[100dvh] flex flex-col items-center justify-center bg-[#182339] px-8 gap-4">
+        <p className="text-white/50 text-sm">
+          {isNotFound
+            ? "Report not found."
+            : is403
+              ? "Access denied."
+              : "Failed to load report."}
+        </p>
+        {!isNotFound && !is403 && (
+          <button
+            onClick={() => queryClient.invalidateQueries({ queryKey: [`/api/results/${reportId}`] })}
+            className="px-6 py-2 rounded-full bg-white/10 border border-white/15 text-white/60 text-sm hover:bg-white/15 transition-colors"
+          >
+            Retry
+          </button>
+        )}
+        <p className="text-[10px] text-white/15 mt-4 max-w-xs text-center break-all">{errMsg}</p>
       </div>
     );
   }

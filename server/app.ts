@@ -14,6 +14,7 @@ app.set("trust proxy", 1);
 // ==========================================
 app.use(helmet({
   contentSecurityPolicy: false, // Vite dev + inline scripts compatibility
+  crossOriginResourcePolicy: { policy: "same-site" }, // allow subdomains (mobile compat)
 }));
 
 // ==========================================
