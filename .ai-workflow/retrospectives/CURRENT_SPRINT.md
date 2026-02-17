@@ -13,6 +13,80 @@
 
 ## 🔄 최근 회고 (최신순)
 
+### 2026-02-17 (C) - 확언형 슬러그 URL + UI/폰트/Gemini 수정 + 커밋 히스토리 정리
+**Agent:** Claude
+
+#### 👍 Keep (계속 할 것)
+- **slug 설계 간결:** 확언 문구 + UUID 앞 4자리 조합으로 충돌 체크 불필요, nullable로 기존 데이터 호환, dual-resolve로 UUID/slug 모두 동작
+- **DB 마이그레이션 선행:** 코드 배포 전에 Supabase에 `ALTER TABLE` 먼저 실행 — nullable 컬럼이라 무중단 추가 가능
+- **커밋 히스토리 정리:** `git reset --soft main` + 선택적 staging으로 3개 논리적 커밋으로 재구성. 이전 세션에서 slug 변경이 TST 커밋에 섞여 들어간 문제를 깔끔하게 해결
+
+#### 🤔 Problem (문제점)
+- **이전 세션에서 slug 변경이 TST 커밋에 혼입:** routes.ts의 slug 관련 변경(resolveReport 등)이 `5392dcf` TST 커밋에 포함되어 있었음. 작업 단위별 커밋을 더 신경 써야 함
+- **로컬 DB 접속 불가:** ECONNREFUSED로 Supabase pooler에 직접 연결 실패 — 유저가 대시보드 SQL Editor로 직접 실행
+
+#### 💡 Try (시도할 것)
+- **작업 단위별 커밋 습관:** 파일 수정 후 바로 커밋하지 말고, 논리적 단위가 완성될 때 해당 파일만 선별 커밋
+- **배포 후 검증 항목:** 새 리포트 생성 → slug URL 접근 → 기존 UUID URL 접근 → 이메일 slug 링크 확인
+
+#### 📦 산출물
+- `shared/schema.ts`: slug 컬럼 추가 (nullable, unique varchar(80))
+- `server/slugs.ts`: 81개 확언 문구 풀 + `generateSlug(uuid)` 함수
+- `server/storage.ts`: `getSajuResultBySlug()`, `createSajuResult()`에 slug 자동 생성
+- `server/routes.ts`: `resolveReport()` dual-resolve 헬퍼, 모든 `:reportId` 라우트 적용, API 응답에 slug 필드
+- `client/src/pages/ResultsV3.tsx`: facet 라벨 고정, 잠금카드 카피 수정
+- `client/src/pages/FAQ.tsx`: bada.one 브랜딩
+- `client/src/index.css`: Satoshi 폰트 스택
+- `lib/gemini_client.ts`: `fixPrematureClose()` JSON 파싱 버그 수정, maxOutputTokens 24k
+
+#### 커밋 이력
+- `9192811` feat: implement True Solar Time (진태양시) for accurate Saju hour pillar
+- `7581c55` fix: UI polish, font stack, Gemini JSON parsing
+- `aab678d` feat: affirmation-based slug URLs for reports
+
+---
+
+### 2026-02-17 (B) - 진태양시(True Solar Time) 기반 사주 시간 계산 구현
+**Agent:** Claude
+
+#### 👍 Keep (계속 할 것)
+- **유저 코드리뷰가 버그를 잡음:** 첫 구현에서 DST 이중 차감 버그 존재 — `stdMeridian`을 DST 포함 offset으로 계산하여 NYC 여름 TST가 1시간 틀림 (09:54 → 정답 10:54). 유저가 "과거 서머타임까지 계산하고 있나?"로 의문 제기 → 검증 → 발견 → 즉시 수정
+- **additive 순서가 안전:** time_utils(신규 함수) → saju_calculator(신규 경로) → behavior_translator(optional param) → routes(스위치) → Survey(UI) 순서로 구현하여 각 단계에서 기존 코드 파괴 없이 진행
+- **debug 메타데이터 설계:** `solarTimeConversion.debug`에 원본시간, timezone, stdMeridian, LMT, EoT, DST보정, 최종TST를 모두 기록하여 문제 추적 즉시 가능. 실제로 이 데이터로 DST 버그를 1분 만에 진단
+- **geo-tz + Luxon 조합 검증:** geo-tz가 좌표 → IANA timezone을 정확하게 도출하고, Luxon이 1996년 역사적 DST를 정확하게 감지 (NYC EDT, London BST 모두 검증)
+
+#### 🤔 Problem (문제점)
+- **DST 이중 차감 버그:** `stdMeridian = utcOffsetHours × 15`에서 utcOffsetHours가 DST 포함값(EDT=-4)이라 stdMeridian=-60° (정답 EST=-75°). LMT에서 -56분 + 명시적 DST -60분 = 이중 차감. 수식 전개로 검증했으면 첫 커밋에서 잡을 수 있었음
+- **테스트 케이스 불충분:** 서울/자카르타(DST 없음)만 기대값 매칭, NYC는 "DST 감지됨"만 확인하고 TST 값 수동 검증 안 함 → DST 있는 케이스의 기대값을 사전 계산했어야 함
+
+#### 💡 Try (시도할 것)
+- **수식 전개 검증 필수:** 보정 공식에 DST, LMT, EoT 여러 변수가 있을 때 수식을 대수적으로 전개하여 이중 계산/상쇄 확인
+- **DST 있는 도시의 기대값 사전 계산:** NYC, London 등 DST 활성 케이스는 손으로 기대 TST를 먼저 구해놓고 코드 결과와 대조
+- **경계 조건 테스트 체계화:** 자정 경계(next/prev), 극단 경도(Urumqi 등), 남반구 DST(시드니 등) 추가
+
+#### 📦 산출물
+- `lib/time_utils.ts`: `calculateTrueSolarTime()` — geo-tz 타임존 감지, LMT 보정, EoT(Spencer), DST 보정, 자정 경계 처리, debug 메타데이터
+- `lib/saju_calculator.ts`: `SajuOptions` 인터페이스, lat/lon → TST 경로 / timezone → legacy KST 경로 분기
+- `lib/behavior_translator.ts`: `calculateLuckCycle()`, `translateToBehaviors()`에 optional coordinates 전달
+- `server/routes.ts`: assessment 스키마 timezone optional, coordinates 파이프라인 와이어링, DB에 solarTimeConversion 저장
+- `client/src/pages/Survey.tsx`: 도시 선택 시 timezone 드롭다운 숨김 (서버가 lat/lon에서 도출)
+
+#### 커밋 이력
+- `5392dcf` feat: implement True Solar Time (진태양시) for accurate Saju hour pillar
+- `4a60b08` fix: correct DST double-counting in True Solar Time stdMeridian
+
+#### 검증 결과
+| 케이스 | TST | 시주 | 비고 |
+|---|---|---|---|
+| 서울 96-09-18 11:56 | 11:31 | 戊午 | regression 없음 |
+| 자카르타 96-09-18 11:56 | 12:10 | 戊午 | 기존 己未 → 수정됨 |
+| 뉴욕 96-07-18 11:56 (EDT) | 10:54 | 癸巳 | DST 정확 |
+| 뉴욕 96-01-18 11:56 (EST) | 11:50 | — | 겨울 정상 |
+| 런던 96-07-18 11:56 (BST) | 10:50 | — | DST 정확 |
+| 자카르타 96-09-18 23:50 | 00:04+1d | — | 자정 경계 정상 |
+
+---
+
 ### 2026-02-17 - 프로덕션 500 에러 근본 원인 발견 + 에러 가시성 인프라 구축
 **Agent:** Claude
 

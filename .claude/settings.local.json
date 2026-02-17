@@ -76,7 +76,16 @@
       "Bash(dig:*)",
       "Bash(git rm:*)",
       "Bash(npx vercel inspect:*)",
-      "Bash(npx vercel:*)"
+      "Bash(npx vercel:*)",
+      "WebFetch(domain:www.bada.one)",
+      "WebFetch(domain:ai.google.dev)",
+      "Bash(cat:*)",
+      "Bash(연락하나요?\" / \"Bagaimana)",
+      "Bash(cara menghubungi?\"\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(wc:*)",
+      "Bash(vercel env:*)",
+      "Bash(gh api:*)",
+      "Bash(git reset:*)"
     ]
   }
 }
