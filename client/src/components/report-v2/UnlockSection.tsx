@@ -22,8 +22,8 @@ const FAQ_ITEMS = [
         a: "Parts 2–5 of your report unlock immediately: your natural blueprint, cognitive axes, friction analysis, and a personalized daily protocol. It's a full operating manual — not a summary.",
     },
     {
-        q: "Is this fortune telling?",
-        a: "No. BADA uses a 1,200-year-old time-data algorithm (Saju) combined with modern psychometric questions. Think of it as pattern analysis, not prediction.",
+        q: "How is this different from MBTI?",
+        a: "MBTI gives you a type. BADA maps the patterns unique to you — why you burn out, how you make decisions, what you keep repeating. No two reports are the same.",
     },
     {
         q: "Is my data safe?",

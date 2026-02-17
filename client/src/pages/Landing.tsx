@@ -273,8 +273,6 @@ function ProblemSection({ t }: { t: TranslateFn }) {
 }
 
 function SolutionSection({ t }: { t: TranslateFn }) {
-  const [showTooltip, setShowTooltip] = useState(false);
-
   const steps = [
     { step: "01", title: t('landing.solution.step1'), desc: t('landing.solution.step1.desc') },
     { step: "02", title: t('landing.solution.step2'), desc: t('landing.solution.step2.desc') },
@@ -299,25 +297,7 @@ function SolutionSection({ t }: { t: TranslateFn }) {
         <FocusSection>
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 md:p-12">
             <p className="text-lg md:text-xl text-white/80 leading-relaxed mb-6">
-              {t('landing.solution.desc').split('"The 60-Year Cycle"')[0]}
-              <span
-                className="relative inline-block border-b border-dashed border-white/40 cursor-help"
-                onMouseEnter={() => setShowTooltip(true)}
-                onMouseLeave={() => setShowTooltip(false)}
-                onTouchStart={() => setShowTooltip(!showTooltip)}
-              >
-                "The 60-Year Cycle"
-                {showTooltip && (
-                  <motion.span
-                    className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-[#182339] text-white text-sm rounded-lg whitespace-nowrap z-10"
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
-                    {t('landing.solution.tooltip')}
-                  </motion.span>
-                )}
-              </span>
-              {t('landing.solution.desc').split('"The 60-Year Cycle"')[1]}
+              {t('landing.solution.desc')}
             </p>
             <p className="text-xl md:text-2xl text-white font-medium">
               {t('landing.solution.tagline')}

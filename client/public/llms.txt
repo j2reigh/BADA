@@ -3,7 +3,7 @@
 > A 5-minute self-discovery analysis that reveals how your mind actually works.
 
 ## What it is
-BADA generates a personalized behavioral pattern report based on your birth data (date, time, and location). It combines Eastern astrology (Saju/Four Pillars) and Human Design to map how you think, decide, and operate.
+BADA generates a personalized behavioral pattern report based on your birth data (date, time, and location). It calculates your behavioral operating pattern — how you think, decide, and operate.
 
 ## What it is NOT
 - Not fortune telling — nothing is predicted
