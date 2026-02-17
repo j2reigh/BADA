@@ -211,17 +211,22 @@ export default function GeneratingScreen({ isComplete, isError, errorMessage, on
       {isError && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#182339]/90 backdrop-blur-sm">
           <div className="text-center px-8 max-w-sm">
-            <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-6">
-              <span className="text-red-400 text-xl">!</span>
+            <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-8">
+              <svg className="w-7 h-7 text-white/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                <path d="M12 9v4m0 4h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </div>
-            <p className="text-white/80 text-base mb-2">Report generation failed</p>
-            <p className="text-white/40 text-sm mb-8">
-              {errorMessage || "Something went wrong. Please try again."}
+            <p className="text-white/90 text-lg font-medium mb-3">
+              Something didn't work
+            </p>
+            <p className="text-white/50 text-sm leading-relaxed mb-10">
+              We couldn't generate your report this time.<br />
+              Your answers are saved — just tap below to try again.
             </p>
             {onRetry && (
               <button
                 onClick={onRetry}
-                className="px-8 py-3 rounded-full bg-white/10 border border-white/20 text-sm text-white/70 hover:bg-white/15 transition-colors"
+                className="px-10 py-3.5 rounded-full bg-white text-[#182339] font-medium text-sm hover:bg-white/90 transition-colors"
               >
                 Try again
               </button>

@@ -138,29 +138,34 @@ export async function registerRoutes(
       // so calculateSaju strips the hour pillar and recalculates from 3 pillars only
       const effectiveBirthTime = isTimeMissing ? "12:00" : input.birthTime!;
 
+      // --- Step 3: Saju Calculation ---
       try {
         console.log(`[Assessment] Running Saju calculation... (birthTimeUnknown: ${isTimeMissing})`);
         sajuData = calculateSaju(input.birthDate, effectiveBirthTime, input.timezone, isTimeMissing);
         console.log("[Assessment] Saju calculated successfully");
+      } catch (err) {
+        console.error("[Assessment] Saju calculation failed:", err);
+        return res.status(500).json({ message: "REPORT_GENERATION_FAILED", stage: "saju" });
+      }
 
-        // v2.3 Logic: Perform Operating Analysis (Saju + Survey)
-        const analysisInput = {
-          ...input.surveyScores,
-          answers: input.answers as { q1: string; q2: string; q3: string;[key: string]: string }
-        };
-
-        try {
-          const operatingAnalysis = analyzeOperatingState(sajuData, analysisInput);
-          sajuData.operatingAnalysis = operatingAnalysis;
-          if (sajuData.stats) {
-            sajuData.stats.operatingRate = operatingAnalysis._internal.finalRate;
-          }
-          console.log("[Assessment] Operating Analysis v2.3 complete:", operatingAnalysis.levelName);
-        } catch (analysisErr) {
-          console.error("[Assessment] Operating Analysis failed:", analysisErr);
+      // Operating Analysis (non-blocking)
+      const analysisInput = {
+        ...input.surveyScores,
+        answers: input.answers as { q1: string; q2: string; q3: string;[key: string]: string }
+      };
+      try {
+        const operatingAnalysis = analyzeOperatingState(sajuData, analysisInput);
+        sajuData.operatingAnalysis = operatingAnalysis;
+        if (sajuData.stats) {
+          sajuData.stats.operatingRate = operatingAnalysis._internal.finalRate;
         }
+        console.log("[Assessment] Operating Analysis v2.3 complete:", operatingAnalysis.levelName);
+      } catch (analysisErr) {
+        console.error("[Assessment] Operating Analysis failed (non-blocking):", analysisErr);
+      }
 
-        // 4. Fetch Human Design data from HD API
+      // --- Step 4: Fetch Human Design data ---
+      try {
         console.log("[Assessment] Fetching Human Design data...");
         const hdBirthTime = isTimeMissing ? "12:00" : input.birthTime!;
         const hdLocation = input.birthCity !== input.birthCountry
@@ -196,8 +201,13 @@ export async function registerRoutes(
           activations: hdResponse.activations,
         };
         console.log(`[Assessment] HD data fetched: type=${hdData.type}, profile=${hdData.profile}`);
+      } catch (err) {
+        console.error("[Assessment] HD API failed:", err);
+        return res.status(500).json({ message: "REPORT_GENERATION_FAILED", stage: "hd_api" });
+      }
 
-        // 5. Generate V3 Card Report
+      // --- Step 5: Generate V3 Card Report ---
+      try {
         console.log("[Assessment] Generating V3 card report...");
         const surveyScoresForReport: SurveyScores = {
           threatScore: input.surveyScores.threatScore,
@@ -210,7 +220,6 @@ export async function registerRoutes(
           typeName: input.surveyScores.typeName,
         };
 
-        // Translate raw data to behavior patterns
         const behaviors = translateToBehaviors(
           sajuData,
           hdData,
@@ -220,13 +229,11 @@ export async function registerRoutes(
         );
         console.log("[Assessment] Behavior patterns translated");
 
-        // Calculate luck cycle (대운/세운)
         const luckBirthTime = isTimeMissing ? "12:00" : input.birthTime!;
         const luckGender = input.gender === "female" ? "F" : "M";
         const luckCycle = calculateLuckCycle(input.birthDate, luckBirthTime, luckGender);
         console.log("[Assessment] Luck cycle calculated");
 
-        // Generate V3 cards via Gemini
         const v3Cards = await generateV3Cards(
           sajuData,
           surveyScoresForReport,
@@ -240,11 +247,8 @@ export async function registerRoutes(
         reportData = { v3Cards };
         console.log(`[Assessment] V3 cards generated successfully in language: ${input.language}`);
       } catch (err) {
-        console.error("[Assessment] Saju/HD/Report calculation error:", err);
-        return res.status(500).json({
-          message: "Failed to generate report. Saju calculation or HD API failed.",
-          error: String(err),
-        });
+        console.error("[Assessment] Report generation failed:", err);
+        return res.status(500).json({ message: "REPORT_GENERATION_FAILED", stage: "gemini" });
       }
 
       // 6. Create saju result record

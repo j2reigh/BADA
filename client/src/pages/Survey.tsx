@@ -214,17 +214,18 @@ export default function Survey() {
       if (response.ok) {
         const result = await response.json();
         console.log("Assessment submitted:", result);
-        // Store navigation target, let GeneratingScreen finish animation first
         pendingNavRef.current = `/results/${result.reportId}`;
         setIsApiComplete(true);
       } else {
-        const error = await response.json();
-        throw new Error(error.message || "Submission failed");
+        // Log full server error for debugging, but don't show to user
+        const errorBody = await response.json().catch(() => ({}));
+        console.error("Assessment server error:", response.status, errorBody);
+        throw new Error("GENERATION_FAILED");
       }
     } catch (error) {
       console.error("Error submitting assessment:", error);
-      const msg = error instanceof Error ? error.message : "Something went wrong. Please try again.";
-      setSubmitError(msg);
+      // Always show generic message — never expose server internals
+      setSubmitError("GENERATION_FAILED");
     }
   };
 
