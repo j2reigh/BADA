@@ -130,3 +130,91 @@
 - **환경변수 체크리스트**: 배포 시 필수 환경변수 목록 관리 (APP_URL, RESEND_API_KEY 등) — 누락 방지
 - **기획 → 구현 매핑**: 기획 문서의 "구현 시 변경 범위" 테이블을 체크리스트로 활용, 빠진 항목 없는지 확인
 - **에러 메시지 구분**: 프론트엔드에서 404/403/500을 구분 표시 — 디버깅 시간 단축
+
+---
+
+## 10. Deployment Incidents (2026-02-17 C) — feat/true-solar-time 머지 후
+
+### 타임라인
+| 시각 | 이벤트 |
+|------|--------|
+| T+0 | `feat/true-solar-time` → `main` 머지 + 푸시. TST(진태양시), slug URL, UI 폴리시 등 포함 |
+| T+5m | 프로덕션 서베이 제출 → **500 에러** (리포트 생성 실패) |
+| T+10m | 원인 파악: Gemini JSON premature close 버그 수정(`fixPrematureClose`)이 feature 브랜치에만 있었음 → 머지로 해결 |
+| T+15m | 재배포 후 서베이 다시 테스트 → 리포트 생성 성공 |
+| T+20m | 유저가 "타임존 인풋 아직 남아있다" 신고 → 확인 결과 **드롭다운은 제거됐지만 라벨이 "Birth Timezone"으로 남아있음** |
+| T+25m | i18n 라벨 수정 (`birth.location`: "Birth Location" / "출생 장소" / "Lokasi Kelahiran") → 커밋 + 푸시 |
+| T+35m | 프로덕션 리포트 생성 재시도 → **500 크래시**: `ReferenceError: __dirname is not defined in ES module scope` |
+| T+40m | 원인 파악: `geo-tz` 라이브러리가 내부에서 `__dirname` 사용 → Vercel ESM 번들에서 미정의 |
+| T+45m | `script/build.ts`에 `__filename`/`__dirname` ESM shim 추가 → 재빌드 + 커밋 + 푸시 |
+| T+50m | 프로덕션 정상 동작 확인 |
+
+### 장애 1: Gemini JSON Premature Close
+
+**증상:** 서베이 제출 → 500 `Unexpected non-whitespace character after JSON at position 3216`
+
+**원인:**
+- Gemini가 JSON 객체 중간에 `}`를 출력한 뒤 `, "nextField": ...`로 계속하는 버그가 간헐적으로 발생
+- 이를 수정하는 `fixPrematureClose()` 함수가 feature 브랜치(`lib/gemini_client.ts`)에만 존재
+- main 브랜치에는 이전 세션의 기본 `parseJSON()`만 있었음
+- 머지 시 `gemini_client.ts`에 충돌이 없어서 자동 머지됐지만, 이미 main에 배포된 코드에는 없었던 상태
+
+**수정:** feature 브랜치 머지로 자동 해결
+
+**교훈:**
+- 프로덕션 크리티컬 버그 수정은 **즉시 main에도 cherry-pick**해야 함
+- feature 브랜치에서만 수정하고 "나중에 머지하면 되지"는 위험
+
+### 장애 2: "Birth Timezone" 라벨 미수정
+
+**증상:** 타임존 드롭다운은 제거했는데, 서베이에 "Birth Timezone" 텍스트가 여전히 보임
+
+**원인:**
+- Survey.tsx에서 timezone `<select>` 요소와 관련 state/validation은 모두 제거함
+- 그러나 도시 선택 필드의 라벨이 i18n 키 `birth.location`을 사용하는데, 이 키의 값이:
+  - EN: `"Birth Timezone"` (잘못된 값)
+  - KO: `"출생 시간대"` (잘못된 값)
+  - ID: `"Zona Waktu Kelahiran"` (잘못된 값)
+- 라벨은 `simple-i18n.ts`에 정의되어 있어서 Survey.tsx만 보면 발견 불가
+
+**수정:** `simple-i18n.ts`에서 3개 언어 모두 수정:
+- EN: `"Birth Location"`, KO: `"출생 장소"`, ID: `"Lokasi Kelahiran"`
+
+**교훈:**
+- UI 요소 제거 시 **연관 i18n 키 값도 함께 검증**해야 함
+- 컴포넌트 코드만 수정하고 i18n 파일을 놓치기 쉬움
+- "제거 완료" 확인 시 브라우저에서 직접 눈으로 확인하는 것이 가장 확실
+
+### 장애 3: `__dirname` ESM 미정의 크래시
+
+**증상:** `ReferenceError: __dirname is not defined in ES module scope` — 프로덕션 서버리스 함수 즉시 크래시
+
+**원인:**
+- TST(진태양시) 기능에서 위도/경도 기반 타임존 계산을 위해 `geo-tz` 라이브러리 추가
+- `geo-tz`는 내부적으로 `__dirname`을 사용하여 데이터 파일 경로를 resolve
+- Vercel 서버리스 번들은 `format: "esm"` → ESM에서 `__dirname`은 정의되지 않음
+- 기존 esbuild 배너에 `require` shim(`createRequire`)만 있었고, `__dirname`/`__filename` shim은 없었음
+
+**수정:** `script/build.ts`의 Vercel 핸들러 esbuild 배너에 추가:
+```javascript
+import { fileURLToPath as __esm_fileURLToPath } from "url";
+import { dirname as __esm_dirname } from "path";
+const __filename = __esm_fileURLToPath(import.meta.url);
+const __dirname = __esm_dirname(__filename);
+```
+
+**근본 원인:**
+- 기능 개발 시 새 패키지(`geo-tz`) 추가 → Vercel ESM 번들 호환성 체크를 하는 워크플로우 자체가 없었음
+- 로컬(`npx tsx`)은 CJS 호환이라 `__dirname`이 원래 존재 → 개발/테스트 전 과정에서 문제가 드러나지 않음
+- esbuild `banner` 설정은 프로젝트 초기에 `require` shim만 넣고 잊혀진 상태 → 새 라이브러리가 `__dirname`을 쓰는지 확인할 계기가 없었음
+
+**교훈:**
+- 라이브러리 추가 시 "Vercel ESM 번들에서 돌아가나?" 체크가 워크플로우에 없으면 반드시 재발함
+- **재발 방지:** `CLAUDE.md`에 "Vercel 배포 호환성 체크" 섹션 추가 — 새 패키지 추가 시 CJS 글로벌 사용 여부 확인 + esbuild banner shim 확인을 필수 체크리스트로 등록
+
+### 종합 교훈
+
+1. **Feature 브랜치 수정 ≠ 프로덕션 수정** — 크리티컬 버그 수정은 main에도 즉시 반영
+2. **UI 제거 = 코드 + i18n + 시각 확인** 3단계 체크리스트 필요
+3. **워크플로우에 없으면 까먹는다** — 새 패키지 추가 시 Vercel ESM 호환성 체크를 `CLAUDE.md` 체크리스트에 등록하여 자동 참조되게 함
+4. **로컬 ≠ Vercel** — `npx tsx`(CJS 호환)와 Vercel Lambda(ESM)는 런타임이 다름. 로컬 성공이 프로덕션 성공을 보장하지 않음

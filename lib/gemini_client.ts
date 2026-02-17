@@ -1412,12 +1412,16 @@ export interface V3CardContent {
     nextLabel: string;      // e.g. "Ages 35-44"
     nextText: string;       // 1-2 sentences, plain language
     accent: string;         // transition insight
-    strategy: string;       // DO/DON'T for current chapter
+    strategy?: string;       // legacy single-string (backward compat)
+    strategyDo: string;      // DO action for current chapter
+    strategyDont: string;    // DON'T trap for current chapter
   };
   yearQuestion: string;
   yearText: string;
   yearAccent: string;
-  yearStrategy: string;
+  yearStrategy?: string;     // legacy single-string (backward compat)
+  yearStrategyDo: string;    // DO action for this year
+  yearStrategyDont: string;  // DON'T trap for this year
   actionQuestion: string;
   actionNeuro: string;
   shifts: Array<{ name: string; text: string; when: string }>;
@@ -1756,12 +1760,14 @@ DO NOT copy this content. Use it ONLY to calibrate tone and specificity.
     "nextLabel": "Ages 35-44",
     "nextText": "A decade of building. The pressure you're feeling now becomes the foundation for real, tangible results.",
     "accent": "You went from learning the rules to being forced to break them. Next comes building something real with what survived.",
-    "strategy": "DO: Say no to safety-seeking decisions. This decade rewards risk. DON'T: Build another backup plan. The pressure you feel isn't a sign to retreat — it's the signal to push."
+    "strategyDo": "Say no to safety-seeking decisions. This decade rewards risk.",
+    "strategyDont": "Build another backup plan. The pressure you feel isn't a sign to retreat — it's the signal to push."
   },
   "yearQuestion": "What is 2026 actually asking of you?",
   "yearText": "This year is offering you a pause button in the middle of a pressure decade. Your system wants to sprint. But 2026 is handing you a library card, not running shoes. The energy this year supports reflection, intuition, and unconventional learning.",
   "yearAccent": "2026 is not asking you to do more. It's asking you to understand more before you act.",
-  "yearStrategy": "DO: Use 2026 to study, not to launch. Take one course, read deeply, talk to mentors. DON'T: Start a new project before June. The urge to build is real but premature — this year's energy is for loading, not firing.",
+  "yearStrategyDo": "Use 2026 to study, not to launch. Take one course, read deeply, talk to mentors.",
+  "yearStrategyDont": "Start a new project before June. The urge to build is real but premature — this year's energy is for loading, not firing.",
   "actionQuestion": "Can your brain actually rewire this?",
   "actionNeuro": "Your amygdala triggers threat responses 3x above baseline. Your prefrontal cortex compensates by staying in control mode. This is why you crash by 3pm. The protocol below interrupts this loop at the neural level.",
   "shifts": [
@@ -1823,8 +1829,11 @@ Generate EXACTLY 3 protocols. Each must:
 5. First protocol = highest impact, most urgent
 
 CHAPTER/YEAR STRATEGY — CRITICAL:
-- chapter.strategy: 2-3 sentences. DO [specific action for this decade's energy] + DON'T [specific trap to avoid].
-- yearStrategy: 2-3 sentences. DO [specific action for this year] + DON'T [specific trap].
+- chapter.strategyDo: 1-2 sentences. What to DO this decade. Specific, actionable.
+- chapter.strategyDont: 1-2 sentences. What NOT to do. The specific trap to avoid.
+- yearStrategyDo: 1-2 sentences. What to DO this year. Specific, actionable.
+- yearStrategyDont: 1-2 sentences. What NOT to do this year. The specific trap to avoid.
+- Do NOT include "DO:" or "DON'T:" prefixes in the text — just write the action/warning directly.
 - These must be ACTIONABLE, not motivational. Bad: "Trust the process." Good: "Spend 30 minutes weekly journaling what you're learning, not what you're achieving."
 - Connect the strategy to the collision — the strategy should address the gap you identified.
 
@@ -1865,8 +1874,8 @@ You MUST include ALL of these fields in your JSON output. If ANY is missing, the
 - "shifts": array of EXACTLY 3 protocol objects [{name, text, when}, ...]
 - "closingLine": ONE powerful sentence that compresses all your advice into a single takeaway. This is the last thing the user reads. Make it unforgettable.
 - "blueprintFacets": array of EXACTLY 3 facet objects [{label, text}, ...]
-- "yearStrategy": DO/DON'T strategy for this year
-- chapter must include "strategy" field
+- "yearStrategyDo", "yearStrategyDont": DO/DON'T strategy for this year (separate fields)
+- chapter must include "strategyDo" and "strategyDont" fields (separate, not combined)
 - All cost cards (costCareer, costRelationship, costMoney) must include "tip" field
 
 Output ONLY valid JSON matching the structure above. No markdown, no explanation.`;

@@ -43,6 +43,26 @@
 🟢 **Main 직행** — 망가져도 티만 나는 작업:
 - 단순 UI/텍스트/CSS 수정
 
+## Vercel 배포 호환성 체크 (필수)
+
+서버 코드 변경 시 **반드시** 아래 체크리스트 확인:
+
+### 새 npm 패키지 추가 시
+- [ ] 해당 라이브러리가 CJS 전용 글로벌 사용하는지 확인 (`__dirname`, `__filename`, `require`)
+- [ ] 사용한다면 `script/build.ts`의 Vercel 핸들러 esbuild `banner`에 shim 존재하는지 확인
+- [ ] 현재 shim 목록: `createRequire`, `__filename` (`fileURLToPath`), `__dirname` (`dirname`)
+- [ ] 네이티브 바이너리(`.node`) 의존 라이브러리는 Vercel Lambda에서 동작 불가 — 대안 검토
+
+### 서버 코드 빌드 후
+- [ ] `npm run build` 성공 확인
+- [ ] `api/index.js` 생성 확인 (Vercel 서버리스 진입점)
+- [ ] 로컬 `npx tsx` ≠ Vercel ESM 런타임임을 인지 — 로컬 성공이 프로덕션 성공을 보장하지 않음
+
+### i18n/UI 제거 시
+- [ ] 컴포넌트 코드 제거
+- [ ] `simple-i18n.ts` 관련 키/값 수정
+- [ ] 브라우저에서 시각적 확인
+
 ## Push 규칙
 - 커밋까지만 한다. **push는 유저가 직접** 하거나 명시적으로 요청 시에만.
 

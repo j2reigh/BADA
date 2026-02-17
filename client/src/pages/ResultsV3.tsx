@@ -12,30 +12,47 @@ function firstSentences(text: string | undefined, count: number): string {
   return sentences.slice(0, count).join(" ").trim();
 }
 
-/** Split strategy text into DO / DON'T bullet points */
-function StrategyBlock({ text }: { text: string }) {
-  // Split on DON'T / 피해야 할 일 patterns
-  const doMatch = text.match(/^(?:DO:|수행해야 할 일:)\s*/i);
-  const dontSplit = text.split(/(?:DON'T:|피해야 할 일:)\s*/i);
-
-  if (dontSplit.length >= 2) {
-    const doText = dontSplit[0].replace(/^(?:DO:|수행해야 할 일:)\s*/i, '').trim();
-    const dontText = dontSplit[1].trim();
+/** Render DO / DON'T strategy as fixed-label bullet points */
+function StrategyBlock({ doText, dontText, legacy }: { doText?: string; dontText?: string; legacy?: string }) {
+  // New split fields available
+  if (doText && dontText) {
     return (
       <div className="space-y-3">
         <div className="flex gap-2 items-start">
           <span className="text-[#6BCB77] text-xs font-mono mt-0.5 shrink-0">DO</span>
-          <p className="text-sm text-white/80 font-light leading-relaxed text-left">{doText}</p>
+          <p className="text-[15px] text-white/80 font-light leading-relaxed text-left">{doText}</p>
         </div>
         <div className="flex gap-2 items-start">
           <span className="text-[#FF6B6B] text-xs font-mono mt-0.5 shrink-0">DON'T</span>
-          <p className="text-sm text-white/80 font-light leading-relaxed text-left">{dontText}</p>
+          <p className="text-[15px] text-white/80 font-light leading-relaxed text-left">{dontText}</p>
         </div>
       </div>
     );
   }
 
-  return <p className="text-sm text-white/80 font-light leading-relaxed">{text}</p>;
+  // Backward compat: try to parse legacy single-string format
+  if (legacy) {
+    const dontSplit = legacy.split(/(?:DON'T:|피해야 할 일:|피하세요:)\s*/i);
+    if (dontSplit.length >= 2) {
+      const parsedDo = dontSplit[0].replace(/^(?:DO:|수행해야 할 일:|실행하세요:)\s*/i, '').trim();
+      const parsedDont = dontSplit[1].trim();
+      return (
+        <div className="space-y-3">
+          <div className="flex gap-2 items-start">
+            <span className="text-[#6BCB77] text-xs font-mono mt-0.5 shrink-0">DO</span>
+            <p className="text-[15px] text-white/80 font-light leading-relaxed text-left">{parsedDo}</p>
+          </div>
+          <div className="flex gap-2 items-start">
+            <span className="text-[#FF6B6B] text-xs font-mono mt-0.5 shrink-0">DON'T</span>
+            <p className="text-[15px] text-white/80 font-light leading-relaxed text-left">{parsedDont}</p>
+          </div>
+        </div>
+      );
+    }
+    return <p className="text-[15px] text-white/80 font-light leading-relaxed">{legacy}</p>;
+  }
+
+  return null;
 }
 
 // ─── V3 Card Content Type ───
@@ -79,12 +96,16 @@ interface V3CardContent {
     nextLabel: string;
     nextText: string;
     accent: string;
-    strategy?: string;
+    strategy?: string;        // legacy single-string
+    strategyDo?: string;
+    strategyDont?: string;
   };
   yearQuestion?: string;
   yearText?: string;
   yearAccent?: string;
-  yearStrategy?: string;
+  yearStrategy?: string;      // legacy single-string
+  yearStrategyDo?: string;
+  yearStrategyDont?: string;
   actionQuestion?: string;
   actionNeuro?: string;
   shift?: { name: string; text: string; when: string };  // legacy
@@ -117,10 +138,12 @@ function Card({
 }) {
   return (
     <div
-      className={`h-[100dvh] w-full flex-shrink-0 snap-start flex flex-col justify-center items-center px-5 sm:px-8 relative ${bg} ${className}`}
+      className={`h-[100dvh] w-full flex-shrink-0 snap-start relative ${bg} ${className}`}
       style={{ fontFamily: "'Inter', sans-serif" }}
     >
-      {children}
+      <div className="h-full overflow-y-auto flex flex-col justify-center items-center px-5 sm:px-8 py-12">
+        {children}
+      </div>
       {/* Watermark — visible in screenshots */}
       <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-1.5 opacity-25 pointer-events-none">
         <img src="/logo-badaone.svg" alt="bada.one" className="h-3.5" />
@@ -545,6 +568,8 @@ interface ChapterData {
   nextText: string;
   accent: string;
   strategy?: string;
+  strategyDo?: string;
+  strategyDont?: string;
 }
 
 function ChapterCard({
@@ -665,13 +690,13 @@ function ChapterCard({
           </p>
         )}
 
-        {chapter.strategy && (
+        {(chapter.strategyDo || chapter.strategy) && (
           <div className="mt-4 w-full px-4 py-4 rounded-xl bg-white/5 border border-white/10">
             <span className="text-xs uppercase tracking-[0.2em] text-[#ABBBD5]/50 block mb-3"
               style={{ fontFamily: "'JetBrains Mono', monospace" }}>
               your move
             </span>
-            <StrategyBlock text={chapter.strategy} />
+            <StrategyBlock doText={chapter.strategyDo} dontText={chapter.strategyDont} legacy={chapter.strategy} />
           </div>
         )}
 
@@ -685,11 +710,15 @@ function YearCard({
   text,
   accent,
   strategy,
+  strategyDo,
+  strategyDont,
 }: {
   question: string;
   text: string;
   accent: string;
   strategy?: string;
+  strategyDo?: string;
+  strategyDont?: string;
 }) {
   return (
     <Card bg="bg-gradient-to-b from-[#182339] to-[#1e2a45]">
@@ -719,13 +748,13 @@ function YearCard({
             </p>
           </div>
         )}
-        {strategy && (
+        {(strategyDo || strategy) && (
           <div className="mt-4 w-full px-4 py-4 rounded-xl bg-[#ABBBD5]/8 border border-[#ABBBD5]/15">
             <span className="text-xs uppercase tracking-[0.2em] text-[#ABBBD5]/50 block mb-3"
               style={{ fontFamily: "'JetBrains Mono', monospace" }}>
               your move
             </span>
-            <StrategyBlock text={strategy} />
+            <StrategyBlock doText={strategyDo} dontText={strategyDont} legacy={strategy} />
           </div>
         )}
 
@@ -1175,7 +1204,7 @@ export default function ResultsV3() {
     {
       key: "year",
       render: () => (v3.yearQuestion && v3.yearText) ? (
-        <YearCard question={v3.yearQuestion} text={v3.yearText} accent={v3.yearAccent || ""} strategy={v3.yearStrategy} />
+        <YearCard question={v3.yearQuestion} text={v3.yearText} accent={v3.yearAccent || ""} strategy={v3.yearStrategy} strategyDo={v3.yearStrategyDo} strategyDont={v3.yearStrategyDont} />
       ) : null,
     },
     {
