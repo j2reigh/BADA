@@ -431,6 +431,9 @@ export async function registerRoutes(
             blueprintText: cards.blueprintText,
             blueprintAccent: cards.blueprintAccent,
             blueprintFacets: cards.blueprintFacets,
+            decisionQuestion: cards.decisionQuestion,
+            decisionText: cards.decisionText,
+            decisionAccent: cards.decisionAccent,
           };
         }
       } else {

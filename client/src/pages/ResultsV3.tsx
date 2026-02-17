@@ -49,6 +49,9 @@ interface V3CardContent {
   blueprintText: string;
   blueprintAccent: string;
   blueprintFacets?: Array<{ label: string; text: string }>;
+  decisionQuestion?: string;
+  decisionText?: string;
+  decisionAccent?: string;
   collisionQuestion?: string;
   collisionText?: string;
   collisionAccent?: string;
@@ -60,6 +63,9 @@ interface V3CardContent {
   costRelationship?: { title: string; text: string; tip?: string };
   costMoneyQuestion?: string;
   costMoney?: { title: string; text: string; tip?: string };
+  rechargeQuestion?: string;
+  rechargeText?: string;
+  rechargeTip?: string;
   brainScan?: {
     question: string;
     insight: string;
@@ -364,6 +370,40 @@ function CostCard({
         <h3 className="text-lg font-medium text-white/90 mb-4">{title}</h3>
         <p className="text-base font-light text-white/80 leading-relaxed">
           {firstSentences(description, 2)}
+        </p>
+        {tip && (
+          <div className="mt-6 w-full px-4 py-4 rounded-xl bg-white/5 border border-white/10 text-left">
+            <span className="text-xs uppercase tracking-[0.2em] text-[#ABBBD5]/50 block mb-2"
+              style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+              try this
+            </span>
+            <p className="text-sm text-white/80 font-light leading-relaxed">{tip}</p>
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function RechargeCard({
+  question,
+  text,
+  tip,
+}: {
+  question: string;
+  text: string;
+  tip?: string;
+}) {
+  return (
+    <Card bg="bg-gradient-to-b from-[#182339] to-[#1a2840]">
+      <div className="relative flex flex-col items-center text-center w-full max-w-sm">
+        <CardLabel>recharge</CardLabel>
+        <p className="text-xl text-[#879DC6] font-light mb-6 leading-relaxed">
+          {question}
+        </p>
+        <div className="w-8 h-px bg-white/10 mb-6" />
+        <p className="text-base font-light text-white/90 leading-relaxed">
+          {text}
         </p>
         {tip && (
           <div className="mt-6 w-full px-4 py-4 rounded-xl bg-white/5 border border-white/10 text-left">
@@ -789,7 +829,7 @@ function LockCard({
       placeholder: "Enter code",
       apply: "Apply",
       faq: [
-        { key: "q2", q: "Is this fortune telling?", a: "No. Nothing is predicted. We show patterns in how you operate — not what will happen to you." },
+        { key: "q2", q: "How is this different from MBTI?", a: "MBTI gives you a type. BADA maps the patterns unique to you — why you burn out, how you make decisions, what you keep repeating. No two reports are the same." },
         { key: "q4", q: "What do I get for $2.9?", a: "10 more cards: why your patterns exist, what they cost you at work, in relationships, and with money, your 10-year chapter, and one thing to change this week." },
         { key: "q6", q: "Is my data safe?", a: "Your birth data is used only to generate your report. We don't sell or share it." },
         { key: "contact", q: "How do I reach you?", a: "Questions, feedback, or just want to say hi?" },
@@ -804,7 +844,7 @@ function LockCard({
       placeholder: "코드 입력",
       apply: "적용",
       faq: [
-        { key: "q2", q: "점술인가요?", a: "아닙니다. 아무것도 예측하지 않습니다. 무슨 일이 일어날지가 아니라, 당신이 어떻게 작동하는지의 패턴을 보여줍니다." },
+        { key: "q2", q: "MBTI랑 뭐가 다른가요?", a: "MBTI는 유형을 줍니다. BADA는 당신만의 패턴을 매핑합니다 — 왜 번아웃이 오는지, 어떻게 결정하는지, 뭘 반복하는지. 같은 리포트는 없습니다." },
         { key: "q4", q: "$2.9으로 뭘 더 보나요?", a: "10장 추가: 패턴이 왜 존재하는지, 직장·관계·돈에서 치르는 대가, 10년 챕터, 이번 주 바꿀 수 있는 한 가지." },
         { key: "q6", q: "데이터는 안전한가요?", a: "생년월일은 리포트 생성에만 사용됩니다. 판매하거나 공유하지 않습니다." },
         { key: "contact", q: "어디로 연락하나요?", a: "질문, 피드백, 또는 그냥 인사하고 싶으신가요?" },
@@ -819,7 +859,7 @@ function LockCard({
       placeholder: "Masukkan kode",
       apply: "Terapkan",
       faq: [
-        { key: "q2", q: "Apakah ini ramalan?", a: "Tidak. Tidak ada yang diprediksi. Kami menunjukkan pola cara kerjamu — bukan apa yang akan terjadi." },
+        { key: "q2", q: "Apa bedanya dengan MBTI?", a: "MBTI memberimu tipe. BADA memetakan pola unikmu — kenapa kamu burnout, bagaimana kamu mengambil keputusan, apa yang terus kamu ulangi. Tidak ada dua laporan yang sama." },
         { key: "q4", q: "Apa yang saya dapat dengan $2.9?", a: "10 kartu lagi: kenapa polamu ada, biayanya di kerja, hubungan, dan uang, chapter 10 tahunmu, dan satu hal yang bisa diubah minggu ini." },
         { key: "q6", q: "Apakah data saya aman?", a: "Data kelahiranmu hanya digunakan untuk membuat laporanmu. Kami tidak menjual atau membagikannya." },
         { key: "contact", q: "Bagaimana cara menghubungi?", a: "Pertanyaan, masukan, atau sekadar ingin menyapa?" },
@@ -1074,6 +1114,12 @@ export default function ResultsV3() {
         <BlueprintFacetsCard facets={v3.blueprintFacets} />
       ) : null,
     },
+    {
+      key: "decision",
+      render: () => v3.decisionQuestion ? (
+        <InsightCard label="Your decisions" question={v3.decisionQuestion} text={v3.decisionText || ""} accent={v3.decisionAccent} />
+      ) : null,
+    },
   ];
 
   const paidCards = [
@@ -1111,6 +1157,12 @@ export default function ResultsV3() {
       key: "cost-money",
       render: () => v3.costMoney ? (
         <CostCard label="With money" question={v3.costMoneyQuestion || ""} emoji="💰" title={v3.costMoney.title} description={v3.costMoney.text} tip={v3.costMoney.tip} />
+      ) : null,
+    },
+    {
+      key: "recharge",
+      render: () => v3.rechargeQuestion ? (
+        <RechargeCard question={v3.rechargeQuestion} text={v3.rechargeText || ""} tip={v3.rechargeTip} />
       ) : null,
     },
     {

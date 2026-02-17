@@ -1342,6 +1342,9 @@ export interface V3CardContent {
     label: string;
     text: string;
   }>;
+  decisionQuestion?: string;
+  decisionText?: string;
+  decisionAccent?: string;
   collisionQuestion: string;
   collisionText: string;
   collisionAccent: string;
@@ -1357,6 +1360,9 @@ export interface V3CardContent {
     question: string;
     insight: string;
   };
+  rechargeQuestion?: string;
+  rechargeText?: string;
+  rechargeTip?: string;
   // Timeline cards (대운 → 세운 → Protocol)
   chapter: {
     question: string;
@@ -1680,6 +1686,9 @@ DO NOT copy this content. Use it ONLY to calibrate tone and specificity.
     { "label": "Hidden Talent", "text": "You read systems faster than people. Give you any organization, business, or group dynamic and you'll spot the structural flaw within minutes. You dismiss this as 'obvious' — it's not. Most people can't do it." },
     { "label": "Blind Spot", "text": "You absorb other people's stress and mistake it for your own. You walk into a tense room and leave carrying weight that was never yours. This is why you feel exhausted after social events that 'shouldn't' be tiring." }
   ],
+  "decisionQuestion": "How do you actually make decisions?",
+  "decisionText": "You think you decide by analyzing all options and picking the safest one. Your design says otherwise. You were built with an emotional authority — meaning your best decisions come after sleeping on it, not after spreadsheet-ing it. Every snap decision you've regretted? That was you overriding the system that needed 24 more hours.",
+  "decisionAccent": "Your gut isn't broken. You're just not giving it enough time to speak.",
   "collisionQuestion": "So what breaks when a mountain tries to sprint?",
   "collisionText": "You think speed is your strength. Your design says it's your biggest leak. You were built to be a mountain, not a sprinter. Every time you rush to fix something, you're overriding the system that gives you your actual power: patience.",
   "collisionAccent": "The gap: you act like fire, but you were built from earth. That mismatch is where your energy disappears.",
@@ -1695,6 +1704,9 @@ DO NOT copy this content. Use it ONLY to calibrate tone and specificity.
   "costRelationship": { "title": "In relationships", "text": "You show up as the strong one. Always capable, never needing. People stop asking if you're okay because you trained them not to. The fortress works. That's the problem.", "tip": "Pick one person this week and say 'I'm actually not fine today.' One sentence. That's it. Your fortress has a door — use it." },
   "costMoneyQuestion": "Why does money come in and leave just as fast?",
   "costMoney": { "title": "With money", "text": "You earn and spend in the same motion. Money comes in through effort, leaks out through the constant maintenance of problems you anticipated but didn't need to solve.", "tip": "Before any purchase over $30 this week, wait 24 hours. Not to save money. To notice whether you're buying to solve a problem or to feel productive." },
+  "rechargeQuestion": "Why doesn't rest feel like rest?",
+  "rechargeText": "You collapse on the couch and call it recovery. But your system doesn't recharge through stillness — it recharges through satisfaction. You were built to respond to what genuinely excites you. When you rest 'correctly' but feel emptier, it's because your body needed engagement, not escape. Your open head center absorbs everyone else's mental noise all day. By evening, half the thoughts in your head aren't even yours.",
+  "rechargeTip": "Before bed tonight, ask yourself: 'Which of today's worries are actually mine?' Write down only yours. Let the rest go — literally cross them out. Your system sheds borrowed energy through physical acknowledgment.",
   "brainScan": { "question": "Where is all your energy actually going?", "insight": "Your amygdala fires at nearly double the baseline rate, keeping your threat-detection system permanently on. This hijacks your prefrontal cortex into reactive problem-solving mode instead of strategic thinking. Meanwhile, your dopamine pathways are locked in a production loop: finish one task, crave the next, repeat. The result is a brain running two expensive programs simultaneously with almost nothing left for the default mode network, the system that handles creativity, self-reflection, and genuine rest." },
   "chapter": {
     "question": "What chapter of your life are you actually in?",
@@ -1724,6 +1736,33 @@ DO NOT copy this content. Use it ONLY to calibrate tone and specificity.
 ═══════════════════════════════
 CARD-SPECIFIC RULES
 ═══════════════════════════════
+
+DECISION CARD — FREE PREVIEW (high impact):
+This card shows how the user THINKS they decide vs how they're DESIGNED to decide.
+Data sources:
+- HD Authority: ${hdData ? hdData.authority : 'N/A'} — this is their designed decision-making mechanism
+  Emotional = sleep on it (wave must complete), Sacral = gut response (yes/no in the moment), Splenic = first instinct (trust the flash), Self-Projected = talk it out, Ego = willpower, None/Lunar = wait 28 days
+- Survey Agency: ${surveyScores.agencyActive === 1 ? 'ACTIVE (thinks they decide fast and shape outcomes)' : 'PASSIVE (thinks they wait and let things unfold)'}
+- HD Strategy: ${hdData ? hdData.strategy : 'N/A'}
+Rules:
+- decisionQuestion: provocative question about their decision-making gap
+- decisionText: 3-4 sentences. Name the gap between how they THINK they decide and how they SHOULD decide. Be specific.
+- decisionAccent: 1 sentence. The practical takeaway — what to do differently starting now.
+- NO jargon. Never say "emotional authority" or "sacral response". Translate to behavior.
+
+RECHARGE CARD — PAID (after Cost trilogy):
+This card explains why rest doesn't feel like rest and gives their actual recovery method.
+Data sources:
+- HD Type + Strategy: ${hdData ? `${hdData.type} / ${hdData.strategy}` : 'N/A'} — defines HOW they recharge
+  Generator/MG = through satisfaction and correct response; Projector = through recognition and being invited; Manifestor = through informing then withdrawing; Reflector = through lunar cycles and space
+- Saju Missing Elements: ${missingElements.length > 0 ? missingElements.join(', ') : 'none'} — what's structurally absent
+  missing water = no natural cooling/rest system; missing wood = no flexibility/growth outlet; missing metal = no structure/release mechanism; missing fire = no passion/spark; missing earth = no grounding/stability
+- HD Open Centers: ${hdData ? ALL_HD_CENTERS.filter(c => !hdData.centers.includes(c)).join(', ') : 'N/A'} — energy they absorb from others and must shed
+- HD Not-Self Theme: ${hdData ? hdData.not_self_theme : 'N/A'} — emotional signal they're running on others' fuel
+Rules:
+- rechargeQuestion: question about why their current rest strategy fails
+- rechargeText: 3-4 sentences. Explain their designed recharge method + what they absorb from others that drains them. Be specific to their open centers.
+- rechargeTip: ONE concrete action. Start with "Tonight:" or "This week:". Must be doable in under 5 minutes. Should address their specific energy leak.
 
 COST CARD TIPS — CRITICAL:
 Each cost card MUST include a "tip" field. This is the SOLUTION, not more diagnosis.
@@ -1782,6 +1821,8 @@ Generate V3CardContent JSON for ${userName} using THEIR data above. Find THEIR s
 
 MANDATORY FIELDS — DO NOT SKIP:
 You MUST include ALL of these fields in your JSON output. If ANY is missing, the report is broken:
+- "decisionQuestion", "decisionText", "decisionAccent": decision-making gap card
+- "rechargeQuestion", "rechargeText", "rechargeTip": recharge/recovery card
 - "shifts": array of EXACTLY 3 protocol objects [{name, text, when}, ...]
 - "closingLine": ONE powerful sentence that compresses all your advice into a single takeaway. This is the last thing the user reads. Make it unforgettable.
 - "blueprintFacets": array of EXACTLY 3 facet objects [{label, text}, ...]
