@@ -13,6 +13,39 @@
 
 ## 🔄 최근 회고 (최신순)
 
+### 2026-02-17 (E) - DO/DON'T 필드 분리 + 리포트 dedup + 배포 회고 + i18n 백로그
+**Agent:** Claude
+
+#### 👍 Keep (계속 할 것)
+- **프론트 라벨 고정 + 백엔드 데이터 분리:** DO/DON'T가 Gemini 언어 출력에 의존하던 regex 파싱 → `strategyDo`/`strategyDont` 별도 필드로 분리하여 언어 관계없이 안정 렌더링. 기존 `strategy` string은 fallback 파싱으로 하위 호환
+- **dedup 로컬 테스트 검증:** 같은 birth data 제출 → 기존 리포트 즉시 반환 (Gemini 호출 0회) 확인. `deduplicated: true` 플래그로 프론트 구분 가능
+- **CLAUDE.md에 Vercel 호환성 체크리스트 등록:** 워크플로우에 없으면 까먹는 문제를 자동 참조로 해결 (새 패키지 추가 시 CJS 글로벌 확인, esbuild banner shim 확인)
+
+#### 🤔 Problem (문제점)
+- **DO/DON'T regex 파싱 깨짐 뒤늦게 발견:** `실행하세요:`/`피하세요:` 같은 한국어 변형을 regex가 못 잡아서 bullet point가 사라진 상태였음. 프롬프트 수정 후 다국어 출력을 눈으로 검증하지 않은 것이 원인
+- **dedup에서 language 매칭 빠뜨림:** 같은 사주 데이터라도 언어가 다르면 새 리포트가 필요한데 첫 구현에서 누락. 유저가 즉시 지적하여 수정
+- **인도네시아 유저 영어 리포트 생성 문제:** `navigator.language` 의존으로 영어 디바이스 쓰는 동남아 유저가 영어로 리포트 생성. 언어 토글은 Landing 푸터에만 있어서 발견 불가
+
+#### 💡 Try (시도할 것)
+- **다국어 출력은 regex 의존 금지:** LLM 출력 파싱이 필요한 필드는 JSON 스키마에서 분리하여 프론트는 고정 라벨만 사용
+- **dedup 조건은 "새 리포트가 필요한 모든 경우"를 열거:** birth data + language + prompt version — 누락하면 다른 언어/버전 리포트를 덮어쓰는 셈
+- **프롬프트 수정 후 PROMPT_REVISION 범프:** `WRITING_STYLE_RULES` 외 인라인 변경 시 수동 범프 필요 — 잊지 않도록 PR/커밋 시 체크
+
+#### 📦 산출물
+- `lib/gemini_client.ts`: `strategyDo`/`strategyDont`, `yearStrategyDo`/`yearStrategyDont` 필드 분리, `getPromptHash()` + `PROMPT_REVISION`, v3Cards에 `_promptHash` 자동 저장
+- `client/src/pages/ResultsV3.tsx`: `StrategyBlock` 리팩터 — 새 필드 우선, legacy fallback (+ `실행하세요:`/`피하세요:` 패턴 추가)
+- `server/routes.ts`: assessment dedup 로직 (24h 윈도우 + prompt hash + language 매칭), `getPromptHash` import
+- `CLAUDE.md`: Vercel 배포 호환성 체크 섹션 (새 패키지, 빌드 후, i18n/UI 제거 시)
+- `.ai-workflow/retrospectives/2026-02-16-vercel-deployment-retro.md`: Section 10 배포 장애 3건 (Gemini JSON, Birth Timezone 라벨, __dirname ESM)
+- `.ai-workflow/backlog/002-i18n-country-language-suggestion.md`: 국가 선택 시 언어 전환 제안 백로그
+
+#### 커밋 이력
+- `d94453e` fix: split DO/DON'T strategy into separate JSON fields for i18n safety
+- `963f137` feat: dedup assessment — return existing report for same birth data
+- `fb3adb9` fix: include language in dedup matching — different language = new report
+
+---
+
 ### 2026-02-17 (D) - Gumroad slug 에러 + 리포트 카드 분리 + Retry 개선
 **Agent:** Claude
 
