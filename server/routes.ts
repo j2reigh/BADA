@@ -441,9 +441,14 @@ export async function registerRoutes(
 
       res.json(responseData);
     } catch (err) {
-      console.error("Results fetch error:", err);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      console.error("Results fetch error:", errMsg);
       console.error("Error stack:", err instanceof Error ? err.stack : "No stack trace");
-      res.status(500).json({ message: "Failed to get results" });
+      res.status(500).json({
+        message: "Failed to get results",
+        errorType: err instanceof Error ? err.constructor.name : typeof err,
+        detail: errMsg,
+      });
     }
   });
 
