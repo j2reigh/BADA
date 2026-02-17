@@ -684,6 +684,42 @@ OUTPUT (JSON Only):
   return generateWithRetry(model, systemPrompt, "Generate Page 5 Solution JSON.");
 }
 
+/**
+ * Fix Gemini split-object pattern: model sometimes outputs a premature }
+ * mid-object, then continues with , "nextField": ...
+ * Only triggers when } brings brace depth to 0 before the string ends,
+ * so it won't touch legitimate }, " inside nested objects.
+ */
+function fixPrematureClose(json: string): string {
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+
+  for (let i = 0; i < json.length; i++) {
+    const ch = json[i];
+
+    if (escape) { escape = false; continue; }
+    if (ch === '\\' && inString) { escape = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+
+    if (ch === '{') depth++;
+    else if (ch === '}') {
+      depth--;
+      if (depth === 0 && i < json.length - 1) {
+        const remainder = json.slice(i + 1).trimStart();
+        if (/^,\s*"/.test(remainder)) {
+          console.log(`[JSON Fix] Premature object close at position ${i}, merging continuation`);
+          json = json.slice(0, i) + json.slice(i + 1);
+          i--;
+          depth = 1;
+        }
+      }
+    }
+  }
+  return json;
+}
+
 function parseJSON(text: string): any {
   // Strip markdown fences
   let cleaned = text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
@@ -692,12 +728,15 @@ function parseJSON(text: string): any {
   // Strip control characters except normal whitespace (tab, newline, carriage return)
   cleaned = cleaned.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
 
-  // Extract JSON object if surrounded by non-JSON text
+  // Extract JSON object from first { to last }
   const jsonStart = cleaned.indexOf('{');
   const jsonEnd = cleaned.lastIndexOf('}');
-  if (jsonStart > 0 && jsonEnd > jsonStart) {
+  if (jsonStart >= 0 && jsonEnd > jsonStart) {
     cleaned = cleaned.slice(jsonStart, jsonEnd + 1);
   }
+
+  // Fix Gemini split-object pattern (depth-aware, only top-level)
+  cleaned = fixPrematureClose(cleaned);
 
   try {
     return JSON.parse(cleaned);
@@ -1408,7 +1447,7 @@ export async function generateV3Cards(
   const model = client.getGenerativeModel({
     model: "gemini-3-flash-preview",
     generationConfig: {
-      maxOutputTokens: 16384,
+      maxOutputTokens: 24576,
       responseMimeType: "application/json",
     },
   });
@@ -1836,12 +1875,21 @@ Output ONLY valid JSON matching the structure above. No markdown, no explanation
 
   const v3Content = await generateWithRetry(model, systemPrompt, "Generate V3 Card Content JSON.") as V3CardContent;
 
+  console.log(`[Gemini] V3 Cards keys received: ${Object.keys(v3Content).sort().join(', ')}`);
+
   // Validate required fields — prevent saving truncated JSON from repair
   const requiredFields = ['hookQuestion', 'mirrorQuestion', 'mirrorText', 'blueprintQuestion', 'blueprintText', 'closingLine', 'shifts'] as const;
   const missing = requiredFields.filter(f => !v3Content[f]);
   if (missing.length > 0) {
     console.error(`[Gemini] V3 Cards missing required fields: ${missing.join(', ')}`);
-    throw new Error(`V3_INCOMPLETE: Missing required fields: ${missing.join(', ')}`);
+    // If only closingLine/shifts missing, the first JSON object was truncated — try to continue with what we have
+    const critical = missing.filter(f => ['hookQuestion', 'mirrorQuestion', 'blueprintQuestion'].includes(f));
+    if (critical.length > 0) {
+      throw new Error(`V3_INCOMPLETE: Missing critical fields: ${critical.join(', ')}`);
+    }
+    console.warn(`[Gemini] Non-critical fields missing, generating with defaults`);
+    if (!v3Content.closingLine) v3Content.closingLine = "Your patterns are not your destiny. They are your starting point.";
+    if (!v3Content.shifts) v3Content.shifts = [];
   }
 
   console.log("[Gemini] V3 Cards Generated");

@@ -201,10 +201,28 @@ function buildDaYunInfo(daYun: any, dayMasterGan: string): DaYunInfo {
   };
 }
 
-export function calculateLuckCycle(birthDate: string, birthTime: string, gender: 'M' | 'F'): LuckCycleInfo | null {
+export function calculateLuckCycle(
+  birthDate: string,
+  birthTime: string,
+  gender: 'M' | 'F',
+  coordinates?: { latitude: number; longitude: number },
+): LuckCycleInfo | null {
   try {
-    const [year, month, day] = birthDate.split('-').map(Number);
-    const [hour, minute] = (birthTime || '12:00').split(':').map(Number);
+    let year: number, month: number, day: number, hour: number, minute: number;
+
+    if (coordinates) {
+      // Use True Solar Time for accurate pillar calculation
+      const { calculateTrueSolarTime } = require('./time_utils');
+      const tst = calculateTrueSolarTime(birthDate, birthTime || '12:00', coordinates.latitude, coordinates.longitude);
+      year = tst.year;
+      month = tst.month;
+      day = tst.day;
+      hour = tst.hour;
+      minute = tst.minute;
+    } else {
+      [year, month, day] = birthDate.split('-').map(Number);
+      [hour, minute] = (birthTime || '12:00').split(':').map(Number);
+    }
 
     const solar = Solar.fromYmdHms(year, month, day, hour, minute, 0);
     const lunar = solar.getLunar();
@@ -294,7 +312,8 @@ export function translateToBehaviors(
   hd: HumanDesignData,
   survey: SurveyScores,
   birthDate: string,
-  gender: string = "female"
+  gender: string = "female",
+  coordinates?: { latitude: number; longitude: number },
 ): BehaviorPatterns {
 
   const age = calculateAge(birthDate);
@@ -393,7 +412,7 @@ export function translateToBehaviors(
   };
 
   // Age Context with Luck Cycle
-  const luckCycle = calculateLuckCycle(birthDate, '12:00', gender === 'female' ? 'F' : 'M');
+  const luckCycle = calculateLuckCycle(birthDate, '12:00', gender === 'female' ? 'F' : 'M', coordinates);
 
   let ageContext = '';
 

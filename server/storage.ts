@@ -17,6 +17,7 @@ import {
 import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
+import { generateSlug } from "./slugs";
 
 export interface IStorage {
   // Legacy methods (for backward compatibility)
@@ -36,6 +37,7 @@ export interface IStorage {
 
   createSajuResult(data: InsertSajuResult): Promise<SajuResult>;
   getSajuResultById(id: string): Promise<SajuResult | undefined>;
+  getSajuResultBySlug(slug: string): Promise<SajuResult | undefined>;
   getSajuResultsByLeadId(leadId: string): Promise<SajuResult[]>;
   unlockReport(id: string): Promise<SajuResult | undefined>;
   patchReportData(id: string, patch: Record<string, any>): Promise<SajuResult | undefined>;
@@ -183,11 +185,23 @@ export class DatabaseStorage implements IStorage {
   // Saju Results methods
   async createSajuResult(data: InsertSajuResult): Promise<SajuResult> {
     if (!db) throw new Error("Database not initialized");
-    const [result] = await db
+    // Insert first to get the generated UUID, then set slug
+    const [inserted] = await db
       .insert(sajuResults)
       .values(data)
       .returning();
-    return result;
+    try {
+      const slug = generateSlug(inserted.id);
+      const [result] = await db
+        .update(sajuResults)
+        .set({ slug })
+        .where(eq(sajuResults.id, inserted.id))
+        .returning();
+      return result;
+    } catch {
+      // Slug generation failed — return without slug
+      return inserted;
+    }
   }
 
   async getSajuResultById(id: string): Promise<SajuResult | undefined> {
@@ -196,6 +210,15 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(sajuResults)
       .where(eq(sajuResults.id, id));
+    return result;
+  }
+
+  async getSajuResultBySlug(slug: string): Promise<SajuResult | undefined> {
+    if (!db) throw new Error("Database not initialized");
+    const [result] = await db
+      .select()
+      .from(sajuResults)
+      .where(eq(sajuResults.slug, slug));
     return result;
   }
 
@@ -299,6 +322,7 @@ export class MemStorage implements IStorage {
   private birthPatterns: Map<number, BirthPattern> = new Map();
   private leads: Map<string, Lead> = new Map();
   private sajuResults: Map<string, SajuResult> = new Map();
+  private slugMap: Map<string, string> = new Map(); // slug → id
 
   private surveyIdCounter = 1;
   private birthPatternIdCounter = 1;
@@ -401,19 +425,27 @@ export class MemStorage implements IStorage {
 
   async createSajuResult(data: InsertSajuResult): Promise<SajuResult> {
     const id = nanoid();
+    const slug = generateSlug(id);
     const result: SajuResult = {
       ...data,
       id,
+      slug,
       isPaid: false,
       language: data.language || "en",
       createdAt: new Date()
     };
     this.sajuResults.set(id, result);
+    this.slugMap.set(slug, id);
     return result;
   }
 
   async getSajuResultById(id: string): Promise<SajuResult | undefined> {
     return this.sajuResults.get(id);
+  }
+
+  async getSajuResultBySlug(slug: string): Promise<SajuResult | undefined> {
+    const id = this.slugMap.get(slug);
+    return id ? this.sajuResults.get(id) : undefined;
   }
 
   async getSajuResultsByLeadId(leadId: string): Promise<SajuResult[]> {

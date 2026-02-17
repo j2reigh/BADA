@@ -6,8 +6,8 @@ function Header({ t }: { t: (key: string) => string }) {
   return (
     <header className="fixed top-0 left-0 right-0 z-50">
       <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
-        <a href="/" className="text-xl font-semibold tracking-tight mix-blend-difference text-white">
-          BADA
+        <a href="/" className="mix-blend-difference">
+          <img src="/logo-badaone.svg" alt="bada.one" className="h-5" />
         </a>
         <nav className="hidden md:flex items-center gap-8 mix-blend-difference text-white">
           <Link href="/" className="text-sm hover:opacity-70 transition-opacity">Home</Link>
@@ -39,7 +39,7 @@ function Footer({ language, setLanguage }: { language: UILanguage; setLanguage: 
       <div className="max-w-[1400px] mx-auto flex items-center justify-between">
         <div className="flex items-center gap-4">
           <span className="text-white/40 text-sm">
-            BADA © {new Date().getFullYear()}
+            bada.one © {new Date().getFullYear()}
           </span>
           <Link href="/privacy" className="text-white/40 text-sm hover:text-white/70 transition-colors">
             Privacy
