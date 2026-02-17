@@ -4,8 +4,8 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 
-import { getCorrectedKST } from "../lib/time_utils";
-import { calculateSaju } from "../lib/saju_calculator";
+import { getCorrectedKST, calculateTrueSolarTime } from "../lib/time_utils";
+import { calculateSaju, type SajuOptions } from "../lib/saju_calculator";
 import { analyzeOperatingState } from "../lib/operating_logic"; // v2.3 Integration
 import { generateV3Cards, repairV3Cards, type SurveyScores } from "../lib/gemini_client";
 import { translateToBehaviors, calculateLuckCycle, type HumanDesignData } from "../lib/behavior_translator";
@@ -13,6 +13,16 @@ import { fetchHumanDesign } from "../lib/hd_client";
 import { sendReportLinkEmail } from "../lib/email";
 import { db } from "./db";
 import { type InsertBirthPattern, type InsertSajuResult } from "@shared/schema";
+
+// UUID v4 pattern for distinguishing UUID from slug
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+async function resolveReport(idOrSlug: string) {
+  if (UUID_RE.test(idOrSlug)) {
+    return storage.getSajuResultById(idOrSlug);
+  }
+  return storage.getSajuResultBySlug(idOrSlug);
+}
 
 // Helper function for unlock code error messages
 function getCodeErrorMessage(error: string): string {
@@ -76,7 +86,7 @@ export async function registerRoutes(
 
     birthCity: z.string(),
     birthCountry: z.string().optional(),
-    timezone: z.string(),
+    timezone: z.string().optional(),
     utcOffset: z.string().optional(),
     latitude: z.number().optional(),
     longitude: z.number().optional(),
@@ -101,30 +111,21 @@ export async function registerRoutes(
       const lead = await storage.upsertLead(input.email, input.marketingConsent);
       console.log("[Assessment] Lead created/updated:", lead.id);
 
-      // 2. Convert birth time to KST with DST correction
-      console.log("[Assessment] Converting to KST...");
-      let kstData: { year: number; month: number; day: number; hour: number | null; minute: number | null; isDstApplied: boolean };
+      // 2. Build coordinates for True Solar Time (if available)
+      const hasCoordinates = input.latitude !== undefined && input.longitude !== undefined
+        && input.latitude !== 0 && input.longitude !== 0;
+      const coordinates = hasCoordinates
+        ? { latitude: input.latitude!, longitude: input.longitude! }
+        : undefined;
 
-      if (input.birthTimeUnknown || !input.birthTime) {
-        const [year, month, day] = input.birthDate.split('-').map(Number);
-        kstData = {
-          year,
-          month,
-          day,
-          hour: null,
-          minute: null,
-          isDstApplied: false,
-        };
-      } else {
-        const corrected = getCorrectedKST(input.birthDate, input.birthTime, input.timezone);
-        kstData = {
-          year: corrected.year,
-          month: corrected.month,
-          day: corrected.day,
-          hour: corrected.hour,
-          minute: corrected.minute,
-          isDstApplied: corrected.isDstApplied,
-        };
+      console.log("[Assessment] Time conversion mode:", hasCoordinates ? "True Solar Time" : "Legacy KST");
+
+      let solarTimeConversion: any = null;
+      if (hasCoordinates && !input.birthTimeUnknown && input.birthTime) {
+        solarTimeConversion = calculateTrueSolarTime(
+          input.birthDate, input.birthTime, input.latitude!, input.longitude!
+        );
+        console.log("[Assessment] True Solar Time:", solarTimeConversion.debug);
       }
 
       // 3. Calculate Saju (Four Pillars)
@@ -140,7 +141,12 @@ export async function registerRoutes(
 
       try {
         console.log(`[Assessment] Running Saju calculation... (birthTimeUnknown: ${isTimeMissing})`);
-        sajuData = calculateSaju(input.birthDate, effectiveBirthTime, input.timezone, isTimeMissing);
+        const sajuOpts: SajuOptions = {
+          birthTimeUnknown: isTimeMissing,
+          ...(coordinates || {}),
+          timezone: input.timezone,
+        };
+        sajuData = calculateSaju(input.birthDate, effectiveBirthTime, sajuOpts);
         console.log("[Assessment] Saju calculated successfully");
 
         // v2.3 Logic: Perform Operating Analysis (Saju + Survey)
@@ -216,14 +222,15 @@ export async function registerRoutes(
           hdData,
           surveyScoresForReport,
           input.birthDate,
-          input.gender
+          input.gender,
+          coordinates,
         );
         console.log("[Assessment] Behavior patterns translated");
 
         // Calculate luck cycle (대운/세운)
         const luckBirthTime = isTimeMissing ? "12:00" : input.birthTime!;
         const luckGender = input.gender === "female" ? "F" : "M";
-        const luckCycle = calculateLuckCycle(input.birthDate, luckBirthTime, luckGender);
+        const luckCycle = calculateLuckCycle(input.birthDate, luckBirthTime, luckGender, coordinates);
         console.log("[Assessment] Luck cycle calculated");
 
         // Generate V3 cards via Gemini
@@ -257,8 +264,10 @@ export async function registerRoutes(
         birthTimeUnknown: input.birthTimeUnknown,
         birthCity: input.birthCity,
         birthCountry: input.birthCountry || null,
-        timezone: input.timezone,
-        kstConversion: kstData,
+        timezone: input.timezone || null,
+        latitude: input.latitude || null,
+        longitude: input.longitude || null,
+        solarTimeConversion: solarTimeConversion?.debug || null,
         surveyAnswers: input.answers,
         surveyScores: input.surveyScores,
         hdData: hdData,
@@ -274,7 +283,7 @@ export async function registerRoutes(
       console.log("[Assessment] Saju result saved:", sajuResult.id);
 
       // Send report link email (non-blocking — don't wait for result)
-      sendReportLinkEmail(lead.email, sajuResult.id, input.name).then(
+      sendReportLinkEmail(lead.email, sajuResult.slug || sajuResult.id, input.name).then(
         (result) => {
           if (result.success) {
             console.log(`[Assessment] Report link email sent to ${lead.email}`);
@@ -287,7 +296,7 @@ export async function registerRoutes(
       console.log("[Assessment] Submission complete!");
       res.status(201).json({
         success: true,
-        reportId: sajuResult.id,
+        reportId: sajuResult.slug || sajuResult.id,
         leadId: lead.id,
         email: lead.email,
       });
@@ -323,7 +332,7 @@ export async function registerRoutes(
         // Already verified, redirect to results
         const sajuResults = await storage.getSajuResultsByLeadId(lead.id);
         if (sajuResults.length > 0) {
-          return res.redirect(`/results/${sajuResults[0].id}`);
+          return res.redirect(`/results/${sajuResults[0].slug || sajuResults[0].id}`);
         }
         return res.redirect("/verification-failed?reason=no_results");
       }
@@ -334,7 +343,7 @@ export async function registerRoutes(
       // Get latest saju result for this lead
       const sajuResults = await storage.getSajuResultsByLeadId(id);
       if (sajuResults.length > 0) {
-        return res.redirect(`/results/${sajuResults[0].id}`);
+        return res.redirect(`/results/${sajuResults[0].slug || sajuResults[0].id}`);
       }
 
       return res.redirect("/verification-failed?reason=no_results");
@@ -352,7 +361,7 @@ export async function registerRoutes(
     try {
       const { reportId } = req.params;
 
-      const sajuResult = await storage.getSajuResultById(reportId);
+      const sajuResult = await resolveReport(reportId);
       if (!sajuResult) {
         return res.status(404).json({ message: "Report not found" });
       }
@@ -388,7 +397,7 @@ export async function registerRoutes(
     try {
       const { reportId } = req.params;
 
-      const sajuResult = await storage.getSajuResultById(reportId);
+      const sajuResult = await resolveReport(reportId);
       if (!sajuResult) {
         return res.status(404).json({ message: "Report not found" });
       }
@@ -406,6 +415,7 @@ export async function registerRoutes(
 
       const responseData: any = {
         reportId: sajuResult.id,
+        slug: sajuResult.slug || null,
         email: lead.email,
         userInput: sajuResult.userInput,
         sajuData: sajuResult.sajuData,
@@ -460,13 +470,13 @@ export async function registerRoutes(
     try {
       const { reportId } = req.params;
 
-      const sajuResult = await storage.getSajuResultById(reportId);
+      const sajuResult = await resolveReport(reportId);
       if (!sajuResult) {
         return res.status(404).json({ message: "Report not found" });
       }
 
-      // Update isPaid status
-      await storage.unlockReport(reportId);
+      // Update isPaid status (use resolved UUID)
+      await storage.unlockReport(sajuResult.id);
 
       res.json({ success: true, message: "Report unlocked" });
     } catch (err) {
@@ -480,7 +490,7 @@ export async function registerRoutes(
     try {
       const { reportId } = req.params;
 
-      const sajuResult = await storage.getSajuResultById(reportId);
+      const sajuResult = await resolveReport(reportId);
       if (!sajuResult) {
         return res.status(404).json({ message: "Report not found" });
       }
@@ -498,19 +508,25 @@ export async function registerRoutes(
         return res.status(400).json({ message: "No HD data found for this report. Report was generated before HD API integration." });
       }
 
+      // Build coordinates if stored
+      const storedCoords = (userInput.latitude && userInput.longitude)
+        ? { latitude: userInput.latitude, longitude: userInput.longitude }
+        : undefined;
+
       // Translate raw data to behavior patterns
       const behaviors = translateToBehaviors(
         sajuData,
         hdData,
         surveyScores,
         birthDate,
-        userInput.gender || "female"
+        userInput.gender || "female",
+        storedCoords,
       );
 
       // Calculate luck cycle (대운/세운) with 십신
       const birthTime = userInput.birthTime || "12:00";
       const gender = userInput.gender || "F";
-      const luckCycle = calculateLuckCycle(birthDate, birthTime, gender);
+      const luckCycle = calculateLuckCycle(birthDate, birthTime, gender, storedCoords);
 
       // Generate V3 cards via Gemini
       const v3Cards = await generateV3Cards(
@@ -535,7 +551,7 @@ export async function registerRoutes(
     try {
       const { reportId } = req.params;
 
-      const sajuResult = await storage.getSajuResultById(reportId);
+      const sajuResult = await resolveReport(reportId);
       if (!sajuResult) {
         return res.status(404).json({ message: "Report not found" });
       }
@@ -560,7 +576,7 @@ export async function registerRoutes(
       const language = (sajuResult as any).language || "en";
 
       const patch = await repairV3Cards(existing, missing, userInput, sajuData, language);
-      await storage.patchReportData(reportId, patch);
+      await storage.patchReportData(sajuResult.id, patch);
 
       console.log(`[Repair] Report ${reportId} patched: ${Object.keys(patch).join(', ')}`);
       res.json({ message: "Report repaired", repaired: Object.keys(patch) });
@@ -583,9 +599,20 @@ export async function registerRoutes(
         });
       }
 
-      console.log(`[Code Redeem] Attempting to redeem code: ${code} for report: ${reportId}`);
+      // Resolve slug to UUID if needed
+      const report = await resolveReport(reportId);
+      if (!report) {
+        return res.status(404).json({
+          success: false,
+          error: "REPORT_NOT_FOUND",
+          message: getCodeErrorMessage("REPORT_NOT_FOUND")
+        });
+      }
+      const resolvedReportId = report.id;
 
-      const result = await storage.redeemCode(code, reportId);
+      console.log(`[Code Redeem] Attempting to redeem code: ${code} for report: ${resolvedReportId}`);
+
+      const result = await storage.redeemCode(code, resolvedReportId);
 
       if (result.success) {
         console.log(`[Code Redeem] ✅ Successfully redeemed code: ${code}`);
@@ -751,7 +778,7 @@ export async function registerRoutes(
     birthTimeUnknown: z.boolean().default(false),
     birthCity: z.string(),
     birthCountry: z.string().optional(),
-    timezone: z.string(),
+    timezone: z.string().optional(),
     utcOffset: z.string().optional(),
     latitude: z.number().optional(),
     longitude: z.number().optional(),
@@ -775,7 +802,7 @@ export async function registerRoutes(
           isDstApplied: false,
         };
       } else {
-        const corrected = getCorrectedKST(input.birthDate, input.birthTime, input.timezone);
+        const corrected = getCorrectedKST(input.birthDate, input.birthTime, input.timezone || 'Asia/Seoul');
         kstData = {
           year: corrected.year,
           month: corrected.month,
@@ -799,7 +826,7 @@ export async function registerRoutes(
         birthTimeUnknown: input.birthTimeUnknown,
         birthCity: input.birthCity,
         birthCountry: input.birthCountry || null,
-        originalTimezone: input.timezone,
+        originalTimezone: input.timezone || '',
         originalUtcOffset: input.utcOffset || null,
         latitude: input.latitude || null,
         longitude: input.longitude || null,

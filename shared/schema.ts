@@ -16,6 +16,7 @@ export const leads = pgTable("leads", {
 // Saju Results table - stores survey, birth pattern, and AI report data
 export const sajuResults = pgTable("saju_results", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  slug: varchar("slug", { length: 80 }).unique(),
   leadId: uuid("lead_id").notNull().references(() => leads.id),
   userInput: jsonb("user_input").notNull(), // Survey answers + birth pattern info
   sajuData: jsonb("saju_data").notNull(), // Four Pillars calculation results
