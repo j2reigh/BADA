@@ -76,7 +76,7 @@ export async function registerRoutes(
 
     birthCity: z.string(),
     birthCountry: z.string().optional(),
-    timezone: z.string(),
+    timezone: z.string().optional(),
     utcOffset: z.string().optional(),
     latitude: z.number().optional(),
     longitude: z.number().optional(),
@@ -116,7 +116,7 @@ export async function registerRoutes(
           isDstApplied: false,
         };
       } else {
-        const corrected = getCorrectedKST(input.birthDate, input.birthTime, input.timezone);
+        const corrected = getCorrectedKST(input.birthDate, input.birthTime, input.timezone || 'Asia/Seoul');
         kstData = {
           year: corrected.year,
           month: corrected.month,
@@ -775,7 +775,7 @@ export async function registerRoutes(
           isDstApplied: false,
         };
       } else {
-        const corrected = getCorrectedKST(input.birthDate, input.birthTime, input.timezone);
+        const corrected = getCorrectedKST(input.birthDate, input.birthTime, input.timezone || 'Asia/Seoul');
         kstData = {
           year: corrected.year,
           month: corrected.month,

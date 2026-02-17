@@ -117,7 +117,7 @@ function Card({
 }) {
   return (
     <div
-      className={`h-[100dvh] w-full flex-shrink-0 snap-start flex flex-col justify-center items-center px-8 relative ${bg} ${className}`}
+      className={`h-[100dvh] w-full flex-shrink-0 snap-start flex flex-col justify-center items-center px-5 sm:px-8 relative ${bg} ${className}`}
       style={{ fontFamily: "'Inter', sans-serif" }}
     >
       {children}

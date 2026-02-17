@@ -40,8 +40,10 @@ function StickyProgressBar({ t }: { t: TranslateFn }) {
 
   useEffect(() => {
     return scrollY.onChange((latest) => {
-      // Show after scrolling past hero (roughly 80vh)
-      setIsVisible(latest > window.innerHeight * 0.7);
+      const pastHero = latest > window.innerHeight * 0.7;
+      // Hide when near bottom so footer is accessible
+      const nearBottom = latest + window.innerHeight > document.body.scrollHeight - 120;
+      setIsVisible(pastHero && !nearBottom);
     });
   }, [scrollY]);
 
