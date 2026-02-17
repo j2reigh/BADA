@@ -13,6 +13,36 @@
 
 ## 🔄 최근 회고 (최신순)
 
+### 2026-02-17 (D) - Gumroad slug 에러 + 리포트 카드 분리 + Retry 개선
+**Agent:** Claude
+
+#### 👍 Keep (계속 할 것)
+- **프로덕션 에러 즉시 대응:** Gumroad webhook 500 에러 발견 즉시 원인 추적 → slug/UUID 불일치 → `resolveReport()` 교체 → 10분 내 배포
+- **카드 분리가 올바른 방향:** Chapter/Year 카드를 콘텐츠+전략 2장으로 분리하여 모바일 잘림 + 글씨 크기 문제 동시 해결
+
+#### 🤔 Problem (문제점)
+- **🔴 Gumroad webhook에서 slug 미지원 (결제 실패):** slug URL 기능 도입 시 `resolveReport()` 헬퍼를 만들어 results/unlock/v3-cards 엔드포인트에는 적용했으나 **Gumroad webhook 핸들러는 빠뜨림**. `getSajuResultById(slug)` → `invalid input syntax for type uuid` → 실제 유저 결제가 3회 재시도 후에도 실패. **ID 스키마 변경 시 모든 소비 지점을 grep하지 않은 것이 근본 원인**
+- **Retry가 폼으로 돌아가는 UX:** 첫 수정에서 `key` prop으로 GeneratingScreen 리마운트 → AnimatePresence exit/enter 트랜지션 중 폼이 노출됨. `retryCount` prop 기반 내부 리셋으로 재수정
+
+#### 💡 Try (시도할 것)
+- **ID/slug 스키마 변경 시 전수 검사:** `getSajuResultById` grep → 모든 호출처에서 `resolveReport()` 사용 확인. CLAUDE.md 체크리스트에 추가
+- **AnimatePresence key 변경 주의:** key 변경 = 언마운트+리마운트 = exit 애니메이션 → 덮고 있던 하위 UI 노출 가능. 내부 상태 리셋이 필요하면 prop으로 시그널
+
+#### 📦 산출물
+- `server/routes.ts`: Gumroad webhook에서 `getSajuResultById()` → `resolveReport()` 3곳 교체, `unlockReport(sajuResult.id)` UUID 보장
+- `client/src/pages/ResultsV3.tsx`: ChapterCard → ChapterCard + ChapterStrategyCard 분리, YearCard → YearCard + YearStrategyCard 분리, 본문 글씨 14px→15-17px
+- `client/src/pages/Survey.tsx`: Retry 시 폼 리셋 없이 직접 재호출, blur focus 해제
+- `client/src/components/GeneratingScreen.tsx`: retryCount prop 기반 내부 상태 리셋, 연타 방지
+- `client/index.html`: OG image + SEO title 변경
+
+#### 커밋 이력
+- `f522fd7` fix: retry submits directly without returning to form + blur focus
+- `32abd56` fix: retry stays on generating screen instead of flashing back to form
+- `15fc692` update: OG image + SEO title
+- `f092391` fix: Gumroad webhook slug support + split chapter/year cards
+
+---
+
 ### 2026-02-17 (C) - 확언형 슬러그 URL + UI/폰트/Gemini 수정 + 커밋 히스토리 정리
 **Agent:** Claude
 

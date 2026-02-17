@@ -63,6 +63,24 @@
 - [ ] `simple-i18n.ts` 관련 키/값 수정
 - [ ] 브라우저에서 시각적 확인
 
+## ID/스키마 변경 체크리스트 (필수)
+
+리포트 ID, URL 스키마, 조회 함수 등을 변경할 때 **반드시** 아래 체크리스트 확인:
+
+### 함수 대체 시 (예: `getSajuResultById` → `resolveReport`)
+- [ ] `grep -r "기존함수명"` 으로 **전체** 호출 지점 검색
+- [ ] 검색 결과가 **0건**이 될 때까지 전환 완료하지 않음
+- [ ] 특히 **webhook 핸들러** (Gumroad, Stripe 등) — 결제 로직은 "결과 조회"와 별개 경로라 누락하기 쉬움
+- [ ] 이메일 링크, 리다이렉트 URL 등 **ID를 URL에 포함하는 모든 지점** 확인
+
+### UUID ↔ slug 전환 시
+- [ ] DB 쿼리 함수가 UUID-only인지 확인 (`getSajuResultById`는 UUID만 받음)
+- [ ] slug를 받을 수 있는 지점은 반드시 `resolveReport()` 경유
+- [ ] `unlockReport()`, `updateReport()` 등 쓰기 함수에는 항상 `.id` (UUID) 전달
+
+### 사고 사례
+- 2026-02-17: Gumroad webhook이 slug를 UUID-only 함수에 전달 → 결제 후 리포트 잠금 해제 실패 (상세: `.ai-workflow/retrospectives/2026-02-16-vercel-deployment-retro.md` §11)
+
 ## Push 규칙
 - 커밋까지만 한다. **push는 유저가 직접** 하거나 명시적으로 요청 시에만.
 

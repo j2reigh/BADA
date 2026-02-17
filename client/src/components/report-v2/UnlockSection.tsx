@@ -37,7 +37,8 @@ export default function UnlockSection({ reportId, email }: UnlockSectionProps) {
     const [codeError, setCodeError] = useState("");
     const [isRedeeming, setIsRedeeming] = useState(false);
 
-    const checkoutUrl = `https://gumroad.com/l/bada-full-report?wanted=true&report_id=${reportId}&email=${encodeURIComponent(email || "")}`;
+    const redirectUrl = `${window.location.origin}/results/${reportId}?paid=1`;
+    const checkoutUrl = `https://gumroad.com/l/bada-full-report?wanted=true&report_id=${reportId}&email=${encodeURIComponent(email || "")}&redirect_url=${encodeURIComponent(redirectUrl)}`;
 
     const handleRedeemCode = async () => {
         const trimmed = code.trim().toUpperCase();

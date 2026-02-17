@@ -919,7 +919,8 @@ function LockCard({
   };
   const t = translations[language as keyof typeof translations] || translations.en;
 
-  const checkoutUrl = `https://gumroad.com/l/bada-full-report?wanted=true&report_id=${reportId}&email=${encodeURIComponent(email || "")}`;
+  const redirectUrl = `${window.location.origin}/results/${reportId}?paid=1`;
+  const checkoutUrl = `https://gumroad.com/l/bada-full-report?wanted=true&report_id=${reportId}&email=${encodeURIComponent(email || "")}&redirect_url=${encodeURIComponent(redirectUrl)}`;
 
   const handleRedeem = async () => {
     const trimmed = code.trim().toUpperCase();
@@ -1084,6 +1085,37 @@ export default function ResultsV3() {
       setLocation(`/wait/${reportId}`);
     }
   }, [error, reportId, setLocation]);
+
+  // After Gumroad payment: redirect lands with ?paid=1 → poll until unlocked
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("paid") !== "1") return;
+    // Clean up URL
+    window.history.replaceState({}, "", window.location.pathname);
+    let attempts = 0;
+    const maxAttempts = 10;
+    const timer = setInterval(async () => {
+      attempts++;
+      await queryClient.invalidateQueries({ queryKey: [`/api/results/${reportId}`] });
+      const cached = queryClient.getQueryData<ResultsApiResponse>([`/api/results/${reportId}`]);
+      if (cached?.isPaid || attempts >= maxAttempts) {
+        clearInterval(timer);
+      }
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [reportId]);
+
+  // Tab focus refetch: when free user returns to tab, check if payment went through
+  useEffect(() => {
+    if (report?.isPaid) return;
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        queryClient.invalidateQueries({ queryKey: [`/api/results/${reportId}`] });
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [reportId, report?.isPaid]);
 
   if (isLoading) {
     return (

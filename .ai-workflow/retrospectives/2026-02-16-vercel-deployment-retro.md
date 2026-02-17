@@ -218,3 +218,51 @@ const __dirname = __esm_dirname(__filename);
 2. **UI 제거 = 코드 + i18n + 시각 확인** 3단계 체크리스트 필요
 3. **워크플로우에 없으면 까먹는다** — 새 패키지 추가 시 Vercel ESM 호환성 체크를 `CLAUDE.md` 체크리스트에 등록하여 자동 참조되게 함
 4. **로컬 ≠ Vercel** — `npx tsx`(CJS 호환)와 Vercel Lambda(ESM)는 런타임이 다름. 로컬 성공이 프로덕션 성공을 보장하지 않음
+
+---
+
+## 11. Gumroad Webhook Slug Crash (2026-02-17 D)
+
+### 증상
+Gumroad 결제 후 webhook 호출 → **500 에러**: `invalid input syntax for type uuid: "spark-from-within-3a93"`
+
+유저가 결제했는데 리포트가 잠금 해제되지 않음.
+
+### 원인
+
+**ID 스키마 변경 시 전체 소비 지점을 누락:**
+
+- 이전 세션에서 리포트 URL을 UUID → slug로 전환 (`resolveReport()` 도입)
+- 결과 조회/잠금해제/V3카드 엔드포인트는 `resolveReport()`로 변경함
+- **Gumroad webhook 핸들러는 누락** — 여전히 `getSajuResultById(targetReportId)` 사용
+- Gumroad이 `url_params[report_id]`에 slug(`spark-from-within-3a93`)를 전달 → UUID-only 함수에 주입 → PostgreSQL `uuid` 타입 파싱 실패
+
+### 수정
+
+`server/routes.ts` Gumroad webhook에서 3곳 변경:
+```typescript
+// Before (broken):
+const exists = await storage.getSajuResultById(targetReportId);
+const sajuResult = await storage.getSajuResultById(targetReportId);
+await storage.unlockReport(targetReportId);  // slug 전달 → 실패
+
+// After (fixed):
+const exists = await resolveReport(targetReportId);
+const sajuResult = await resolveReport(targetReportId);
+await storage.unlockReport(sajuResult.id);   // 항상 UUID
+```
+
+### 근본 원인
+
+**"grep 안 하고 눈으로 찾았다"**
+
+ID 스키마를 변경할 때, `getSajuResultById` 호출 지점을 코드베이스 전체에서 grep하지 않고 "결과 관련 엔드포인트"만 수동으로 찾아 수정함. Gumroad webhook은 결제 로직이라 "결과"라는 멘탈 모델에서 빠져있었음.
+
+### 영향
+- 결제한 유저의 리포트가 잠금 해제되지 않음
+- Gumroad 자체 재시도 메커니즘이 있어 수정 배포 후 자동 복구 기대 가능
+- 금전적 피해는 없으나 유저 경험 손상
+
+### 재발 방지
+- **CLAUDE.md에 "ID 스키마 변경 체크리스트" 추가** — ID/slug/UUID 관련 함수 변경 시 `grep`으로 전체 호출 지점 검색 필수
+- 특정 함수를 대체할 때는 `grep -r "기존함수명"` 결과가 0건이 될 때까지 전환 완료하지 않음
