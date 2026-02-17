@@ -397,18 +397,8 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Lead not found" });
       }
 
-      // Development mode: Skip email verification check
-      const isDevelopment = process.env.NODE_ENV === 'development';
-      if (!isDevelopment && !lead.isVerified) {
-        return res.status(403).json({
-          message: "Email not verified",
-          redirectTo: `/wait/${reportId}`
-        });
-      }
-
-      if (isDevelopment && !lead.isVerified) {
-        console.log(`[DEV MODE] Bypassing email verification for report ${reportId}`);
-      }
+      // Option E: No email verification required — report is accessible by URL
+      // Email verification was removed per email-flow-redesign plan
 
       const reportData = sajuResult.reportData as any;
       const isPaid = (sajuResult as any).isPaid || false;
@@ -464,11 +454,6 @@ export async function registerRoutes(
       const sajuResult = await storage.getSajuResultById(reportId);
       if (!sajuResult) {
         return res.status(404).json({ message: "Report not found" });
-      }
-
-      const lead = await storage.getLeadById(sajuResult.leadId);
-      if (!lead || !lead.isVerified) {
-        return res.status(403).json({ message: "Email not verified" });
       }
 
       // Update isPaid status

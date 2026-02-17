@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Lock, ChevronDown, ExternalLink } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
@@ -980,11 +980,19 @@ function LockCard({
 
 export default function ResultsV3() {
   const { reportId } = useParams<{ reportId: string }>();
+  const [, setLocation] = useLocation();
   const containerRef = useRef<HTMLDivElement>(null);
 
   const { data: report, isLoading, error } = useQuery<ResultsApiResponse>({
     queryKey: [`/api/results/${reportId}`],
   });
+
+  // Handle 403 (email not verified) → redirect to wait page
+  useEffect(() => {
+    if (error?.message?.includes("403")) {
+      setLocation(`/wait/${reportId}`);
+    }
+  }, [error, reportId, setLocation]);
 
   if (isLoading) {
     return (
