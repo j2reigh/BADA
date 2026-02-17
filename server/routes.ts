@@ -88,7 +88,12 @@ export async function registerRoutes(
   app.post("/api/assessment/submit", async (req, res) => {
     try {
       console.log("[Assessment] Starting submission...");
-      const input = assessmentInputSchema.parse(req.body);
+      const rawInput = assessmentInputSchema.parse(req.body);
+      // Capitalize first letter of name (e.g. "john" → "John")
+      const input = {
+        ...rawInput,
+        name: rawInput.name.charAt(0).toUpperCase() + rawInput.name.slice(1),
+      };
       console.log("[Assessment] Input validated");
 
       // 1. Upsert lead (create or update by email)
