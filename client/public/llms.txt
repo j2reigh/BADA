@@ -1,0 +1,28 @@
+# BADA (bada.one)
+
+> A 5-minute self-discovery analysis that reveals how your mind actually works.
+
+## What it is
+BADA generates a personalized behavioral pattern report based on your birth data (date, time, and location). It combines Eastern astrology (Saju/Four Pillars) and Human Design to map how you think, decide, and operate.
+
+## What it is NOT
+- Not fortune telling — nothing is predicted
+- Not a horoscope — no vague daily advice
+- Not personality typing — no boxes like MBTI
+
+## What you get
+- **Free:** 3 diagnostic cards (your hook pattern, mirror pattern, and blueprint)
+- **Paid ($2.90):** 10 additional cards covering why your patterns exist, what they cost you at work, in relationships, and with money, your 10-year chapter, and one actionable change for this week
+
+## Key facts
+- URL: https://www.bada.one
+- Languages: English, Korean (한국어), Indonesian (Bahasa Indonesia)
+- Takes ~5 minutes to complete
+- Report is AI-generated and unique to each person
+- Report links don't expire
+- Payment via Gumroad
+- Contact: badathebrand@gmail.com
+- Instagram: @badathebrand
+
+## For more details
+See https://www.bada.one/llms-full.txt
