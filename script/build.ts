@@ -73,7 +73,7 @@ async function buildAll() {
       "process.env.VERCEL": '"1"',
     },
     banner: {
-      js: 'import { createRequire } from "module";\nconst require = createRequire(import.meta.url);',
+      js: 'import { createRequire } from "module";\nimport { fileURLToPath as __esm_fileURLToPath } from "url";\nimport { dirname as __esm_dirname } from "path";\nconst require = createRequire(import.meta.url);\nconst __filename = __esm_fileURLToPath(import.meta.url);\nconst __dirname = __esm_dirname(__filename);',
     },
     minify: true,
     external: [],
