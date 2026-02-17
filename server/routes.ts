@@ -118,7 +118,8 @@ export async function registerRoutes(
         return (
           ui.birthDate === input.birthDate &&
           ui.birthTime === (input.birthTime || null) &&
-          ui.birthCity === input.birthCity
+          ui.birthCity === input.birthCity &&
+          r.language === input.language
         );
       });
 
