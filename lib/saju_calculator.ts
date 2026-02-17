@@ -1,5 +1,5 @@
 import { Solar } from "lunar-typescript";
-import { getCorrectedKST, formatDateForSaju, formatTimeForSaju } from "./time_utils";
+import { getCorrectedKST, calculateTrueSolarTime, formatDateForSaju, formatTimeForSaju } from "./time_utils";
 import {
   TEN_GODS_MAP,
   ELEMENT_MAP,
@@ -54,6 +54,7 @@ export interface SajuResult {
     operatingRate: number; // Legacy support (rough estimate)
   };
   hardwareAnalysis: HardwareAnalysis;
+  solarTimeDebug?: any; // True Solar Time debug metadata
 }
 
 // v2.2 Interaction Penalty Logic
@@ -97,25 +98,54 @@ function getInteractionPenalty(
   return penalty;
 }
 
-export const calculateSaju = (dateStr: string, timeStr: string, timezone?: string, birthTimeUnknown?: boolean): SajuResult => {
+export interface SajuOptions {
+  latitude?: number;
+  longitude?: number;
+  timezone?: string;         // legacy fallback
+  birthTimeUnknown?: boolean;
+}
+
+export const calculateSaju = (dateStr: string, timeStr: string, options?: SajuOptions): SajuResult => {
+  // Support legacy 4-arg signature: calculateSaju(date, time, timezone?, birthTimeUnknown?)
+  const opts: SajuOptions = options || {};
+  const birthTimeUnknown = opts.birthTimeUnknown;
+
   try {
     let year: number, month: number, day: number, hour: number, minute: number;
+    let solarTimeDebug: any = null;
 
-    if (timezone && timezone !== 'Asia/Seoul') {
-      const corrected = getCorrectedKST(dateStr, timeStr, timezone);
+    if (opts.latitude !== undefined && opts.longitude !== undefined) {
+      // New path: True Solar Time from coordinates
+      const tst = calculateTrueSolarTime(dateStr, timeStr, opts.latitude, opts.longitude);
+      year = tst.year;
+      month = tst.month;
+      day = tst.day;
+      hour = tst.hour;
+      minute = tst.minute;
+      solarTimeDebug = tst.debug;
+
+      console.log('True Solar Time Applied:', {
+        original: { date: dateStr, time: timeStr, lat: opts.latitude, lon: opts.longitude },
+        result: { year, month, day, hour, minute },
+        debug: tst.debug,
+      });
+    } else if (opts.timezone && opts.timezone !== 'Asia/Seoul') {
+      // Legacy path: timezone-based KST conversion
+      const corrected = getCorrectedKST(dateStr, timeStr, opts.timezone);
       year = corrected.year;
       month = corrected.month;
       day = corrected.day;
       hour = corrected.hour;
       minute = corrected.minute;
 
-      console.log('DST Correction Applied:', {
-        original: { date: dateStr, time: timeStr, timezone },
+      console.log('DST Correction Applied (legacy):', {
+        original: { date: dateStr, time: timeStr, timezone: opts.timezone },
         corrected: { year, month, day, hour, minute },
         isDstApplied: corrected.isDstApplied,
         debugInfo: corrected.debugInfo
       });
     } else {
+      // Default: direct parse (Seoul)
       [year, month, day] = dateStr.split("-").map(Number);
       [hour, minute] = timeStr.split(":").map(Number);
     }
@@ -305,6 +335,11 @@ export const calculateSaju = (dateStr: string, timeStr: string, timezone?: strin
     // We can just set a default here, or use the old logic.
     // Let's keep it simple for now, as the real calc happens in routes.ts with Survey data
     result.stats.operatingRate = 50;
+
+    // Attach True Solar Time debug if available
+    if (solarTimeDebug) {
+      result.solarTimeDebug = solarTimeDebug;
+    }
 
     return result;
 

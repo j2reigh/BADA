@@ -113,9 +113,19 @@ export default function Survey() {
 
   const question = !isBirthPatternStep ? QUESTIONS[currentStep] : null;
 
+  // City selected → server derives timezone from lat/lon, no timezone field needed
+  const selectedCity = birthData.birthCityName
+    ? availableCities.find(c => c.name === birthData.birthCityName)
+    : null;
+  const hasCityCoordinates = !!(selectedCity?.latitude && selectedCity?.longitude);
+
+  // Show timezone dropdown only when: no city selected AND country has multiple timezones
+  const showTimezoneDropdown = !hasCityCoordinates && availableTimezones.length > 1;
+
   const isBirthFormValid = birthData.name.trim() && birthData.gender && birthData.birthDate &&
     (birthData.birthTimeUnknown || birthData.birthTime) &&
-    birthData.birthCountryCode && birthData.birthTimezone &&
+    birthData.birthCountryCode &&
+    (hasCityCoordinates || birthData.birthTimezone) &&
     birthData.email.trim() && birthData.consent;
 
   const handleOptionSelect = (value: string) => {
@@ -575,25 +585,27 @@ export default function Survey() {
                       </div>
                     </div>
 
-                    {/* Timezone Dropdown */}
-                    <div className="relative mt-4">
-                      <select
-                        value={birthData.birthTimezone}
-                        onChange={(e) => handleBirthPatternChange("birthTimezone", e.target.value)}
-                        disabled={!birthData.birthCountryCode || availableTimezones.length === 0}
-                        className="w-full bg-transparent border-0 border-b border-white/20 rounded-none px-0 py-4 text-lg text-white focus:outline-none focus:border-white transition-colors appearance-none cursor-pointer disabled:opacity-30"
-                      >
-                        <option value="" className="bg-[#182339] text-white/50">
-                          {availableTimezones.length === 0 ? "Timezone" : "Select Timezone"}
-                        </option>
-                        {availableTimezones.map((tz) => (
-                          <option key={tz.zoneName} value={tz.zoneName} className="bg-[#182339] text-white">
-                            {tz.zoneName} ({tz.gmtOffsetName})
+                    {/* Timezone Dropdown — only shown when no city selected + multi-timezone country */}
+                    {showTimezoneDropdown && (
+                      <div className="relative mt-4">
+                        <select
+                          value={birthData.birthTimezone}
+                          onChange={(e) => handleBirthPatternChange("birthTimezone", e.target.value)}
+                          disabled={!birthData.birthCountryCode || availableTimezones.length === 0}
+                          className="w-full bg-transparent border-0 border-b border-white/20 rounded-none px-0 py-4 text-lg text-white focus:outline-none focus:border-white transition-colors appearance-none cursor-pointer disabled:opacity-30"
+                        >
+                          <option value="" className="bg-[#182339] text-white/50">
+                            {availableTimezones.length === 0 ? "Timezone" : "Select Timezone"}
                           </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60 pointer-events-none" />
-                    </div>
+                          {availableTimezones.map((tz) => (
+                            <option key={tz.zoneName} value={tz.zoneName} className="bg-[#182339] text-white">
+                              {tz.zoneName} ({tz.gmtOffsetName})
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60 pointer-events-none" />
+                      </div>
+                    )}
                   </div>
 
                   <div>
