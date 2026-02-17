@@ -384,6 +384,7 @@ export async function registerRoutes(
 
   // Get results (Page 1 always, Pages 2-5 only if paid)
   app.get("/api/results/:reportId", async (req, res) => {
+    res.set("Cache-Control", "no-store");
     try {
       const { reportId } = req.params;
 
