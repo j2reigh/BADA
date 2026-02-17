@@ -231,6 +231,7 @@ function BlueprintCard({
 }
 
 /** Blueprint page 2: facets carousel (Core Drive / Hidden Talent / Blind Spot) */
+const FACET_LABELS = ["Core Drive", "Hidden Talent", "Blind Spot"];
 function BlueprintFacetsCard({
   facets,
 }: {
@@ -270,7 +271,7 @@ function BlueprintFacetsCard({
                   : "text-white/35"
               }`}
             >
-              {f.label}
+              {FACET_LABELS[i] || f.label}
             </button>
           ))}
           <span className="text-white/20 text-xs">›</span>
@@ -822,45 +823,45 @@ function LockCard({
   const translations = {
     en: {
       headline: "what you see ≠ what's there",
-      line1: "If those 3 cards resonated,",
-      line2: "the remaining 10 explain why you can't help but feel that way.",
+      line1: "If those cards felt accurate,",
+      line2: "the next 11 explain why — and what to do about it.",
       cta: "Unlock",
       or: "or",
       placeholder: "Enter code",
       apply: "Apply",
       faq: [
         { key: "q2", q: "How is this different from MBTI?", a: "MBTI gives you a type. BADA maps the patterns unique to you — why you burn out, how you make decisions, what you keep repeating. No two reports are the same." },
-        { key: "q4", q: "What do I get for $2.9?", a: "10 more cards: why your patterns exist, what they cost you at work, in relationships, and with money, your 10-year chapter, and one thing to change this week." },
+        { key: "q4", q: "What do I get for $2.9?", a: "11 more cards: why your patterns exist, what they cost you at work · relationships · money, how you recharge, your 10-year chapter, and one thing to change this week." },
         { key: "q6", q: "Is my data safe?", a: "Your birth data is used only to generate your report. We don't sell or share it." },
         { key: "contact", q: "How do I reach you?", a: "Questions, feedback, or just want to say hi?" },
       ],
     },
     ko: {
       headline: "보이는 나 ≠ 진짜 나",
-      line1: "3장이 공감되었다면,",
-      line2: "나머지 10장은 당신이 그렇게 느낄 수밖에 없는 원리를 설명합니다.",
+      line1: "여기까지 공감되셨다면,",
+      line2: "나머지 11장은 왜 그런지, 그리고 어떻게 바꿀 수 있는지 알려줍니다.",
       cta: "잠금 해제",
       or: "또는",
       placeholder: "코드 입력",
       apply: "적용",
       faq: [
         { key: "q2", q: "MBTI랑 뭐가 다른가요?", a: "MBTI는 유형을 줍니다. BADA는 당신만의 패턴을 매핑합니다 — 왜 번아웃이 오는지, 어떻게 결정하는지, 뭘 반복하는지. 같은 리포트는 없습니다." },
-        { key: "q4", q: "$2.9으로 뭘 더 보나요?", a: "10장 추가: 패턴이 왜 존재하는지, 직장·관계·돈에서 치르는 대가, 10년 챕터, 이번 주 바꿀 수 있는 한 가지." },
+        { key: "q4", q: "$2.9으로 뭘 더 보나요?", a: "11장 추가: 패턴이 왜 존재하는지, 직장·관계·돈에서 치르는 대가, 회복법, 10년 챕터, 이번 주 바꿀 수 있는 한 가지." },
         { key: "q6", q: "데이터는 안전한가요?", a: "생년월일은 리포트 생성에만 사용됩니다. 판매하거나 공유하지 않습니다." },
         { key: "contact", q: "어디로 연락하나요?", a: "질문, 피드백, 또는 그냥 인사하고 싶으신가요?" },
       ],
     },
     id: {
       headline: "yang kamu lihat ≠ yang sebenarnya",
-      line1: "Kalau 3 kartu tadi terasa pas,",
-      line2: "10 kartu sisanya menjelaskan kenapa kamu pasti merasakan itu.",
+      line1: "Kalau kartu tadi terasa pas,",
+      line2: "11 kartu berikutnya menjelaskan kenapa — dan apa yang bisa kamu ubah.",
       cta: "Buka",
       or: "atau",
       placeholder: "Masukkan kode",
       apply: "Terapkan",
       faq: [
         { key: "q2", q: "Apa bedanya dengan MBTI?", a: "MBTI memberimu tipe. BADA memetakan pola unikmu — kenapa kamu burnout, bagaimana kamu mengambil keputusan, apa yang terus kamu ulangi. Tidak ada dua laporan yang sama." },
-        { key: "q4", q: "Apa yang saya dapat dengan $2.9?", a: "10 kartu lagi: kenapa polamu ada, biayanya di kerja, hubungan, dan uang, chapter 10 tahunmu, dan satu hal yang bisa diubah minggu ini." },
+        { key: "q4", q: "Apa yang saya dapat dengan $2.9?", a: "11 kartu lagi: kenapa polamu ada, biayanya di kerja · hubungan · uang, cara recharge, chapter 10 tahunmu, dan satu hal yang bisa diubah minggu ini." },
         { key: "q6", q: "Apakah data saya aman?", a: "Data kelahiranmu hanya digunakan untuk membuat laporanmu. Kami tidak menjual atau membagikannya." },
         { key: "contact", q: "Bagaimana cara menghubungi?", a: "Pertanyaan, masukan, atau sekadar ingin menyapa?" },
       ],
