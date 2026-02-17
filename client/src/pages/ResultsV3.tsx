@@ -856,32 +856,32 @@ function LockCard({
 
   return (
     <Card bg="bg-gradient-to-b from-[#182339] via-[#233F64] to-[#402525]">
-      <div className="flex flex-col items-center text-center w-full max-w-sm max-h-[calc(100dvh-14rem)] overflow-y-auto">
-        <div className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-8 flex-shrink-0">
+      <div className="flex flex-col items-center text-center w-full max-w-sm">
+        <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-5 flex-shrink-0">
           <Lock className="w-5 h-5 text-white/40" />
         </div>
 
-        <p className="text-lg text-white/60 font-light tracking-wide mb-8">
+        <p className="text-lg text-white/60 font-light tracking-wide mb-5">
           {t.headline}
         </p>
 
-        <p className="text-base text-white/70 font-light leading-relaxed mb-1">
+        <p className="text-sm text-white/70 font-light leading-relaxed mb-1">
           {t.line1}
         </p>
-        <p className="text-base text-white/70 font-light leading-relaxed mb-8">
+        <p className="text-sm text-white/70 font-light leading-relaxed mb-6">
           {t.line2}
         </p>
 
-        <p className="text-3xl text-white font-light mb-4">$2.9</p>
+        <p className="text-3xl text-white font-light mb-3">$2.9</p>
 
         <button
           onClick={() => window.open(checkoutUrl, "_blank", "noopener")}
-          className="w-full max-w-xs py-4 rounded-full bg-white text-[#182339] text-sm font-medium tracking-wide hover:bg-white/90 transition-colors mb-4"
+          className="w-full max-w-xs py-3.5 rounded-full bg-white text-[#182339] text-sm font-medium tracking-wide hover:bg-white/90 transition-colors mb-3"
         >
           {t.cta}
         </button>
 
-        <div className="flex items-center gap-3 my-4 w-full max-w-xs">
+        <div className="flex items-center gap-3 my-3 w-full max-w-xs">
           <div className="flex-1 h-px bg-white/10" />
           <span className="text-xs text-white/40 uppercase tracking-wider" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{t.or}</span>
           <div className="flex-1 h-px bg-white/10" />
@@ -913,18 +913,18 @@ function LockCard({
         )}
 
         {/* FAQ toggles */}
-        <div className="w-full max-w-xs mt-10 space-y-0 border-t border-white/5">
+        <div className="w-full max-w-xs mt-6 space-y-0 border-t border-white/5">
           {t.faq.map((item) => (
             <div key={item.key} className="border-b border-white/5">
               <button
                 onClick={() => setOpenFaq(openFaq === item.key ? null : item.key)}
-                className="w-full flex items-center justify-between py-3 text-xs text-white/30 hover:text-white/50 transition-colors"
+                className="w-full flex items-center justify-between py-2.5 text-xs text-white/30 hover:text-white/50 transition-colors"
               >
                 <span>{item.q}</span>
                 <ChevronDown className={`w-3 h-3 transition-transform ${openFaq === item.key ? "rotate-180" : ""}`} />
               </button>
               {openFaq === item.key && (
-                <div className="pb-3 text-xs text-white/40 text-left leading-relaxed whitespace-pre-line max-h-24 overflow-y-auto">
+                <div className="pb-2.5 text-xs text-white/40 text-left leading-relaxed whitespace-pre-line">
                   {item.key === "contact" ? (
                     <div className="space-y-1">
                       <p>{item.a}</p>
@@ -1137,9 +1137,11 @@ export default function ResultsV3() {
         className="h-[100dvh] overflow-y-scroll snap-y snap-mandatory scroll-smooth"
         style={{ WebkitOverflowScrolling: "touch" }}
       >
-        {visibleCards.map((card) => (
-          <div key={card.key}>{card.render()}</div>
-        ))}
+        {visibleCards.map((card) => {
+          const content = card.render();
+          if (!content) return null;
+          return <div key={card.key}>{content}</div>;
+        })}
 
         {/* Lock card for unpaid users */}
         {!isPaid && (
@@ -1150,6 +1152,9 @@ export default function ResultsV3() {
             language={report.language || "en"}
           />
         )}
+
+        {/* Spacer — prevents iOS snap-mandatory from bouncing back on last card */}
+        <div className="h-1 flex-shrink-0" />
       </div>
     </div>
   );
