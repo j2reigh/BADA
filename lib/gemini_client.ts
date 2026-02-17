@@ -12,6 +12,7 @@
  */
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { createHash } from "crypto";
 import { DAY_MASTER_MAP, TEN_GODS_MAP, ELEMENT_MAP } from "./saju_constants";
 import { FIVE_ELEMENTS_INFO } from "./saju_knowledge";
 import { OS_TYPE_PROTOCOLS } from "./standardization_dictionaries";
@@ -831,6 +832,15 @@ FIX EM-DASH PATTERNS:
 ❌ "You're fast — but your clarity needs time."
 ✅ "You're fast. But your clarity needs time."
 `;
+
+// Prompt version hash — auto-computed from WRITING_STYLE_RULES.
+// If you change card-specific rules or examples in the V3 template, bump PROMPT_REVISION.
+const PROMPT_REVISION = 1;
+
+export function getPromptHash(): string {
+  const key = `v${PROMPT_REVISION}:${WRITING_STYLE_RULES}`;
+  return createHash("md5").update(key).digest("hex").slice(0, 12);
+}
 
 async function generatePage1_v3(
   sajuResult: SajuResult,
@@ -1902,6 +1912,8 @@ Output ONLY valid JSON matching the structure above. No markdown, no explanation
   }
 
   console.log("[Gemini] V3 Cards Generated");
+  // Attach prompt hash for dedup
+  (v3Content as any)._promptHash = getPromptHash();
   return v3Content;
 }
 
