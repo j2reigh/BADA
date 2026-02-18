@@ -52,6 +52,8 @@
 - [ ] 사용한다면 `script/build.ts`의 Vercel 핸들러 esbuild `banner`에 shim 존재하는지 확인
 - [ ] 현재 shim 목록: `createRequire`, `__filename` (`fileURLToPath`), `__dirname` (`dirname`)
 - [ ] 네이티브 바이너리(`.node`) 의존 라이브러리는 Vercel Lambda에서 동작 불가 — 대안 검토
+- [ ] **런타임 파일 읽기 확인** — `fs.readFile`/`fs.openSync`로 데이터 파일(.dat, .bin, .json 등)을 읽는 라이브러리는 esbuild 번들에 포함 불가. 순수 JS 대안 사용 필수
+  - 사고 사례: `geo-tz`가 24MB `.dat` 파일을 `fs.openSync`로 읽음 → Vercel ENOENT 크래시 → `@photostructure/tz-lookup`(순수 JS)로 교체
 
 ### 서버 코드 빌드 후
 - [ ] `npm run build` 성공 확인
