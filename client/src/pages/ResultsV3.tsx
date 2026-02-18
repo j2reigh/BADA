@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Lock, ChevronDown, Share2 } from "lucide-react";
+import { Loader2, Lock, ChevronDown, Share2, Link2, Image } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 
 // ─── Helpers ───
@@ -140,15 +140,32 @@ function Card({
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [pressed, setPressed] = useState(false);
+  const [showActions, setShowActions] = useState(false);
+  const [savingImage, setSavingImage] = useState(false);
   const pressTimer = useRef<ReturnType<typeof setTimeout>>();
 
-  const handleShare = useCallback(async () => {
+  const shareLink = useCallback(async () => {
+    const url = window.location.href;
+    if (navigator.share) {
+      try { await navigator.share({ url }); } catch {}
+    } else {
+      navigator.clipboard.writeText(url);
+    }
+    setShowActions(false);
+  }, []);
+
+  const saveImage = useCallback(async () => {
     if (!cardRef.current) return;
+    setSavingImage(true);
     try {
       const { toPng } = await import("html-to-image");
       const png = await toPng(cardRef.current, {
         cacheBust: true,
         pixelRatio: 2,
+        filter: (node) => {
+          if (node instanceof HTMLElement && node.dataset.cardActions === "true") return false;
+          return true;
+        },
       });
       const blob = await (await fetch(png)).blob();
       const file = new File([blob], "bada-card.png", { type: "image/png" });
@@ -162,7 +179,10 @@ function Card({
         a.click();
       }
     } catch {
-      // User cancelled or error
+      // fallback: open image in new tab
+    } finally {
+      setSavingImage(false);
+      setShowActions(false);
     }
   }, []);
 
@@ -170,12 +190,11 @@ function Card({
     if (!showShare) return;
     setPressed(true);
     pressTimer.current = setTimeout(() => {
-      // Haptic feedback if available
       if (navigator.vibrate) navigator.vibrate(30);
-      handleShare();
       setPressed(false);
+      setShowActions(true);
     }, 500);
-  }, [showShare, handleShare]);
+  }, [showShare]);
 
   const cancelPress = useCallback(() => {
     clearTimeout(pressTimer.current);
@@ -200,6 +219,37 @@ function Card({
       <div className="h-full overflow-y-auto flex flex-col justify-center items-center px-5 sm:px-8 py-12">
         {children}
       </div>
+      {/* Action bar on long press */}
+      {showActions && (
+        <div data-card-actions="true" className="absolute bottom-16 left-0 right-0 z-40 flex justify-center px-4 animate-slide-up">
+          <div className="flex items-center gap-1 px-2 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15">
+            <button
+              onClick={shareLink}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs text-white/70 hover:bg-white/10 transition-colors"
+            >
+              <Link2 className="w-3.5 h-3.5" />
+              Link
+            </button>
+            <div className="w-px h-4 bg-white/10" />
+            <button
+              onClick={saveImage}
+              disabled={savingImage}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs text-white/70 hover:bg-white/10 transition-colors disabled:opacity-50"
+            >
+              {savingImage ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Image className="w-3.5 h-3.5" />
+              )}
+              Image
+            </button>
+          </div>
+        </div>
+      )}
+      {/* Dismiss action bar on tap outside */}
+      {showActions && (
+        <div data-card-actions="true" className="absolute inset-0 z-30" onClick={() => setShowActions(false)} />
+      )}
       {/* Watermark — visible in screenshots */}
       <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-1.5 opacity-25 pointer-events-none">
         <img src="/logo-badaone.svg" alt="bada.one" className="h-3.5" />
