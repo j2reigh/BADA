@@ -254,6 +254,7 @@ export default function Survey() {
             isError={!!submitError}
             errorMessage={submitError || undefined}
             retryCount={retryAttempt}
+            language={language}
             onFinished={handleGeneratingFinished}
             onRetry={() => {
               setSubmitError(null);

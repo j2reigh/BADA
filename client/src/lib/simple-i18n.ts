@@ -211,6 +211,23 @@ export const translations = {
     'faq.contact.desc': 'Questions, feedback, or just want to say hi?',
     'faq.cta': 'Start your analysis',
 
+    // Generating Screen
+    'generating.step1': 'Reading your birth chart',
+    'generating.step2': 'Mapping your energy design',
+    'generating.step3': 'Finding the collision points',
+    'generating.step4': 'Generating your diagnostic cards',
+    'generating.step5': 'Finalizing your report',
+    'generating.insight1': 'No two blueprints are alike — yours is being crafted now.',
+    'generating.insight2': 'We\'re looking at how your natural wiring meets your current reality.',
+    'generating.insight3': 'Your report maps both your strengths and your blind spots.',
+    'generating.insight4': 'Over 480 unique archetype combinations exist. Finding yours.',
+    'generating.insight5': 'Almost there — preparing your personalized action guide.',
+    'generating.label': 'Generating',
+    'generating.error.title': 'Something didn\'t work',
+    'generating.error.desc': 'We couldn\'t generate your report this time.<br />Your answers are saved — just tap below to try again.',
+    'generating.error.retry': 'Try again',
+    'generating.error.retrying': 'Retrying...',
+
     // Element names (radar chart)
     'element.wood': 'Wood',
     'element.fire': 'Fire',
@@ -428,6 +445,23 @@ export const translations = {
     'faq.contact.desc': '질문, 피드백, 또는 그냥 인사하고 싶으신가요?',
     'faq.cta': '분석 시작하기',
 
+    // Generating Screen
+    'generating.step1': '출생 차트 읽는 중',
+    'generating.step2': '에너지 설계 매핑 중',
+    'generating.step3': '충돌 포인트 탐색 중',
+    'generating.step4': '진단 카드 생성 중',
+    'generating.step5': '리포트 마무리 중',
+    'generating.insight1': '같은 설계도는 없습니다 — 지금 당신만의 것을 만들고 있어요.',
+    'generating.insight2': '타고난 배선이 현재 현실과 어떻게 만나는지 분석 중이에요.',
+    'generating.insight3': '리포트는 강점과 사각지대를 모두 매핑합니다.',
+    'generating.insight4': '480가지 이상의 고유한 조합 중 당신의 것을 찾고 있어요.',
+    'generating.insight5': '거의 다 됐어요 — 맞춤 행동 가이드를 준비하고 있습니다.',
+    'generating.label': '생성 중',
+    'generating.error.title': '문제가 발생했어요',
+    'generating.error.desc': '이번에 리포트를 생성하지 못했어요.<br />답변은 저장되어 있어요 — 아래를 눌러 다시 시도하세요.',
+    'generating.error.retry': '다시 시도',
+    'generating.error.retrying': '재시도 중...',
+
     // Element names (radar chart)
     'element.wood': '목(木)',
     'element.fire': '화(火)',
@@ -644,6 +678,23 @@ export const translations = {
     'faq.contact.title': 'Bagaimana cara menghubungi?',
     'faq.contact.desc': 'Pertanyaan, masukan, atau sekadar ingin menyapa?',
     'faq.cta': 'Mulai analisismu',
+
+    // Generating Screen
+    'generating.step1': 'Membaca chart kelahiranmu',
+    'generating.step2': 'Memetakan desain energimu',
+    'generating.step3': 'Menemukan titik collision',
+    'generating.step4': 'Membuat kartu diagnostikmu',
+    'generating.step5': 'Menyelesaikan laporanmu',
+    'generating.insight1': 'Tidak ada dua blueprint yang sama — milikmu sedang dibuat sekarang.',
+    'generating.insight2': 'Kami melihat bagaimana pola alami bertemu realitasmu saat ini.',
+    'generating.insight3': 'Laporanmu memetakan kekuatan dan titik butamu.',
+    'generating.insight4': 'Ada lebih dari 480 kombinasi unik. Menemukan milikmu.',
+    'generating.insight5': 'Hampir selesai — menyiapkan panduan aksi personalmu.',
+    'generating.label': 'Membuat',
+    'generating.error.title': 'Ada yang tidak berjalan',
+    'generating.error.desc': 'Kami tidak bisa membuat laporanmu kali ini.<br />Jawabanmu tersimpan — ketuk di bawah untuk coba lagi.',
+    'generating.error.retry': 'Coba lagi',
+    'generating.error.retrying': 'Mencoba lagi...',
 
     // Element names (radar chart)
     'element.wood': 'Kayu',

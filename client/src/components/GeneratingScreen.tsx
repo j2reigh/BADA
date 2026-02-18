@@ -1,32 +1,28 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { t as translate, type UILanguage } from "@/lib/simple-i18n";
 
 interface GeneratingScreenProps {
   isComplete: boolean;
   isError?: boolean;
   errorMessage?: string;
   retryCount?: number;
+  language?: UILanguage;
   onFinished: () => void;
   onRetry?: () => void;
 }
 
-const STEPS = [
-  { label: "Reading your birth chart", duration: 2000 },
-  { label: "Mapping your energy design", duration: 2500 },
-  { label: "Finding the collision points", duration: 3000 },
-  { label: "Generating your diagnostic cards", duration: 5000 },
-  { label: "Finalizing your report", duration: 5000 },
-];
+const STEP_DURATIONS = [2000, 2500, 3000, 5000, 5000];
 
-const INSIGHTS = [
-  "No two blueprints are alike — yours is being crafted now.",
-  "We're looking at how your natural wiring meets your current reality.",
-  "Your report maps both your strengths and your blind spots.",
-  "Over 480 unique archetype combinations exist. Finding yours.",
-  "Almost there — preparing your personalized action guide.",
-];
-
-export default function GeneratingScreen({ isComplete, isError, errorMessage, retryCount, onFinished, onRetry }: GeneratingScreenProps) {
+export default function GeneratingScreen({ isComplete, isError, errorMessage, retryCount, language = "en", onFinished, onRetry }: GeneratingScreenProps) {
+  const lang = language;
+  const steps = STEP_DURATIONS.map((duration, i) => ({
+    label: translate(`generating.step${i + 1}`, lang),
+    duration,
+  }));
+  const insights = Array.from({ length: 5 }, (_, i) =>
+    translate(`generating.insight${i + 1}`, lang)
+  );
   const [currentStep, setCurrentStep] = useState(0);
   const [progress, setProgress] = useState(0);
   const [insightIndex, setInsightIndex] = useState(0);
@@ -49,14 +45,14 @@ export default function GeneratingScreen({ isComplete, isError, errorMessage, re
 
     let elapsed = 0;
     for (let i = 0; i < currentStep; i++) {
-      elapsed += STEPS[i].duration;
+      elapsed += steps[i].duration;
     }
 
     const timer = setTimeout(() => {
-      if (currentStep < STEPS.length - 1) {
+      if (currentStep < steps.length - 1) {
         setCurrentStep((s) => s + 1);
       }
-    }, STEPS[currentStep].duration);
+    }, steps[currentStep].duration);
 
     return () => clearTimeout(timer);
   }, [currentStep, isDone]);
@@ -78,7 +74,7 @@ export default function GeneratingScreen({ isComplete, isError, errorMessage, re
   // Insight rotation (every 5s)
   useEffect(() => {
     const interval = setInterval(() => {
-      setInsightIndex((i) => (i + 1) % INSIGHTS.length);
+      setInsightIndex((i) => (i + 1) % insights.length);
     }, 5000);
     return () => clearInterval(interval);
   }, []);
@@ -87,7 +83,7 @@ export default function GeneratingScreen({ isComplete, isError, errorMessage, re
   useEffect(() => {
     if (isComplete && !isDone) {
       setIsDone(true);
-      setCurrentStep(STEPS.length - 1);
+      setCurrentStep(steps.length - 1);
 
       // Animate progress to 100%
       let p = progress;
@@ -131,7 +127,7 @@ export default function GeneratingScreen({ isComplete, isError, errorMessage, re
 
         {/* Steps */}
         <div className="space-y-4 mb-12">
-          {STEPS.map((step, i) => (
+          {steps.map((step, i) => (
             <motion.div
               key={i}
               initial={{ opacity: 0, x: -10 }}
@@ -197,7 +193,7 @@ export default function GeneratingScreen({ isComplete, isError, errorMessage, re
             />
           </div>
           <div className="flex justify-between mt-2">
-            <span className="text-[10px] text-white/30 uppercase tracking-widest">Generating</span>
+            <span className="text-[10px] text-white/30 uppercase tracking-widest">{translate('generating.label', lang)}</span>
             <span className="text-[10px] text-white/30 font-mono">{Math.round(progress)}%</span>
           </div>
         </div>
@@ -213,7 +209,7 @@ export default function GeneratingScreen({ isComplete, isError, errorMessage, re
               transition={{ duration: 0.4 }}
               className="text-xs text-white/40 italic leading-relaxed"
             >
-              {INSIGHTS[insightIndex]}
+              {insights[insightIndex]}
             </motion.p>
           </AnimatePresence>
         </div>
@@ -229,12 +225,11 @@ export default function GeneratingScreen({ isComplete, isError, errorMessage, re
               </svg>
             </div>
             <p className="text-white/90 text-lg font-medium mb-3">
-              Something didn't work
+              {translate('generating.error.title', lang)}
             </p>
-            <p className="text-white/50 text-sm leading-relaxed mb-10">
-              We couldn't generate your report this time.<br />
-              Your answers are saved — just tap below to try again.
-            </p>
+            <p className="text-white/50 text-sm leading-relaxed mb-10"
+               dangerouslySetInnerHTML={{ __html: translate('generating.error.desc', lang) }}
+            />
             {onRetry && (
               <button
                 onClick={() => {
@@ -244,7 +239,7 @@ export default function GeneratingScreen({ isComplete, isError, errorMessage, re
                 disabled={isRetrying}
                 className="px-10 py-3.5 rounded-full bg-white text-[#182339] font-medium text-sm hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isRetrying ? "Retrying..." : "Try again"}
+                {isRetrying ? translate('generating.error.retrying', lang) : translate('generating.error.retry', lang)}
               </button>
             )}
           </div>
