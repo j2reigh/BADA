@@ -13,6 +13,39 @@
 
 ## 🔄 최근 회고 (최신순)
 
+### 2026-02-18 - geo-tz ENOENT 크래시 + Gumroad 결제 후 UX + 모바일 hover 고착
+**Agent:** Claude
+
+#### 👍 Keep (계속 할 것)
+- **라이브러리 교체가 정답:** `geo-tz` (24MB .dat + fs.openSync) → `@photostructure/tz-lookup` (순수 JS). 번들 2.6→2.0MB 감소, 파일시스템 의존 완전 제거. 같은 기능, 더 나은 호환성
+- **Gumroad 결제 후 UX 개선:** redirect_url + visibilitychange refetch + ?paid=1 polling으로 결제 완료 → 리포트 잠금 해제 자동화. 서버 변경 없이 클라이언트만으로 해결
+
+#### 🤔 Problem (문제점)
+- **🔴 geo-tz ENOENT 프로덕션 크래시:** `geo-tz`가 런타임에 `fs.openSync`로 `.dat` 파일을 읽는데, esbuild 번들에는 JS만 포함 → Vercel Lambda에서 파일 없음 → 해외 좌표 제출 시 500. **CLAUDE.md 체크리스트에 "CJS 글로벌"만 있고 "런타임 파일 읽기"가 없어서 놓침**
+- **__dirname shim이 근본 해결이 아니었음:** 이전 세션에서 `__dirname` 미정의 크래시 수정 → shim 추가로 경로 계산은 됐지만, 실제 .dat 파일이 번들에 없는 건 그대로. 서울 데이터(좌표 없음=레거시 KST) 로만 테스트해서 geo-tz 호출 자체가 안 됨 → 해외 좌표 들어와서야 터짐
+- **모바일 hover 고착:** `blur()`가 keyboard focus만 제거하고 CSS `:hover` 상태는 안 없앰. Tailwind v3에서 `hover:`가 터치에도 적용 → 서베이 옵션 탭 후 다음 질문 버튼에 hover 스타일 잔존
+
+#### 💡 Try (시도할 것)
+- **패키지 추가 시 3단 체크:** CJS 글로벌 + 네이티브 바이너리 + **런타임 파일 읽기** (CLAUDE.md 체크리스트 업데이트 완료)
+- **해외 좌표 테스트 필수:** 서울만 테스트하면 레거시 KST 경로만 검증됨. 자카르타/NYC 등 좌표 있는 케이스를 배포 후 스모크 테스트에 포함
+- **Tailwind `hoverOnlyWhenSupported`:** 터치 디바이스에서 hover 고착 근본 방지. 모바일 퍼스트 프로젝트에서는 초기 설정 시 활성화할 것
+
+#### 📦 산출물
+- `lib/time_utils.ts`: `geo-tz` → `@photostructure/tz-lookup` 교체
+- `package.json`: geo-tz 제거, @photostructure/tz-lookup 추가
+- `tailwind.config.ts`: `future: { hoverOnlyWhenSupported: true }` 추가
+- `client/src/pages/ResultsV3.tsx`: Gumroad redirect_url + ?paid=1 polling + visibilitychange refetch
+- `client/src/components/report-v2/UnlockSection.tsx`: Gumroad redirect_url 추가
+- `CLAUDE.md`: "런타임 파일 읽기 확인" 체크 항목 + "ID/스키마 변경 체크리스트" 섹션
+- `.ai-workflow/retrospectives/2026-02-16-vercel-deployment-retro.md`: §11 Gumroad webhook slug crash 기록
+
+#### 커밋 이력
+- `51fd800` feat: auto-refetch after Gumroad payment + ID schema change prevention
+- `b307c8a` fix: replace geo-tz with pure JS tz-lookup — Vercel ENOENT crash
+- `2d4c27d` docs: add runtime file read check to Vercel compatibility checklist
+
+---
+
 ### 2026-02-17 (E) - DO/DON'T 필드 분리 + 리포트 dedup + 배포 회고 + i18n 백로그
 **Agent:** Claude
 
