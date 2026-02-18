@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon';
-import { find as findTimezone } from 'geo-tz';
+import tzlookup from '@photostructure/tz-lookup';
 
 export interface TrueSolarTimeResult {
   year: number;
@@ -41,9 +41,8 @@ export function calculateTrueSolarTime(
   latitude: number,
   longitude: number,
 ): TrueSolarTimeResult {
-  // 1. Derive IANA timezone from coordinates
-  const tzResults = findTimezone(latitude, longitude);
-  const timezone = tzResults[0] || 'UTC';
+  // 1. Derive IANA timezone from coordinates (pure JS, no filesystem)
+  const timezone = tzlookup(latitude, longitude) || 'UTC';
 
   // 2. Parse in local timezone to get DST and UTC offset
   const dt = DateTime.fromISO(`${date}T${time}`, { zone: timezone });
