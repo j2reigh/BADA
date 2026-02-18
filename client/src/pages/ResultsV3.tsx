@@ -805,7 +805,7 @@ function ClosingCard({
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          timer = setTimeout(() => setShowToast(true), 2000);
+          timer = setTimeout(() => setShowToast(true), 500);
           observer.disconnect();
         }
       },
@@ -895,7 +895,7 @@ function ShareToast({
   // Auto-dismiss after 8s
   useEffect(() => {
     if (!visible) return;
-    const timer = setTimeout(onDismiss, 8000);
+    const timer = setTimeout(onDismiss, 15000);
     return () => clearTimeout(timer);
   }, [visible, onDismiss]);
 
