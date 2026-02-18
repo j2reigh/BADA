@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Lock, ChevronDown, Share2, Link2, Image } from "lucide-react";
+import { Loader2, Lock, ChevronDown, Share2, Camera } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 
 // ─── Helpers ───
@@ -132,17 +132,16 @@ function Card({
   bg = "bg-[#182339]",
   className = "",
   showShare = false,
+  allowImage = true,
 }: {
   children: React.ReactNode;
   bg?: string;
   className?: string;
   showShare?: boolean;
+  allowImage?: boolean;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
-  const [pressed, setPressed] = useState(false);
-  const [showActions, setShowActions] = useState(false);
   const [savingImage, setSavingImage] = useState(false);
-  const pressTimer = useRef<ReturnType<typeof setTimeout>>();
 
   const shareLink = useCallback(async () => {
     const url = window.location.href;
@@ -151,7 +150,6 @@ function Card({
     } else {
       navigator.clipboard.writeText(url);
     }
-    setShowActions(false);
   }, []);
 
   const saveImage = useCallback(async () => {
@@ -163,92 +161,64 @@ function Card({
         cacheBust: true,
         pixelRatio: 2,
         filter: (node) => {
-          if (node instanceof HTMLElement && node.dataset.cardActions === "true") return false;
+          if (node instanceof HTMLElement && node.dataset.sharePill === "true") return false;
           return true;
         },
       });
-      const blob = await (await fetch(png)).blob();
-      const file = new File([blob], "bada-card.png", { type: "image/png" });
 
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file] });
-      } else {
-        const a = document.createElement("a");
-        a.href = png;
-        a.download = "bada-card.png";
-        a.click();
+      // Try native share with file, fallback to opening in new tab
+      try {
+        const blob = await (await fetch(png)).blob();
+        const file = new File([blob], "bada-card.png", { type: "image/png" });
+        if (navigator.canShare?.({ files: [file] })) {
+          await navigator.share({ files: [file] });
+          return;
+        }
+      } catch {}
+
+      // Fallback: open in new tab (user can long-press to save on iOS)
+      const w = window.open();
+      if (w) {
+        w.document.write(`<img src="${png}" style="max-width:100%;background:#182339">`);
+        w.document.title = "BADA Card";
       }
     } catch {
-      // fallback: open image in new tab
+      // ignore
     } finally {
       setSavingImage(false);
-      setShowActions(false);
     }
-  }, []);
-
-  const startPress = useCallback(() => {
-    if (!showShare) return;
-    setPressed(true);
-    pressTimer.current = setTimeout(() => {
-      if (navigator.vibrate) navigator.vibrate(30);
-      setPressed(false);
-      setShowActions(true);
-    }, 500);
-  }, [showShare]);
-
-  const cancelPress = useCallback(() => {
-    clearTimeout(pressTimer.current);
-    setPressed(false);
   }, []);
 
   return (
     <div
       ref={cardRef}
-      className={`h-[100dvh] w-full flex-shrink-0 snap-start relative ${bg} ${className} transition-transform duration-150`}
-      style={{
-        fontFamily: "'Inter', sans-serif",
-        transform: pressed ? "scale(0.97)" : "scale(1)",
-      }}
-      onTouchStart={startPress}
-      onTouchEnd={cancelPress}
-      onTouchCancel={cancelPress}
-      onMouseDown={startPress}
-      onMouseUp={cancelPress}
-      onMouseLeave={cancelPress}
+      className={`h-[100dvh] w-full flex-shrink-0 snap-start relative ${bg} ${className}`}
+      style={{ fontFamily: "'Inter', sans-serif" }}
     >
       <div className="h-full overflow-y-auto flex flex-col justify-center items-center px-5 sm:px-8 py-12">
         {children}
       </div>
-      {/* Action bar on long press */}
-      {showActions && (
-        <div data-card-actions="true" className="absolute bottom-16 left-0 right-0 z-40 flex justify-center px-4 animate-slide-up">
-          <div className="flex items-center gap-1 px-2 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15">
-            <button
-              onClick={shareLink}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs text-white/70 hover:bg-white/10 transition-colors"
-            >
-              <Link2 className="w-3.5 h-3.5" />
-              Link
-            </button>
-            <div className="w-px h-4 bg-white/10" />
+      {/* Share pill — top right */}
+      {showShare && (
+        <div data-share-pill="true" className="absolute top-4 right-4 z-20 flex items-center gap-0.5 rounded-full bg-white/5 border border-white/10 p-0.5">
+          {allowImage && (
             <button
               onClick={saveImage}
               disabled={savingImage}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs text-white/70 hover:bg-white/10 transition-colors disabled:opacity-50"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-white/25 hover:text-white/50 hover:bg-white/5 transition-colors disabled:opacity-50"
+              aria-label="Save as image"
             >
-              {savingImage ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Image className="w-3.5 h-3.5" />
-              )}
-              Image
+              {savingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
             </button>
-          </div>
+          )}
+          <button
+            onClick={shareLink}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-white/25 hover:text-white/50 hover:bg-white/5 transition-colors"
+            aria-label="Share link"
+          >
+            <Share2 className="w-3.5 h-3.5" />
+          </button>
         </div>
-      )}
-      {/* Dismiss action bar on tap outside */}
-      {showActions && (
-        <div data-card-actions="true" className="absolute inset-0 z-30" onClick={() => setShowActions(false)} />
       )}
       {/* Watermark — visible in screenshots */}
       <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-1.5 opacity-25 pointer-events-none">
@@ -381,7 +351,7 @@ function BlueprintFacetsCard({
   }, []);
 
   return (
-    <Card showShare>
+    <Card showShare allowImage={false}>
       <div className="relative flex flex-col items-center text-center w-full max-w-sm">
         <CardLabel>your blueprint</CardLabel>
 
@@ -573,7 +543,7 @@ function ActionCard({
   }, []);
 
   return (
-    <Card bg="bg-gradient-to-b from-[#182339] to-[#1e2a45]" showShare>
+    <Card bg="bg-gradient-to-b from-[#182339] to-[#1e2a45]" showShare allowImage={false}>
       <div className="relative flex flex-col items-center text-center w-full max-w-sm">
         <CardLabel>this week</CardLabel>
 
@@ -1026,37 +996,6 @@ function ShareToast({
         <span>{t.text}</span>
       </button>
     </div>
-  );
-}
-
-// ─── Floating Share Button (top-right) ───
-
-function FloatingShareButton({ reportId }: { reportId: string }) {
-  const [copied, setCopied] = useState(false);
-  const shareUrl = `${window.location.origin}/results/${reportId}`;
-
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({ url: shareUrl });
-    } else {
-      navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  return (
-    <button
-      onClick={handleShare}
-      className="fixed top-4 right-4 z-50 w-10 h-10 rounded-full bg-white/8 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white/50 hover:text-white/80 hover:bg-white/15 transition-all"
-      aria-label="Share report"
-    >
-      {copied ? (
-        <span className="text-xs font-mono text-[#6BCB77]">✓</span>
-      ) : (
-        <Share2 className="w-4 h-4" />
-      )}
-    </button>
   );
 }
 
@@ -1581,9 +1520,6 @@ export default function ResultsV3() {
 
   return (
     <div className="relative">
-      {/* Floating share button — top right */}
-      <FloatingShareButton reportId={reportId || ""} />
-
       {/* Sticky unlock CTA — free users only, hides on scroll down */}
       {!isPaid && (
         <StickyUnlockCTA
