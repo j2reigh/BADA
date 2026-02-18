@@ -894,8 +894,8 @@ function StickyUnlockCTA({
   language?: string;
   onUnlock: () => void;
 }) {
-  const ctaText = { en: "Unlock full report", ko: "전체 리포트 보기", id: "Buka laporan lengkap" };
-  const moreText = { en: "Full report inside", ko: "전체 리포트 보기", id: "Laporan lengkap" };
+  const ctaText = { en: "Unlock full report", ko: "잠금 해제", id: "Buka laporan" };
+  const moreText = { en: "Full report inside", ko: "전체 리포트 보기", id: "Laporan lengkap di dalam" };
   const label = ctaText[language as keyof typeof ctaText] || ctaText.en;
   const more = moreText[language as keyof typeof moreText] || moreText.en;
 
