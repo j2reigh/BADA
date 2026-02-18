@@ -10,7 +10,7 @@ import { analyzeOperatingState } from "../lib/operating_logic"; // v2.3 Integrat
 import { generateV3Cards, repairV3Cards, getPromptHash, type SurveyScores } from "../lib/gemini_client";
 import { translateToBehaviors, calculateLuckCycle, type HumanDesignData } from "../lib/behavior_translator";
 import { fetchHumanDesign } from "../lib/hd_client";
-import { sendReportLinkEmail, sendReportLinksEmail } from "../lib/email";
+import { sendReportLinksEmail } from "../lib/email";
 import { db } from "./db";
 import { type InsertBirthPattern, type InsertSajuResult } from "@shared/schema";
 
@@ -319,7 +319,9 @@ export async function registerRoutes(
       console.log("[Assessment] Saju result saved:", sajuResult.id);
 
       // Send report link email (non-blocking — don't wait for result)
-      sendReportLinkEmail(lead.email, sajuResult.slug || sajuResult.id, input.name).then(
+      sendReportLinksEmail(lead.email, [
+        { id: sajuResult.slug || sajuResult.id, name: input.name, createdAt: new Date().toISOString() },
+      ]).then(
         (result) => {
           if (result.success) {
             console.log(`[Assessment] Report link email sent to ${lead.email}`);
