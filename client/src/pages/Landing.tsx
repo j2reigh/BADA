@@ -1,5 +1,5 @@
 import { motion, useScroll, useTransform, useInView } from "framer-motion";
-import { ArrowRight, ArrowDown, ExternalLink } from "lucide-react";
+import { ArrowRight, ArrowDown, ExternalLink, Menu, X } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { Link } from "wouter";
 import TypewriterText from "@/components/landing/TypewriterText";
@@ -16,21 +16,88 @@ import {
 
 type TranslateFn = (key: string, params?: Record<string, any>) => string;
 
-function Header({ t }: { t: TranslateFn }) {
-  return (
-    <header className="fixed top-0 left-0 right-0 z-50 transition-colors duration-500">
-      <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
-        <a href="/" className="mix-blend-difference">
-          <img src="/logo-badaone.svg" alt="bada.one" className="h-5" />
-        </a>
+function Header({ t, language, setLanguage }: { t: TranslateFn; language: UILanguage; setLanguage: (lang: UILanguage) => void }) {
+  const [menuOpen, setMenuOpen] = useState(false);
 
-        <nav className="hidden md:flex items-center gap-8 mix-blend-difference text-white">
-          <a href="#problem" className="text-sm hover:opacity-70 transition-opacity">{t('landing.nav.problem')}</a>
-          <a href="#solution" className="text-sm hover:opacity-70 transition-opacity">{t('landing.nav.solution')}</a>
-          <Link href="/faq" className="text-sm hover:opacity-70 transition-opacity">{t('faq.title')}</Link>
-        </nav>
-      </div>
-    </header>
+  const languages: { code: UILanguage; label: string }[] = [
+    { code: 'en', label: 'EN' },
+    { code: 'ko', label: '한' },
+    { code: 'id', label: 'ID' },
+  ];
+
+  const findReportLabel = { en: "Find my report", ko: "내 리포트 찾기", id: "Cari laporanku" };
+  const findLabel = findReportLabel[language] || findReportLabel.en;
+
+  return (
+    <>
+      <header className="fixed top-0 left-0 right-0 z-50 transition-colors duration-500">
+        <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
+          <a href="/" className="mix-blend-difference">
+            <img src="/logo-badaone.svg" alt="bada.one" className="h-5" />
+          </a>
+
+          {/* Desktop nav */}
+          <nav className="hidden md:flex items-center gap-8 mix-blend-difference text-white">
+            <a href="#problem" className="text-sm hover:opacity-70 transition-opacity">{t('landing.nav.problem')}</a>
+            <a href="#solution" className="text-sm hover:opacity-70 transition-opacity">{t('landing.nav.solution')}</a>
+            <Link href="/faq" className="text-sm hover:opacity-70 transition-opacity">{t('faq.title')}</Link>
+          </nav>
+
+          {/* Mobile hamburger */}
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="md:hidden mix-blend-difference text-white p-1"
+            aria-label="Menu"
+          >
+            {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
+      </header>
+
+      {/* Mobile menu overlay */}
+      {menuOpen && (
+        <div className="fixed inset-0 z-[55] bg-[#182339]/95 backdrop-blur-md md:hidden">
+          <div className="flex flex-col items-center justify-center h-full gap-8">
+            {/* Nav links */}
+            <Link
+              href="/faq"
+              onClick={() => setMenuOpen(false)}
+              className="text-lg text-white/80 hover:text-white transition-colors"
+            >
+              {t('faq.title')}
+            </Link>
+
+            <a
+              href="#find-report"
+              onClick={() => setMenuOpen(false)}
+              className="text-lg text-white/80 hover:text-white transition-colors"
+            >
+              {findLabel}
+            </a>
+
+            {/* Language toggle */}
+            <div className="flex items-center gap-1 bg-white/5 rounded-full p-1 mt-4">
+              {languages.map((lang) => (
+                <button
+                  key={lang.code}
+                  onClick={() => {
+                    setLanguage(lang.code);
+                    setMenuOpen(false);
+                  }}
+                  className={`px-4 py-2 text-sm rounded-full transition-all ${
+                    language === lang.code
+                      ? 'bg-white text-[#182339] font-medium'
+                      : 'text-white/60 hover:text-white'
+                  }`}
+                >
+                  {lang.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -594,7 +661,7 @@ function FindMyReport({ language }: { language: UILanguage }) {
   const l = labels[language] || labels.en;
 
   return (
-    <section className="relative z-10 py-12 px-6">
+    <section id="find-report" className="relative z-10 py-12 px-6">
       <div className="max-w-md mx-auto text-center">
         <p className="text-white/40 text-sm mb-2">{l.title}</p>
         {status === "sent" ? (
@@ -698,7 +765,7 @@ export default function Landing() {
         }}
       />
 
-      <Header t={t} />
+      <Header t={t} language={language} setLanguage={setLanguage} />
 
       <div className="relative">
         <HeroSection t={t} />
