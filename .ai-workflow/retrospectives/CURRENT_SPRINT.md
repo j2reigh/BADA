@@ -13,6 +13,38 @@
 
 ## 🔄 최근 회고 (최신순)
 
+### 2026-02-18 (B) - Report UX 개선: Sticky CTA, Share 버튼, Find My Report
+**Agent:** Claude
+**Branch:** `feat/report-ux-improvements`
+
+#### 👍 Keep (계속 할 것)
+- **유저 피드백 즉시 반영**: 스크롤 다운→숨기기가 아니라 "가만히 있으면 보이기"로 CTA 동작 변경, 코드입력 접기→바로 보이기 등 유저가 직접 테스트하면서 실시간 수정
+- **이메일 열거 방지**: resend-report-link API가 존재/비존재 모두 동일 응답 반환 → 보안 고려
+- **동적 카드 수 → 숫자 제거**: 하드코딩 11 → 동적 paidCards.length → 13이 불길 → 숫자 완전 제거. 결과적으로 가장 유지보수 좋은 형태
+
+#### 🚨 Problem (문제)
+- **React hooks 순서 에러**: `useEffect`를 early return 뒤에 배치 → "Rendered more hooks than previous render" 크래시. 모든 훅은 반드시 early return 전에 위치해야 함
+- **리포트 조회 누락**: `getLeadByEmail`이 lead 1개만 반환 → 같은 이메일 다른 lead의 리포트 누락. innerJoin으로 직접 email→saju_results 조회하도록 수정
+- **카드 수 불일치**: FAQ/LockCard 곳곳에 10, 11, 13 등 제각각 하드코딩되어 있었음
+
+#### 🔧 Try (다음에 시도)
+- 숫자 하드코딩 지양 — 카드 추가/삭제 시 모든 곳에서 수정 누락 위험. 동적이거나 숫자 없는 표현 사용
+- React 컴포넌트에 새 훅 추가 시 early return 체크 먼저
+
+#### 📦 산출물
+- Floating Share 버튼 (리포트 상단 우측)
+- Sticky Unlock CTA (스크롤 멈추면 표시, 다운 시 숨김, LockCard로 스크롤)
+- Find My Report (Landing 하단, 이메일→리포트 링크 재발송)
+- 멀티 리포트 이메일 템플릿 (yyyy-mm-dd | 이름 | 링크)
+- FAQ 3개 추가 (코드 사용법, 리포트 찾기, 할인코드)
+- 이메일 문구 통일 ("Save your report. / From BADA, with our best wishes.")
+- Strategy 카드 "what to do now" → JetBrains Mono uppercase
+
+#### 📝 커밋
+- `5e81b28` feat: report UX improvements — sticky CTA, share button, find my report
+
+---
+
 ### 2026-02-18 - geo-tz ENOENT 크래시 + Gumroad 결제 후 UX + 모바일 hover 고착
 **Agent:** Claude
 
