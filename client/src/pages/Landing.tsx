@@ -30,7 +30,7 @@ function Header({ t, language, setLanguage }: { t: TranslateFn; language: UILang
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 transition-colors duration-500">
+      <header className={`fixed top-0 left-0 right-0 transition-colors duration-500 ${menuOpen ? 'z-[60]' : 'z-50'}`}>
         <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
           <a href="/" className="mix-blend-difference">
             <img src="/logo-badaone.svg" alt="bada.one" className="h-5" />
