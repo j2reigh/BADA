@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Lock, ChevronDown, ExternalLink, Share2 } from "lucide-react";
+import { Loader2, Lock, ChevronDown, Share2 } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
+import { toPng } from "html-to-image";
 
 // ─── Helpers ───
 
@@ -131,15 +132,70 @@ function Card({
   children,
   bg = "bg-[#182339]",
   className = "",
+  showShare = false,
 }: {
   children: React.ReactNode;
   bg?: string;
   className?: string;
+  showShare?: boolean;
 }) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [pressed, setPressed] = useState(false);
+  const pressTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  const handleShare = useCallback(async () => {
+    if (!cardRef.current) return;
+    try {
+      const png = await toPng(cardRef.current, {
+        cacheBust: true,
+        pixelRatio: 2,
+      });
+      const blob = await (await fetch(png)).blob();
+      const file = new File([blob], "bada-card.png", { type: "image/png" });
+
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file] });
+      } else {
+        const a = document.createElement("a");
+        a.href = png;
+        a.download = "bada-card.png";
+        a.click();
+      }
+    } catch {
+      // User cancelled or error
+    }
+  }, []);
+
+  const startPress = useCallback(() => {
+    if (!showShare) return;
+    setPressed(true);
+    pressTimer.current = setTimeout(() => {
+      // Haptic feedback if available
+      if (navigator.vibrate) navigator.vibrate(30);
+      handleShare();
+      setPressed(false);
+    }, 500);
+  }, [showShare, handleShare]);
+
+  const cancelPress = useCallback(() => {
+    clearTimeout(pressTimer.current);
+    setPressed(false);
+  }, []);
+
   return (
     <div
-      className={`h-[100dvh] w-full flex-shrink-0 snap-start relative ${bg} ${className}`}
-      style={{ fontFamily: "'Inter', sans-serif" }}
+      ref={cardRef}
+      className={`h-[100dvh] w-full flex-shrink-0 snap-start relative ${bg} ${className} transition-transform duration-150`}
+      style={{
+        fontFamily: "'Inter', sans-serif",
+        transform: pressed ? "scale(0.97)" : "scale(1)",
+      }}
+      onTouchStart={startPress}
+      onTouchEnd={cancelPress}
+      onTouchCancel={cancelPress}
+      onMouseDown={startPress}
+      onMouseUp={cancelPress}
+      onMouseLeave={cancelPress}
     >
       <div className="h-full overflow-y-auto flex flex-col justify-center items-center px-5 sm:px-8 py-12">
         {children}
@@ -203,7 +259,7 @@ function InsightCard({
   accent?: string;
 }) {
   return (
-    <Card>
+    <Card showShare>
       <div className="relative flex flex-col items-center text-center w-full max-w-sm">
         <CardLabel>{label}</CardLabel>
         {question && (
@@ -239,7 +295,7 @@ function BlueprintCard({
   accent?: string;
 }) {
   return (
-    <Card>
+    <Card showShare>
       <div className="relative flex flex-col items-center text-center w-full max-w-sm">
         <CardLabel>your blueprint</CardLabel>
         <p className="text-xl text-[#879DC6] font-light mb-6 leading-relaxed">{question}</p>
@@ -275,7 +331,7 @@ function BlueprintFacetsCard({
   }, []);
 
   return (
-    <Card>
+    <Card showShare>
       <div className="relative flex flex-col items-center text-center w-full max-w-sm">
         <CardLabel>your blueprint</CardLabel>
 
@@ -337,7 +393,7 @@ function EvidenceCard({
   items: string[];
 }) {
   return (
-    <Card>
+    <Card showShare>
       <div className="relative flex flex-col w-full max-w-sm">
         <CardLabel>{label}</CardLabel>
         {question && (
@@ -379,7 +435,7 @@ function CostCard({
   tip?: string;
 }) {
   return (
-    <Card>
+    <Card showShare>
       <div className="relative flex flex-col items-center text-center w-full max-w-sm">
         <CardLabel>{label}</CardLabel>
         {question && (
@@ -419,7 +475,7 @@ function RechargeCard({
   tip?: string;
 }) {
   return (
-    <Card bg="bg-gradient-to-b from-[#182339] to-[#1a2840]">
+    <Card bg="bg-gradient-to-b from-[#182339] to-[#1a2840]" showShare>
       <div className="relative flex flex-col items-center text-center w-full max-w-sm">
         <CardLabel>recharge</CardLabel>
         <p className="text-xl text-[#879DC6] font-light mb-6 leading-relaxed">
@@ -467,7 +523,7 @@ function ActionCard({
   }, []);
 
   return (
-    <Card bg="bg-gradient-to-b from-[#182339] to-[#1e2a45]">
+    <Card bg="bg-gradient-to-b from-[#182339] to-[#1e2a45]" showShare>
       <div className="relative flex flex-col items-center text-center w-full max-w-sm">
         <CardLabel>this week</CardLabel>
 
@@ -534,7 +590,7 @@ function EnergyCard({
   insight: string;
 }) {
   return (
-    <Card bg="bg-gradient-to-b from-[#182339] to-[#1a2840]">
+    <Card bg="bg-gradient-to-b from-[#182339] to-[#1a2840]" showShare>
       <div className="relative flex flex-col items-center w-full max-w-sm">
         <CardLabel>your brain</CardLabel>
         <p className="text-lg text-[#879DC6] font-light mb-8 leading-relaxed text-center">
@@ -609,7 +665,7 @@ function ChapterCard({
   ];
 
   return (
-    <Card bg="bg-gradient-to-b from-[#182339] to-[#1e2a45]">
+    <Card bg="bg-gradient-to-b from-[#182339] to-[#1e2a45]" showShare>
       <div className="relative flex flex-col items-center w-full max-w-sm">
         <CardLabel>your chapter</CardLabel>
         <p className="text-xl text-[#ABBBD5] font-light mb-6 leading-relaxed text-center">
@@ -702,7 +758,7 @@ function ChapterStrategyCard({
 }) {
   if (!chapter.strategyDo && !chapter.strategy) return null;
   return (
-    <Card bg="bg-gradient-to-b from-[#1e2a45] to-[#182339]">
+    <Card bg="bg-gradient-to-b from-[#1e2a45] to-[#182339]" showShare>
       <div className="relative flex flex-col items-center w-full max-w-sm">
         <CardLabel>your move</CardLabel>
         <p className="text-xs uppercase tracking-[0.2em] text-[#ABBBD5]/70 mb-8 text-center" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
@@ -726,7 +782,7 @@ function YearCard({
   accent: string;
 }) {
   return (
-    <Card bg="bg-gradient-to-b from-[#182339] to-[#1e2a45]">
+    <Card bg="bg-gradient-to-b from-[#182339] to-[#1e2a45]" showShare>
       <div className="relative flex flex-col items-center text-center w-full max-w-sm">
         <CardLabel>this year</CardLabel>
 
@@ -770,7 +826,7 @@ function YearStrategyCard({
 }) {
   if (!strategyDo && !strategy) return null;
   return (
-    <Card bg="bg-gradient-to-b from-[#1e2a45] to-[#182339]">
+    <Card bg="bg-gradient-to-b from-[#1e2a45] to-[#182339]" showShare>
       <div className="relative flex flex-col items-center w-full max-w-sm">
         <CardLabel>your move</CardLabel>
         <p className="text-xs uppercase tracking-[0.2em] text-[#ABBBD5]/70 mb-8 text-center" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
@@ -787,12 +843,21 @@ function YearStrategyCard({
 function ClosingCard({
   message,
   reportId,
+  language = "en",
 }: {
   message: string;
   reportId: string;
+  language?: string;
 }) {
-  const shareUrl = `${window.location.origin}/results/${reportId}`;
+  const [showModal, setShowModal] = useState(false);
   const marqueeText = "CLARITY IS THE NEW HIGH · BADA · ".repeat(12);
+
+  // Auto-show modal 4s after mount
+  useEffect(() => {
+    const timer = setTimeout(() => setShowModal(true), 4000);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <Card bg="bg-gradient-to-b from-[#182339] via-[#233F64] to-[#402525]">
       <div className="relative flex flex-col items-center text-center w-full max-w-sm">
@@ -800,20 +865,15 @@ function ClosingCard({
         <p className="text-xl font-light text-white/90 leading-relaxed mb-10">
           {firstSentences(message, 2)}
         </p>
-        <button
-          onClick={() => {
-            if (navigator.share) {
-              navigator.share({ url: shareUrl });
-            } else {
-              navigator.clipboard.writeText(shareUrl);
-            }
-          }}
-          className="flex items-center gap-2 px-8 py-3 rounded-full bg-white/10 border border-white/20 text-sm text-white/70 hover:bg-white/15 transition-colors"
-        >
-          Share this report
-          <ExternalLink className="w-3.5 h-3.5" />
-        </button>
       </div>
+
+      {/* Share bottom sheet */}
+      <ShareBottomSheet
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        reportId={reportId}
+        language={language}
+      />
 
       {/* Marquee wave — "CLARITY IS THE NEW HIGH · BADA" */}
       <div className="absolute bottom-8 left-0 right-0 overflow-hidden pointer-events-none" style={{ height: "60px" }}>
@@ -849,6 +909,88 @@ function ClosingCard({
         </svg>
       </div>
     </Card>
+  );
+}
+
+// ─── Share Bottom Sheet (Closing Card) ───
+
+function ShareBottomSheet({
+  open,
+  onClose,
+  reportId,
+  language = "en",
+}: {
+  open: boolean;
+  onClose: () => void;
+  reportId: string;
+  language?: string;
+}) {
+  const [copied, setCopied] = useState(false);
+  const shareUrl = `${window.location.origin}/results/${reportId}`;
+
+  const nudge: Record<string, { line1: string; line2: string; btn: string }> = {
+    en: {
+      line1: "If someone came to mind while reading —",
+      line2: "they're probably the reason.",
+      btn: "Share this report",
+    },
+    ko: {
+      line1: "읽으면서 떠오르는 사람이 있다면,",
+      line2: "그게 이유입니다.",
+      btn: "리포트 공유하기",
+    },
+    id: {
+      line1: "Jika seseorang muncul di pikiranmu saat membaca —",
+      line2: "itu tandanya.",
+      btn: "Bagikan laporan ini",
+    },
+  };
+
+  const t = nudge[language] || nudge.en;
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ url: shareUrl });
+      } catch {
+        // cancelled
+      }
+    } else {
+      navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  if (!open) return null;
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 z-30 bg-black/40 backdrop-blur-[2px] transition-opacity"
+        onClick={onClose}
+      />
+      {/* Bottom sheet */}
+      <div className="absolute bottom-0 left-0 right-0 z-40 px-6 pb-10 pt-8 animate-slide-up">
+        <div className="max-w-sm mx-auto text-center">
+          <p className="text-white/80 text-base font-light leading-relaxed">
+            {t.line1}
+          </p>
+          <p className="text-white/90 text-base font-light leading-relaxed mb-8">
+            {t.line2}
+          </p>
+          <button
+            onClick={handleShare}
+            className="inline-flex items-center gap-2 px-8 py-3 rounded-full bg-white/10 border border-white/20 text-sm text-white/70 hover:bg-white/15 transition-colors"
+          >
+            <Share2 className="w-3.5 h-3.5" />
+            {copied ? "Copied!" : t.btn}
+          </button>
+          <p className="mt-6 text-[10px] text-white/20">bada.one</p>
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -1392,7 +1534,7 @@ export default function ResultsV3() {
     {
       key: "closing",
       render: () => (
-        <ClosingCard message={v3.closingLine || ""} reportId={reportId || ""} />
+        <ClosingCard message={v3.closingLine || ""} reportId={reportId || ""} language={report.language || "en"} />
       ),
     },
   ];
