@@ -71,7 +71,7 @@ function Footer({ language, setLanguage }: { language: UILanguage; setLanguage: 
 export default function FAQ() {
   const { t, language, setLanguage } = useTranslation();
 
-  const questions = Array.from({ length: 6 }, (_, i) => ({
+  const questions = Array.from({ length: 9 }, (_, i) => ({
     question: t(`faq.q${i + 1}.q`),
     answer: t(`faq.q${i + 1}.a`),
   }));

@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Lock, ChevronDown, ExternalLink } from "lucide-react";
+import { Loader2, Lock, ChevronDown, ExternalLink, Share2 } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 
 // ─── Helpers ───
@@ -705,8 +705,8 @@ function ChapterStrategyCard({
     <Card bg="bg-gradient-to-b from-[#1e2a45] to-[#182339]">
       <div className="relative flex flex-col items-center w-full max-w-sm">
         <CardLabel>your move</CardLabel>
-        <p className="text-xl text-[#ABBBD5] font-light mb-8 leading-relaxed text-center">
-          {chapter.currentLabel ? `${chapter.currentLabel} — what to do now` : "What to do with this decade"}
+        <p className="text-xs uppercase tracking-[0.2em] text-[#ABBBD5]/70 mb-8 text-center" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+          {chapter.currentLabel ? `${chapter.currentLabel} — WHAT TO DO NOW` : "WHAT TO DO WITH THIS DECADE"}
         </p>
         <div className="w-full px-5 py-5 rounded-xl bg-white/5 border border-white/10">
           <StrategyBlock doText={chapter.strategyDo} dontText={chapter.strategyDont} legacy={chapter.strategy} />
@@ -773,8 +773,8 @@ function YearStrategyCard({
     <Card bg="bg-gradient-to-b from-[#1e2a45] to-[#182339]">
       <div className="relative flex flex-col items-center w-full max-w-sm">
         <CardLabel>your move</CardLabel>
-        <p className="text-xl text-[#ABBBD5] font-light mb-8 leading-relaxed text-center">
-          {new Date().getFullYear()} — what to do now
+        <p className="text-xs uppercase tracking-[0.2em] text-[#ABBBD5]/70 mb-8 text-center" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+          {new Date().getFullYear()} — WHAT TO DO NOW
         </p>
         <div className="w-full px-5 py-5 rounded-xl bg-[#ABBBD5]/8 border border-[#ABBBD5]/15">
           <StrategyBlock doText={strategyDo} dontText={strategyDont} legacy={strategy} />
@@ -852,6 +852,72 @@ function ClosingCard({
   );
 }
 
+// ─── Floating Share Button (top-right) ───
+
+function FloatingShareButton({ reportId }: { reportId: string }) {
+  const [copied, setCopied] = useState(false);
+  const shareUrl = `${window.location.origin}/results/${reportId}`;
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({ url: shareUrl });
+    } else {
+      navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleShare}
+      className="fixed top-4 right-4 z-50 w-10 h-10 rounded-full bg-white/8 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white/50 hover:text-white/80 hover:bg-white/15 transition-all"
+      aria-label="Share report"
+    >
+      {copied ? (
+        <span className="text-xs font-mono text-[#6BCB77]">✓</span>
+      ) : (
+        <Share2 className="w-4 h-4" />
+      )}
+    </button>
+  );
+}
+
+// ─── Sticky Unlock CTA (free users, hides on scroll down) ───
+
+function StickyUnlockCTA({
+  visible,
+  language = "en",
+  onUnlock,
+}: {
+  visible: boolean;
+  language?: string;
+  onUnlock: () => void;
+}) {
+  const ctaText = { en: "Unlock full report", ko: "전체 리포트 보기", id: "Buka laporan lengkap" };
+  const moreText = { en: "Full report inside", ko: "전체 리포트 보기", id: "Laporan lengkap" };
+  const label = ctaText[language as keyof typeof ctaText] || ctaText.en;
+  const more = moreText[language as keyof typeof moreText] || moreText.en;
+
+  return (
+    <div
+      className={`fixed bottom-0 left-0 right-0 z-50 transition-transform duration-300 ${
+        visible ? "translate-y-0" : "translate-y-full"
+      }`}
+    >
+      <div className="bg-[#182339]/90 backdrop-blur-md border-t border-white/10 px-4 py-3 flex items-center justify-between max-w-lg mx-auto gap-3">
+        <span className="text-white/40 text-sm font-light">{more}</span>
+        <button
+          onClick={onUnlock}
+          className="px-5 py-2.5 rounded-full bg-white text-[#182339] text-sm font-medium tracking-wide hover:bg-white/90 transition-colors shrink-0"
+        >
+          {label}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Lock Card ───
 
 function LockCard({
@@ -874,14 +940,14 @@ function LockCard({
     en: {
       headline: "what you see ≠ what's there",
       line1: "If those cards felt accurate,",
-      line2: "the next 11 explain why — and what to do about it.",
+      line2: "the rest explain why — and what to do about it.",
       cta: "Unlock",
       or: "or",
       placeholder: "Enter code",
       apply: "Apply",
       faq: [
         { key: "q2", q: "How is this different from MBTI?", a: "MBTI gives you a type. BADA maps the patterns unique to you — why you burn out, how you make decisions, what you keep repeating. No two reports are the same." },
-        { key: "q4", q: "What do I get for $2.9?", a: "11 more cards: why your patterns exist, what they cost you at work · relationships · money, how you recharge, your 10-year chapter, and one thing to change this week." },
+        { key: "q4", q: "What do I get for $2.9?", a: "The full report: why your patterns exist, what they cost you at work · relationships · money, how you recharge, your 10-year chapter, and one thing to change this week." },
         { key: "q6", q: "Is my data safe?", a: "Your birth data is used only to generate your report. We don't sell or share it." },
         { key: "contact", q: "How do I reach you?", a: "Questions, feedback, or just want to say hi?" },
       ],
@@ -889,14 +955,14 @@ function LockCard({
     ko: {
       headline: "보이는 나 ≠ 진짜 나",
       line1: "여기까지 공감되셨다면,",
-      line2: "나머지 11장은 왜 그런지, 그리고 어떻게 바꿀 수 있는지 알려줍니다.",
+      line2: "나머지 카드가 왜 그런지, 어떻게 바꿀 수 있는지 알려줍니다.",
       cta: "잠금 해제",
       or: "또는",
       placeholder: "코드 입력",
       apply: "적용",
       faq: [
         { key: "q2", q: "MBTI랑 뭐가 다른가요?", a: "MBTI는 유형을 줍니다. BADA는 당신만의 패턴을 매핑합니다 — 왜 번아웃이 오는지, 어떻게 결정하는지, 뭘 반복하는지. 같은 리포트는 없습니다." },
-        { key: "q4", q: "$2.9으로 뭘 더 보나요?", a: "11장 추가: 패턴이 왜 존재하는지, 직장·관계·돈에서 치르는 대가, 회복법, 10년 챕터, 이번 주 바꿀 수 있는 한 가지." },
+        { key: "q4", q: "$2.9으로 뭘 더 보나요?", a: "전체 리포트: 패턴이 왜 존재하는지, 직장·관계·돈에서 치르는 대가, 회복법, 10년 챕터, 이번 주 바꿀 수 있는 한 가지." },
         { key: "q6", q: "데이터는 안전한가요?", a: "생년월일은 리포트 생성에만 사용됩니다. 판매하거나 공유하지 않습니다." },
         { key: "contact", q: "어디로 연락하나요?", a: "질문, 피드백, 또는 그냥 인사하고 싶으신가요?" },
       ],
@@ -904,14 +970,14 @@ function LockCard({
     id: {
       headline: "yang kamu lihat ≠ yang sebenarnya",
       line1: "Kalau kartu tadi terasa pas,",
-      line2: "11 kartu berikutnya menjelaskan kenapa — dan apa yang bisa kamu ubah.",
+      line2: "sisanya menjelaskan kenapa — dan apa yang bisa kamu ubah.",
       cta: "Buka",
       or: "atau",
       placeholder: "Masukkan kode",
       apply: "Terapkan",
       faq: [
         { key: "q2", q: "Apa bedanya dengan MBTI?", a: "MBTI memberimu tipe. BADA memetakan pola unikmu — kenapa kamu burnout, bagaimana kamu mengambil keputusan, apa yang terus kamu ulangi. Tidak ada dua laporan yang sama." },
-        { key: "q4", q: "Apa yang saya dapat dengan $2.9?", a: "11 kartu lagi: kenapa polamu ada, biayanya di kerja · hubungan · uang, cara recharge, chapter 10 tahunmu, dan satu hal yang bisa diubah minggu ini." },
+        { key: "q4", q: "Apa yang saya dapat dengan $2.9?", a: "Laporan lengkap: kenapa polamu ada, biayanya di kerja · hubungan · uang, cara recharge, chapter 10 tahunmu, dan satu hal yang bisa diubah minggu ini." },
         { key: "q6", q: "Apakah data saya aman?", a: "Data kelahiranmu hanya digunakan untuk membuat laporanmu. Kami tidak menjual atau membagikannya." },
         { key: "contact", q: "Bagaimana cara menghubungi?", a: "Pertanyaan, masukan, atau sekadar ingin menyapa?" },
       ],
@@ -973,12 +1039,12 @@ function LockCard({
           {t.cta}
         </button>
 
+        {/* Code input — always visible */}
         <div className="flex items-center gap-3 my-3 w-full max-w-xs">
           <div className="flex-1 h-px bg-white/10" />
           <span className="text-xs text-white/40 uppercase tracking-wider" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{t.or}</span>
           <div className="flex-1 h-px bg-white/10" />
         </div>
-
         <div className="flex gap-2 w-full max-w-xs">
           <input
             value={code}
@@ -1074,6 +1140,39 @@ export default function ResultsV3() {
   const { reportId } = useParams<{ reportId: string }>();
   const [, setLocation] = useLocation();
   const containerRef = useRef<HTMLDivElement>(null);
+  const [showCta, setShowCta] = useState(false);
+  const lastScrollY = useRef(0);
+  const scrollTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  // Track scroll for sticky CTA — visible by default, hide only while scrolling down
+  const handleScroll = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const current = el.scrollTop;
+    const pastFirstCard = current > window.innerHeight * 0.5;
+    const nearBottom = current + el.clientHeight > el.scrollHeight - 200;
+    const isScrollingDown = current > lastScrollY.current;
+
+    if (!pastFirstCard || nearBottom) {
+      setShowCta(false);
+    } else if (isScrollingDown) {
+      setShowCta(false);
+    } else {
+      setShowCta(true);
+    }
+
+    // Show again when scrolling stops
+    clearTimeout(scrollTimer.current);
+    scrollTimer.current = setTimeout(() => {
+      const el2 = containerRef.current;
+      if (!el2) return;
+      const still = el2.scrollTop > window.innerHeight * 0.5;
+      const bottom = el2.scrollTop + el2.clientHeight > el2.scrollHeight - 200;
+      if (still && !bottom) setShowCta(true);
+    }, 300);
+
+    lastScrollY.current = current;
+  }, []);
 
   const { data: report, isLoading, error } = useQuery<ResultsApiResponse>({
     queryKey: [`/api/results/${reportId}`],
@@ -1116,6 +1215,14 @@ export default function ResultsV3() {
     document.addEventListener("visibilitychange", handleVisibility);
     return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, [reportId, report?.isPaid]);
+
+  // Attach scroll listener for sticky CTA (must be before early returns)
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || report?.isPaid) return;
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, [report?.isPaid, handleScroll]);
 
   if (isLoading) {
     return (
@@ -1297,6 +1404,21 @@ export default function ResultsV3() {
 
   return (
     <div className="relative">
+      {/* Floating share button — top right */}
+      <FloatingShareButton reportId={reportId || ""} />
+
+      {/* Sticky unlock CTA — free users only, hides on scroll down */}
+      {!isPaid && (
+        <StickyUnlockCTA
+          visible={showCta}
+          language={report.language || "en"}
+          onUnlock={() => {
+            const lock = document.getElementById("lock-card");
+            lock?.scrollIntoView({ behavior: "smooth" });
+          }}
+        />
+      )}
+
       <div
         ref={containerRef}
         className="h-[100dvh] overflow-y-scroll snap-y snap-mandatory scroll-smooth"
@@ -1310,12 +1432,14 @@ export default function ResultsV3() {
 
         {/* Lock card for unpaid users */}
         {!isPaid && (
-          <LockCard
-            reportId={reportId || ""}
-            email={report.email || ""}
-            remainingCount={paidCards.length}
-            language={report.language || "en"}
-          />
+          <div id="lock-card">
+            <LockCard
+              reportId={reportId || ""}
+              email={report.email || ""}
+              remainingCount={paidCards.length}
+              language={report.language || "en"}
+            />
+          </div>
         )}
 
         {/* Spacer — prevents iOS snap-mandatory from bouncing back on last card */}

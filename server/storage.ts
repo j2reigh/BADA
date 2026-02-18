@@ -39,6 +39,7 @@ export interface IStorage {
   getSajuResultById(id: string): Promise<SajuResult | undefined>;
   getSajuResultBySlug(slug: string): Promise<SajuResult | undefined>;
   getSajuResultsByLeadId(leadId: string): Promise<SajuResult[]>;
+  getSajuResultsByEmail(email: string): Promise<SajuResult[]>;
   unlockReport(id: string): Promise<SajuResult | undefined>;
   patchReportData(id: string, patch: Record<string, any>): Promise<SajuResult | undefined>;
 
@@ -229,6 +230,16 @@ export class DatabaseStorage implements IStorage {
       .from(sajuResults)
       .where(eq(sajuResults.leadId, leadId));
     return results;
+  }
+
+  async getSajuResultsByEmail(email: string): Promise<SajuResult[]> {
+    if (!db) throw new Error("Database not initialized");
+    const rows = await db
+      .select({ sajuResult: sajuResults })
+      .from(sajuResults)
+      .innerJoin(leads, eq(sajuResults.leadId, leads.id))
+      .where(eq(leads.email, email));
+    return rows.map((r) => r.sajuResult);
   }
 
   async unlockReport(id: string): Promise<SajuResult | undefined> {
@@ -450,6 +461,13 @@ export class MemStorage implements IStorage {
 
   async getSajuResultsByLeadId(leadId: string): Promise<SajuResult[]> {
     return Array.from(this.sajuResults.values()).filter(r => r.leadId === leadId);
+  }
+
+  async getSajuResultsByEmail(email: string): Promise<SajuResult[]> {
+    const matchingLeadIds = Array.from(this.leads.values())
+      .filter(l => l.email === email)
+      .map(l => l.id);
+    return Array.from(this.sajuResults.values()).filter(r => matchingLeadIds.includes(r.leadId));
   }
 
   async unlockReport(id: string): Promise<SajuResult | undefined> {

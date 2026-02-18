@@ -566,6 +566,63 @@ function FinalCTA({ t }: { t: TranslateFn }) {
   );
 }
 
+function FindMyReport({ language }: { language: UILanguage }) {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "sending" | "sent">("idle");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || status === "sending") return;
+    setStatus("sending");
+    try {
+      await fetch("/api/resend-report-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      setStatus("sent");
+    } catch {
+      setStatus("sent"); // Still show success to prevent enumeration
+    }
+  };
+
+  const labels = {
+    en: { title: "Already have a report?", desc: "Enter your email and we'll resend the link.", button: "Send link", sent: "Check your inbox!" },
+    ko: { title: "리포트를 잃어버리셨나요?", desc: "이메일을 입력하면 리포트 링크를 다시 보내드려요.", button: "링크 받기", sent: "메일함을 확인하세요!" },
+    id: { title: "Sudah punya laporan?", desc: "Masukkan email dan kami akan kirim ulang linknya.", button: "Kirim link", sent: "Cek inbox kamu!" },
+  };
+  const l = labels[language] || labels.en;
+
+  return (
+    <section className="relative z-10 py-12 px-6">
+      <div className="max-w-md mx-auto text-center">
+        <p className="text-white/40 text-sm mb-2">{l.title}</p>
+        {status === "sent" ? (
+          <p className="text-[#6BCB77]/80 text-sm">{l.sent}</p>
+        ) : (
+          <form onSubmit={handleSubmit} className="flex gap-2">
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="email@example.com"
+              required
+              className="flex-1 px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white/70 placeholder:text-white/25 focus:outline-none focus:border-white/25 transition-colors"
+            />
+            <button
+              type="submit"
+              disabled={status === "sending"}
+              className="px-5 py-2.5 bg-white/10 border border-white/10 rounded-xl text-sm text-white/60 hover:bg-white/15 hover:text-white/80 disabled:opacity-40 transition-colors shrink-0"
+            >
+              {l.button}
+            </button>
+          </form>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function Footer({ language, setLanguage, t }: { language: UILanguage; setLanguage: (lang: UILanguage) => void; t: TranslateFn }) {
   const languages: { code: UILanguage; label: string }[] = [
     { code: 'en', label: 'EN' },
@@ -652,6 +709,7 @@ export default function Landing() {
         <FinalCTA t={t} />
       </div>
 
+      <FindMyReport language={language} />
       <Footer language={language} setLanguage={setLanguage} t={t} />
       <StickyProgressBar t={t} />
     </main>

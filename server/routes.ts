@@ -10,7 +10,7 @@ import { analyzeOperatingState } from "../lib/operating_logic"; // v2.3 Integrat
 import { generateV3Cards, repairV3Cards, getPromptHash, type SurveyScores } from "../lib/gemini_client";
 import { translateToBehaviors, calculateLuckCycle, type HumanDesignData } from "../lib/behavior_translator";
 import { fetchHumanDesign } from "../lib/hd_client";
-import { sendReportLinkEmail } from "../lib/email";
+import { sendReportLinkEmail, sendReportLinksEmail } from "../lib/email";
 import { db } from "./db";
 import { type InsertBirthPattern, type InsertSajuResult } from "@shared/schema";
 
@@ -893,6 +893,51 @@ export async function registerRoutes(
       }
       console.error("Birth pattern submission error:", err);
       res.status(500).json({ message: "Failed to save birth pattern" });
+    }
+  });
+
+  // ─── Resend report link by email ───
+  app.post("/api/resend-report-link", async (req, res) => {
+    try {
+      const { email } = z.object({ email: z.string().email() }).parse(req.body);
+
+      // Always return the same response to prevent email enumeration
+      const genericMsg = "If we have a report for this email, we'll send the link shortly.";
+
+      const reports = await storage.getSajuResultsByEmail(email);
+      if (reports.length === 0) {
+        return res.json({ success: true, message: genericMsg });
+      }
+
+      // Send all report links in one email (newest first)
+      const sorted = reports.sort(
+        (a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
+      );
+
+      sendReportLinksEmail(
+        email,
+        sorted.map((r) => ({
+          id: r.slug || r.id,
+          name: (r.userInput as any)?.name,
+          createdAt: r.createdAt!.toString(),
+        })),
+      ).then(
+        (result) => {
+          if (result.success) {
+            console.log(`[Resend] ${sorted.length} report link(s) sent to ${email}`);
+          } else {
+            console.error(`[Resend] Report links email failed: ${result.error}`);
+          }
+        }
+      );
+
+      res.json({ success: true, message: genericMsg });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid email address" });
+      }
+      console.error("[Resend] Error:", err);
+      res.status(500).json({ message: "Something went wrong" });
     }
   });
 
