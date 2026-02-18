@@ -13,6 +13,42 @@
 
 ## 🔄 최근 회고 (최신순)
 
+### 2026-02-18 (D) - 공유 UX 탐색 → 이미지 저장 철수 → 클로징 토스트 확정
+**Agent:** Claude
+**Branch:** `feat/share-cards` → main 머지
+
+#### 👍 Keep (계속 할 것)
+- **실기기 테스트 기반 의사결정:** Vercel preview로 iPhone 실기기 테스트 → html-to-image가 가로스크롤 캐러셀 파괴, iOS share file 실패 등 웹 한계를 빠르게 확인하고 과감하게 기능 철수
+- **유저 철학을 UX에 녹임:** "덕(Deok) 순환" 컨셉 → "선명함은 나누면 돌아옵니다" 카피로 브랜드 보이스와 철학이 자연스럽게 연결. 마르키 "CLARITY IS THE NEW HIGH"와 톤 일관
+- **빠른 반복:** 6번의 피드백 사이클 (full modal → toast → long press → action bar → static pill → 전부 제거) 을 한 세션에 소화
+
+#### 🚨 Problem (문제)
+- **html-to-image 웹 한계:** DOM-to-PNG 변환이 가로스크롤 캐러셀의 현재 슬라이드만 캡처, 나머지는 빈 영역. 또한 렌더링 중 touch event를 블록하여 스와이프 불가
+- **iOS Safari navigator.share({ files }) 실패:** user gesture timeout — html-to-image 렌더링 시간(~500ms)이 iOS의 user activation 윈도우를 초과
+- **Long press가 모바일에서 비실용적:** 텍스트 선택, 스크롤과 충돌. 사용자가 의도한 동작을 수행하기 어려움
+- **기능 과잉 → 핵심 UX 훼손:** 이미지 저장 기능 추가로 인해 가로스크롤 카드(Blueprint Facets, Chapter, Action)의 스와이프가 먹통
+
+#### 🔧 Try (다음에 시도)
+- **모바일 웹 한계 사전 인지:** html-to-image, navigator.share files 등은 iOS Safari에서 제약이 많음. 구현 전 Can I Use / MDN 확인
+- **MVP 먼저, 기능 추가는 검증 후:** 토스트(텍스트 + 링크 공유)만으로 충분한지 먼저 확인하고, 이미지 저장은 실제 수요 확인 후 추가
+- **"걷어내는 용기":** 기능이 핵심 경험을 해치면 과감히 제거. -92줄이 +92줄보다 가치 있을 수 있음
+
+#### 📦 산출물
+- `client/src/pages/ResultsV3.tsx`: 이미지 저장 관련 코드 전부 제거 (-92줄), Card 컴포넌트 단순화, ShareToast 카피 확정
+- `client/src/index.css`: `animate-slide-up` 키프레임 추가
+- 토스트 카피: EN "Clarity comes back when you share it." / KO "선명함은 나누면 돌아옵니다." / ID "Kejelasan kembali saat dibagikan."
+- 토스트 타이밍: 0.5초 후 등장, 15초 유지
+
+#### 📝 커밋
+- `0c2efbe` feat: long-press card sharing + closing share bottom sheet
+- `a657751` fix: lazy-load html-to-image, toast instead of full modal, IntersectionObserver timing
+- `539c424` fix: long press shows action bar with Link/Image buttons
+- `96f0c95` fix: replace long press with static pill icons
+- `52e7c49` refactor: strip image saving, keep only closing share toast
+- `12f689b` tweak: share toast appears faster (0.5s), stays longer (15s)
+
+---
+
 ### 2026-02-18 (C) - 모바일 햄버거 메뉴 + 추가 수정
 **Agent:** Claude
 
