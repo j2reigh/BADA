@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Lock, ChevronDown, Share2, Camera } from "lucide-react";
+import { Loader2, Lock, ChevronDown, Share2 } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 
 // ─── Helpers ───
@@ -131,95 +131,19 @@ function Card({
   children,
   bg = "bg-[#182339]",
   className = "",
-  showShare = false,
-  allowImage = true,
 }: {
   children: React.ReactNode;
   bg?: string;
   className?: string;
-  showShare?: boolean;
-  allowImage?: boolean;
 }) {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [savingImage, setSavingImage] = useState(false);
-
-  const shareLink = useCallback(async () => {
-    const url = window.location.href;
-    if (navigator.share) {
-      try { await navigator.share({ url }); } catch {}
-    } else {
-      navigator.clipboard.writeText(url);
-    }
-  }, []);
-
-  const saveImage = useCallback(async () => {
-    if (!cardRef.current) return;
-    setSavingImage(true);
-    try {
-      const { toPng } = await import("html-to-image");
-      const png = await toPng(cardRef.current, {
-        cacheBust: true,
-        pixelRatio: 2,
-        filter: (node) => {
-          if (node instanceof HTMLElement && node.dataset.sharePill === "true") return false;
-          return true;
-        },
-      });
-
-      // Try native share with file, fallback to opening in new tab
-      try {
-        const blob = await (await fetch(png)).blob();
-        const file = new File([blob], "bada-card.png", { type: "image/png" });
-        if (navigator.canShare?.({ files: [file] })) {
-          await navigator.share({ files: [file] });
-          return;
-        }
-      } catch {}
-
-      // Fallback: open in new tab (user can long-press to save on iOS)
-      const w = window.open();
-      if (w) {
-        w.document.write(`<img src="${png}" style="max-width:100%;background:#182339">`);
-        w.document.title = "BADA Card";
-      }
-    } catch {
-      // ignore
-    } finally {
-      setSavingImage(false);
-    }
-  }, []);
-
   return (
     <div
-      ref={cardRef}
       className={`h-[100dvh] w-full flex-shrink-0 snap-start relative ${bg} ${className}`}
       style={{ fontFamily: "'Inter', sans-serif" }}
     >
       <div className="h-full overflow-y-auto flex flex-col justify-center items-center px-5 sm:px-8 py-12">
         {children}
       </div>
-      {/* Share pill — top right */}
-      {showShare && (
-        <div data-share-pill="true" className="absolute top-4 right-4 z-20 flex items-center gap-0.5 rounded-full bg-white/5 border border-white/10 p-0.5">
-          {allowImage && (
-            <button
-              onClick={saveImage}
-              disabled={savingImage}
-              className="w-8 h-8 rounded-full flex items-center justify-center text-white/25 hover:text-white/50 hover:bg-white/5 transition-colors disabled:opacity-50"
-              aria-label="Save as image"
-            >
-              {savingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
-            </button>
-          )}
-          <button
-            onClick={shareLink}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-white/25 hover:text-white/50 hover:bg-white/5 transition-colors"
-            aria-label="Share link"
-          >
-            <Share2 className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
       {/* Watermark — visible in screenshots */}
       <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-1.5 opacity-25 pointer-events-none">
         <img src="/logo-badaone.svg" alt="bada.one" className="h-3.5" />
@@ -279,7 +203,7 @@ function InsightCard({
   accent?: string;
 }) {
   return (
-    <Card showShare>
+    <Card>
       <div className="relative flex flex-col items-center text-center w-full max-w-sm">
         <CardLabel>{label}</CardLabel>
         {question && (
@@ -315,7 +239,7 @@ function BlueprintCard({
   accent?: string;
 }) {
   return (
-    <Card showShare>
+    <Card>
       <div className="relative flex flex-col items-center text-center w-full max-w-sm">
         <CardLabel>your blueprint</CardLabel>
         <p className="text-xl text-[#879DC6] font-light mb-6 leading-relaxed">{question}</p>
@@ -351,7 +275,7 @@ function BlueprintFacetsCard({
   }, []);
 
   return (
-    <Card showShare allowImage={false}>
+    <Card>
       <div className="relative flex flex-col items-center text-center w-full max-w-sm">
         <CardLabel>your blueprint</CardLabel>
 
@@ -413,7 +337,7 @@ function EvidenceCard({
   items: string[];
 }) {
   return (
-    <Card showShare>
+    <Card>
       <div className="relative flex flex-col w-full max-w-sm">
         <CardLabel>{label}</CardLabel>
         {question && (
@@ -455,7 +379,7 @@ function CostCard({
   tip?: string;
 }) {
   return (
-    <Card showShare>
+    <Card>
       <div className="relative flex flex-col items-center text-center w-full max-w-sm">
         <CardLabel>{label}</CardLabel>
         {question && (
@@ -495,7 +419,7 @@ function RechargeCard({
   tip?: string;
 }) {
   return (
-    <Card bg="bg-gradient-to-b from-[#182339] to-[#1a2840]" showShare>
+    <Card bg="bg-gradient-to-b from-[#182339] to-[#1a2840]">
       <div className="relative flex flex-col items-center text-center w-full max-w-sm">
         <CardLabel>recharge</CardLabel>
         <p className="text-xl text-[#879DC6] font-light mb-6 leading-relaxed">
@@ -543,7 +467,7 @@ function ActionCard({
   }, []);
 
   return (
-    <Card bg="bg-gradient-to-b from-[#182339] to-[#1e2a45]" showShare allowImage={false}>
+    <Card bg="bg-gradient-to-b from-[#182339] to-[#1e2a45]">
       <div className="relative flex flex-col items-center text-center w-full max-w-sm">
         <CardLabel>this week</CardLabel>
 
@@ -610,7 +534,7 @@ function EnergyCard({
   insight: string;
 }) {
   return (
-    <Card bg="bg-gradient-to-b from-[#182339] to-[#1a2840]" showShare>
+    <Card bg="bg-gradient-to-b from-[#182339] to-[#1a2840]">
       <div className="relative flex flex-col items-center w-full max-w-sm">
         <CardLabel>your brain</CardLabel>
         <p className="text-lg text-[#879DC6] font-light mb-8 leading-relaxed text-center">
@@ -685,7 +609,7 @@ function ChapterCard({
   ];
 
   return (
-    <Card bg="bg-gradient-to-b from-[#182339] to-[#1e2a45]" showShare>
+    <Card bg="bg-gradient-to-b from-[#182339] to-[#1e2a45]">
       <div className="relative flex flex-col items-center w-full max-w-sm">
         <CardLabel>your chapter</CardLabel>
         <p className="text-xl text-[#ABBBD5] font-light mb-6 leading-relaxed text-center">
@@ -778,7 +702,7 @@ function ChapterStrategyCard({
 }) {
   if (!chapter.strategyDo && !chapter.strategy) return null;
   return (
-    <Card bg="bg-gradient-to-b from-[#1e2a45] to-[#182339]" showShare>
+    <Card bg="bg-gradient-to-b from-[#1e2a45] to-[#182339]">
       <div className="relative flex flex-col items-center w-full max-w-sm">
         <CardLabel>your move</CardLabel>
         <p className="text-xs uppercase tracking-[0.2em] text-[#ABBBD5]/70 mb-8 text-center" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
@@ -802,7 +726,7 @@ function YearCard({
   accent: string;
 }) {
   return (
-    <Card bg="bg-gradient-to-b from-[#182339] to-[#1e2a45]" showShare>
+    <Card bg="bg-gradient-to-b from-[#182339] to-[#1e2a45]">
       <div className="relative flex flex-col items-center text-center w-full max-w-sm">
         <CardLabel>this year</CardLabel>
 
@@ -846,7 +770,7 @@ function YearStrategyCard({
 }) {
   if (!strategyDo && !strategy) return null;
   return (
-    <Card bg="bg-gradient-to-b from-[#1e2a45] to-[#182339]" showShare>
+    <Card bg="bg-gradient-to-b from-[#1e2a45] to-[#182339]">
       <div className="relative flex flex-col items-center w-full max-w-sm">
         <CardLabel>your move</CardLabel>
         <p className="text-xs uppercase tracking-[0.2em] text-[#ABBBD5]/70 mb-8 text-center" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
@@ -961,9 +885,9 @@ function ShareToast({
   const shareUrl = `${window.location.origin}/results/${reportId}`;
 
   const nudge: Record<string, { text: string }> = {
-    en: { text: "Someone came to mind? Share it." },
-    ko: { text: "떠오르는 사람이 있다면, 보내주세요." },
-    id: { text: "Ada yang terlintas? Bagikan." },
+    en: { text: "Clarity comes back when you share it." },
+    ko: { text: "선명함은 나누면 돌아옵니다." },
+    id: { text: "Kejelasan kembali saat dibagikan." },
   };
 
   const t = nudge[language] || nudge.en;
