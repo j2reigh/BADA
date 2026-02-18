@@ -3,7 +3,6 @@ import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Lock, ChevronDown, Share2 } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
-import { toPng } from "html-to-image";
 
 // ─── Helpers ───
 
@@ -146,6 +145,7 @@ function Card({
   const handleShare = useCallback(async () => {
     if (!cardRef.current) return;
     try {
+      const { toPng } = await import("html-to-image");
       const png = await toPng(cardRef.current, {
         cacheBust: true,
         pixelRatio: 2,
@@ -849,28 +849,41 @@ function ClosingCard({
   reportId: string;
   language?: string;
 }) {
-  const [showModal, setShowModal] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const closingRef = useRef<HTMLDivElement>(null);
   const marqueeText = "CLARITY IS THE NEW HIGH · BADA · ".repeat(12);
 
-  // Auto-show modal 4s after mount
+  // Show toast when card scrolls into view
   useEffect(() => {
-    const timer = setTimeout(() => setShowModal(true), 4000);
-    return () => clearTimeout(timer);
+    const el = closingRef.current;
+    if (!el) return;
+    let timer: ReturnType<typeof setTimeout>;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          timer = setTimeout(() => setShowToast(true), 2000);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.5 }
+    );
+    observer.observe(el);
+    return () => { observer.disconnect(); clearTimeout(timer); };
   }, []);
 
   return (
     <Card bg="bg-gradient-to-b from-[#182339] via-[#233F64] to-[#402525]">
-      <div className="relative flex flex-col items-center text-center w-full max-w-sm">
+      <div ref={closingRef} className="relative flex flex-col items-center text-center w-full max-w-sm">
         <CardLabel>closing</CardLabel>
         <p className="text-xl font-light text-white/90 leading-relaxed mb-10">
           {firstSentences(message, 2)}
         </p>
       </div>
 
-      {/* Share bottom sheet */}
-      <ShareBottomSheet
-        open={showModal}
-        onClose={() => setShowModal(false)}
+      {/* Share toast */}
+      <ShareToast
+        visible={showToast}
+        onDismiss={() => setShowToast(false)}
         reportId={reportId}
         language={language}
       />
@@ -912,85 +925,57 @@ function ClosingCard({
   );
 }
 
-// ─── Share Bottom Sheet (Closing Card) ───
+// ─── Share Toast (Closing Card) ───
 
-function ShareBottomSheet({
-  open,
-  onClose,
+function ShareToast({
+  visible,
+  onDismiss,
   reportId,
   language = "en",
 }: {
-  open: boolean;
-  onClose: () => void;
+  visible: boolean;
+  onDismiss: () => void;
   reportId: string;
   language?: string;
 }) {
-  const [copied, setCopied] = useState(false);
   const shareUrl = `${window.location.origin}/results/${reportId}`;
 
-  const nudge: Record<string, { line1: string; line2: string; btn: string }> = {
-    en: {
-      line1: "If someone came to mind while reading —",
-      line2: "they're probably the reason.",
-      btn: "Share this report",
-    },
-    ko: {
-      line1: "읽으면서 떠오르는 사람이 있다면,",
-      line2: "그게 이유입니다.",
-      btn: "리포트 공유하기",
-    },
-    id: {
-      line1: "Jika seseorang muncul di pikiranmu saat membaca —",
-      line2: "itu tandanya.",
-      btn: "Bagikan laporan ini",
-    },
+  const nudge: Record<string, { text: string }> = {
+    en: { text: "Someone came to mind? Share it." },
+    ko: { text: "떠오르는 사람이 있다면, 보내주세요." },
+    id: { text: "Ada yang terlintas? Bagikan." },
   };
 
   const t = nudge[language] || nudge.en;
 
+  // Auto-dismiss after 8s
+  useEffect(() => {
+    if (!visible) return;
+    const timer = setTimeout(onDismiss, 8000);
+    return () => clearTimeout(timer);
+  }, [visible, onDismiss]);
+
   const handleShare = async () => {
     if (navigator.share) {
-      try {
-        await navigator.share({ url: shareUrl });
-      } catch {
-        // cancelled
-      }
+      try { await navigator.share({ url: shareUrl }); } catch {}
     } else {
       navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     }
+    onDismiss();
   };
 
-  if (!open) return null;
+  if (!visible) return null;
 
   return (
-    <>
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 z-30 bg-black/40 backdrop-blur-[2px] transition-opacity"
-        onClick={onClose}
-      />
-      {/* Bottom sheet */}
-      <div className="absolute bottom-0 left-0 right-0 z-40 px-6 pb-10 pt-8 animate-slide-up">
-        <div className="max-w-sm mx-auto text-center">
-          <p className="text-white/80 text-base font-light leading-relaxed">
-            {t.line1}
-          </p>
-          <p className="text-white/90 text-base font-light leading-relaxed mb-8">
-            {t.line2}
-          </p>
-          <button
-            onClick={handleShare}
-            className="inline-flex items-center gap-2 px-8 py-3 rounded-full bg-white/10 border border-white/20 text-sm text-white/70 hover:bg-white/15 transition-colors"
-          >
-            <Share2 className="w-3.5 h-3.5" />
-            {copied ? "Copied!" : t.btn}
-          </button>
-          <p className="mt-6 text-[10px] text-white/20">bada.one</p>
-        </div>
-      </div>
-    </>
+    <div className="absolute bottom-16 left-0 right-0 z-40 flex justify-center px-4 animate-slide-up">
+      <button
+        onClick={handleShare}
+        className="flex items-center gap-2.5 px-5 py-3 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-sm text-white/70 hover:bg-white/15 transition-colors"
+      >
+        <Share2 className="w-3.5 h-3.5 shrink-0" />
+        <span>{t.text}</span>
+      </button>
+    </div>
   );
 }
 
