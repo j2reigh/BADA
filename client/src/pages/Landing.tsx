@@ -400,8 +400,13 @@ const SAMPLE_CARDS = [
   {
     label: "PROOF",
     born: "Born 1996. Seoul.",
-    question: "성격이라고 생각했던 것들:",
-    text: "회의가 시작되기도 전에 발생하지도 않은 문제들의 해결책을 세 가지씩 만듭니다. 남들이 하면 답답하다는 이유로 남의 일까지 가져와서 처리하고는, 왜 나만 이렇게 바쁜지 화를 냅니다. 중요한 제안을 받았을 때 그 자리에서 바로 수락하고, 돌아오는 길에 알 수 없는 답답함을 느낍니다.",
+    question: "",
+    text: "",
+    items: [
+      "회의가 시작되기도 전에 이미 발생하지도 않은 문제들에 대한 해결책 세 가지를 머릿속으로 만듭니다.",
+      "남들이 하면 답답하다는 이유로 남의 일까지 가져와서 처리하고는, 왜 나만 이렇게 바쁜지 화를 냅니다.",
+      "중요한 제안을 받았을 때 그 자리에서 바로 수락하고, 돌아오는 길에 알 수 없는 답답함을 느낍니다.",
+    ],
   },
   {
     label: "EVIDENCE",
@@ -488,12 +493,27 @@ function SampleCardsSection({ t }: { t: TranslateFn }) {
                           {s.question}
                         </p>
                       )}
-                      <p
-                        className="text-white/50 text-sm leading-relaxed mt-3"
-                        style={{ fontFamily: "'JetBrains Mono', monospace" }}
-                      >
-                        {s.text}
-                      </p>
+                      {s.items ? (
+                        <div className="space-y-4 mt-4">
+                          {s.items.map((item, j) => (
+                            <div key={j} className="flex gap-3 items-start">
+                              <span className="text-white/25 text-xs mt-0.5 shrink-0" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                                {String(j + 1).padStart(2, "0")}
+                              </span>
+                              <p className="text-white/50 text-sm leading-relaxed" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                                {item}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p
+                          className="text-white/50 text-sm leading-relaxed mt-3"
+                          style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                        >
+                          {s.text}
+                        </p>
+                      )}
                     </div>
                     <p
                       className="text-white/20 text-[10px] mt-5 uppercase tracking-wider"
