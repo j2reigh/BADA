@@ -247,7 +247,7 @@ export const translations = {
 
     // Landing - Hero
     'landing.hero.tag': '셀프 디스커버리 분석',
-    'landing.hero.title': '그만 추측하세요.',
+    'landing.hero.title': 'Stop Guessing.',
     'landing.hero.rolling1': '왜 번아웃이 오는지.',
     'landing.hero.rolling2': '왜 머리가 안 돌아가는지.',
     'landing.hero.rolling3': '진짜 나는 누구인지.',
