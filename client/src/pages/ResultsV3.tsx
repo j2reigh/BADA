@@ -1444,6 +1444,22 @@ export default function ResultsV3() {
 
   return (
     <div className="relative">
+      {/* Floating share button — top right */}
+      <button
+        onClick={async () => {
+          const url = window.location.href;
+          if (navigator.share) {
+            try { await navigator.share({ url }); } catch {}
+          } else {
+            navigator.clipboard.writeText(url);
+          }
+        }}
+        className="fixed top-4 right-4 z-40 w-9 h-9 rounded-full bg-white/10 backdrop-blur-md border border-white/15 flex items-center justify-center text-white/40 hover:text-white/60 hover:bg-white/15 transition-colors"
+        aria-label="Share"
+      >
+        <Share2 className="w-4 h-4" />
+      </button>
+
       {/* Sticky unlock CTA — free users only, hides on scroll down */}
       {!isPaid && (
         <StickyUnlockCTA
