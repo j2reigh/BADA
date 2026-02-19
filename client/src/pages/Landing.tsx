@@ -400,14 +400,14 @@ const SAMPLE_CARDS = [
   {
     label: "COLLISION",
     born: "Born 1996. Seoul.",
-    question: "What happens when your alertness has nowhere to go?",
-    text: "You scan for threats that don't exist yet. Not because you're anxious. Because your system was built to detect danger before it arrives. The cost? You can't rest even when you're safe.",
+    question: "경계심이 갈 곳을 잃으면 어떻게 될까?",
+    text: "아직 존재하지 않는 위협을 스캔합니다. 불안해서가 아닙니다. 당신의 시스템이 위험이 도착하기 전에 감지하도록 설계되었기 때문입니다. 대가는? 안전할 때도 쉴 수 없다는 것.",
   },
   {
     label: "EVIDENCE",
     born: "Born 1989. Jakarta.",
-    question: "Things you do that you thought were just personality:",
-    text: "You rehearse conversations before they happen. You feel guilty resting on a productive day. You know the answer but wait for someone else to say it first.",
+    question: "Hal yang kamu kira cuma kepribadian:",
+    text: "Kamu melatih percakapan sebelum terjadi. Kamu merasa bersalah saat istirahat di hari produktif. Kamu tahu jawabannya tapi menunggu orang lain mengatakannya duluan.",
   },
   {
     label: "BRAIN SCAN",
@@ -425,7 +425,7 @@ const SAMPLE_CARDS = [
     label: "CLOSING",
     born: "Born 1988. Tokyo.",
     question: "",
-    text: "You've spent years building systems to manage a mind you were never given the manual for.",
+    text: "あなたは何年もかけて、取扱説明書のない心を管理するシステムを作ってきた。",
   },
 ];
 
