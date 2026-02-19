@@ -398,6 +398,12 @@ function SolutionSection({ t }: { t: TranslateFn }) {
 
 const SAMPLE_CARDS = [
   {
+    label: "YOUR CHAPTER",
+    born: "Born 1982. Perth.",
+    question: "You're halfway through a decade of dismantling.",
+    text: "What you built in your 30s was real. But it was built on borrowed blueprints. This decade isn't about starting over. It's about building from what's actually yours.",
+  },
+  {
     label: "PROOF",
     born: "Born 1996. Seoul.",
     question: "",
@@ -415,22 +421,16 @@ const SAMPLE_CARDS = [
     text: "Kamu melatih percakapan sebelum terjadi. Kamu merasa bersalah saat istirahat di hari produktif. Kamu tahu jawabannya tapi menunggu orang lain mengatakannya duluan.",
   },
   {
-    label: "BRAIN SCAN",
-    born: "Born 2001. London.",
-    question: "What's actually running under the surface?",
-    text: "Your prefrontal cortex is competing with your limbic system for bandwidth. You don't lack focus. You have two systems fighting for the steering wheel.",
-  },
-  {
     label: "MIRROR",
-    born: "Born 1993. New York.",
+    born: "Born 1993. Boston.",
     question: "The version of you that others see:",
     text: "Calm. Collected. Slightly hard to read. Here's what they miss: you're running 4 simulations of this conversation before you open your mouth.",
   },
   {
-    label: "YOUR CHAPTER",
-    born: "Born 1982. Perth.",
-    question: "You're halfway through a decade of dismantling.",
-    text: "What you built in your 30s was real. But it was built on borrowed blueprints. This decade isn't about starting over. It's about building from what's actually yours.",
+    label: "BRAIN SCAN",
+    born: "Born 2001. London.",
+    question: "What's actually running under the surface?",
+    text: "Your prefrontal cortex is competing with your limbic system for bandwidth. You don't lack focus. You have two systems fighting for the steering wheel.",
   },
   {
     label: "CLOSING",
