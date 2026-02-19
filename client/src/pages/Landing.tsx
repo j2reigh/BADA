@@ -422,6 +422,12 @@ const SAMPLE_CARDS = [
     text: "Calm. Collected. Slightly hard to read. Here's what they miss: you're running 4 simulations of this conversation before you open your mouth.",
   },
   {
+    label: "YOUR CHAPTER",
+    born: "Born 1982. Perth.",
+    question: "You're halfway through a decade of dismantling.",
+    text: "What you built in your 30s was real. But it was built on borrowed blueprints. This decade isn't about starting over. It's about building from what's actually yours.",
+  },
+  {
     label: "CLOSING",
     born: "Born 1988. Tokyo.",
     question: "",
