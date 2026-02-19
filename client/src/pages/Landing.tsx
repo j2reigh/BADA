@@ -421,26 +421,37 @@ const SAMPLE_CARDS = [
   {
     label: "EVIDENCE",
     born: "Born 1989. Jakarta.",
-    question: "Hal yang kamu kira cuma kepribadian:",
-    text: "Kamu melatih percakapan sebelum terjadi. Kamu merasa bersalah saat istirahat di hari produktif. Kamu tahu jawabannya tapi menunggu orang lain mengatakannya duluan.",
+    question: "",
+    text: "",
+    items: [
+      "Kamu sering merasa harus membuktikan diri kepada orang lain dengan bekerja lebih keras dari yang diminta.",
+      "Kamu menyimpan kekesalan saat merasa orang lain tidak menghargai bantuanmu yang tulus.",
+      "Kamu merasa sangat lelah secara mental setelah berada di keramaian karena menyerap terlalu banyak pikiran orang lain.",
+    ],
   },
   {
-    label: "MIRROR",
+    label: "YOUR MIRROR",
     born: "Born 1993. Boston.",
-    question: "The version of you that others see:",
-    text: "Calm. Collected. Slightly hard to read. Here's what they miss: you're running 4 simulations of this conversation before you open your mouth.",
+    question: "You think you are the architect of your own life. Are you?",
+    text: "You see yourself as the reliable builder. You scan for threats and create structures to keep everything stable. You believe your value comes from being the one who never lets a ball drop or a deadline slip.",
+    accent: "In your mind, your constant activity is the only thing keeping the chaos at bay.",
   },
   {
-    label: "BRAIN SCAN",
+    label: "YOUR BRAIN",
     born: "Born 2001. London.",
-    question: "What's actually running under the surface?",
-    text: "Your prefrontal cortex is competing with your limbic system for bandwidth. You don't lack focus. You have two systems fighting for the steering wheel.",
+    question: "Why is your mind always running a marathon?",
+    text: "",
+    brainItems: [
+      "Your amygdala stays in a high-alert state even in safe environments, keeping your threat-detection system permanently on.",
+      "This forces your prefrontal cortex into a loop of abstract problem-solving — burning energy on fear, not creativity.",
+      "Your dopamine pathways are linked to finding clarity, so you never feel done. The pattern is often just noise you picked up from others.",
+    ],
   },
   {
     label: "CLOSING",
     born: "Born 1988. Tokyo.",
     question: "",
-    text: "あなたは何年もかけて、取扱説明書のない心を管理するシステムを作ってきた。",
+    text: "あなたは嵐を観察する者ではない。嵐を起こし、その方向を指し示す者だ。",
   },
 ];
 
@@ -510,6 +521,24 @@ function SampleCardsSection({ t }: { t: TranslateFn }) {
                             </div>
                           ))}
                         </div>
+                      ) : s.brainItems ? (
+                        <div className="mt-4 rounded-xl bg-white/5 border border-white/10 px-4 py-5">
+                          <span className="text-[10px] uppercase tracking-[0.25em] text-white/25" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                            NEUROSCIENCE
+                          </span>
+                          <div className="space-y-4 mt-4">
+                            {s.brainItems.map((item, j) => (
+                              <div key={j} className="flex gap-3 items-start">
+                                <span className="text-white/25 text-xs mt-0.5 shrink-0" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                                  {String(j + 1).padStart(2, "0")}
+                                </span>
+                                <p className="text-white/50 text-sm leading-relaxed" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                                  {item}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       ) : s.strategy ? (
                         <div className="mt-4 rounded-xl bg-white/5 border border-white/10 px-4 py-4 space-y-3">
                           <div className="flex gap-2 items-start">
@@ -522,12 +551,25 @@ function SampleCardsSection({ t }: { t: TranslateFn }) {
                           </div>
                         </div>
                       ) : (
-                        <p
-                          className="text-white/50 text-sm leading-relaxed mt-3"
-                          style={{ fontFamily: "'JetBrains Mono', monospace" }}
-                        >
-                          {s.text}
-                        </p>
+                        <>
+                          <p
+                            className="text-white/50 text-sm leading-relaxed mt-3"
+                            style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                          >
+                            {s.text}
+                          </p>
+                          {s.accent && (
+                            <>
+                              <div className="border-t border-white/10 mt-4 pt-4" />
+                              <p
+                                className="text-white/30 text-xs leading-relaxed italic"
+                                style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                              >
+                                {s.accent}
+                              </p>
+                            </>
+                          )}
+                        </>
                       )}
                     </div>
                     <p
