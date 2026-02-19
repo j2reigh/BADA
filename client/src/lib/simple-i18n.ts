@@ -481,7 +481,7 @@ export const translations = {
 
     // Landing - Hero
     'landing.hero.tag': 'Analisis Penemuan Diri',
-    'landing.hero.title': 'Berhenti Menebak.',
+    'landing.hero.title': 'Stop Guessing.',
     'landing.hero.rolling1': 'Kenapa kamu burnout.',
     'landing.hero.rolling2': 'Kenapa otakmu berkabut.',
     'landing.hero.rolling3': 'Siapa dirimu sebenarnya.',
