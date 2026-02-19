@@ -398,10 +398,14 @@ function SolutionSection({ t }: { t: TranslateFn }) {
 
 const SAMPLE_CARDS = [
   {
-    label: "YOUR CHAPTER",
+    label: "YOUR MOVE",
     born: "Born 1982. Perth.",
-    question: "You're halfway through a decade of dismantling.",
-    text: "What you built in your 30s was real. But it was built on borrowed blueprints. This decade isn't about starting over. It's about building from what's actually yours.",
+    question: "35-44 — WHAT TO DO NOW",
+    text: "",
+    strategy: {
+      do: "Embrace your natural ability to lead by taking on challenging roles. Use your strong intuition and creative mind to find innovative solutions.",
+      dont: "Don't let the desire for structure or the pressure to conform stifle your original ideas. Resist the urge to hold back your unique voice for the sake of external approval.",
+    },
   },
   {
     label: "PROOF",
@@ -505,6 +509,17 @@ function SampleCardsSection({ t }: { t: TranslateFn }) {
                               </p>
                             </div>
                           ))}
+                        </div>
+                      ) : s.strategy ? (
+                        <div className="mt-4 rounded-xl bg-white/5 border border-white/10 px-4 py-4 space-y-3">
+                          <div className="flex gap-2 items-start">
+                            <span className="text-[#6BCB77] text-xs font-mono mt-0.5 shrink-0">DO</span>
+                            <p className="text-white/50 text-sm leading-relaxed">{s.strategy.do}</p>
+                          </div>
+                          <div className="flex gap-2 items-start">
+                            <span className="text-[#FF6B6B] text-xs font-mono mt-0.5 shrink-0">DON'T</span>
+                            <p className="text-white/50 text-sm leading-relaxed">{s.strategy.dont}</p>
+                          </div>
                         </div>
                       ) : (
                         <p
