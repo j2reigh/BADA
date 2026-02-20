@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ArrowRight, ChevronDown } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useTranslation, type UILanguage } from "@/lib/simple-i18n";
 
 function Header({ t }: { t: (key: string) => string }) {
@@ -84,6 +84,7 @@ function Footer({ language, setLanguage }: { language: UILanguage; setLanguage: 
 export default function FAQ() {
   const { t, language, setLanguage } = useTranslation();
 
+  const [, setLocation] = useLocation();
   const findReportLabel = { en: "Find my report →", ko: "내 리포트 찾기 →", id: "Cari laporanku →" } as const;
 
   const questions = Array.from({ length: 9 }, (_, i) => ({
@@ -94,8 +95,16 @@ export default function FAQ() {
         href="/#find-report"
         onClick={(e) => {
           e.preventDefault();
-          // Force full page navigation (not SPA routing)
-          window.location.assign(window.location.origin + "/#find-report");
+          setLocation("/");
+          // Wait for Landing to mount, then scroll to section
+          const poll = setInterval(() => {
+            const el = document.getElementById("find-report");
+            if (el) {
+              clearInterval(poll);
+              el.scrollIntoView({ behavior: "smooth" });
+            }
+          }, 100);
+          setTimeout(() => clearInterval(poll), 3000);
         }}
         className="inline-block mt-3 text-sm text-white/70 hover:text-white transition-colors underline underline-offset-4"
       >
