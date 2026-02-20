@@ -4,7 +4,7 @@ import { QUESTIONS, calculateScore } from "@/lib/scoring";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, CheckCircle2, MapPin, Calendar, Clock, Mail, Globe, ChevronDown, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { REPORT_LANGUAGES, detectUILanguage, getDefaultReportLanguage, useTranslation, type ReportLanguage } from "@/lib/simple-i18n";
+import { REPORT_LANGUAGES, useTranslation, type ReportLanguage } from "@/lib/simple-i18n";
 import { Country, City } from "country-state-city";
 import GeneratingScreen from "@/components/GeneratingScreen";
 import TimePickerModal from "@/components/TimePickerModal";
@@ -36,7 +36,7 @@ interface BirthPatternData {
   email: string;
   consent: boolean;
   notificationConsent: boolean;
-  reportLanguage: ReportLanguage;
+  reportLanguage: ReportLanguage | "";
 }
 
 export default function Survey() {
@@ -69,21 +69,18 @@ export default function Survey() {
     return {};
   });
 
-  const [birthData, setBirthData] = useState<BirthPatternData>(() => {
-    const defaultLang = getDefaultReportLanguage(language);
-    return {
-      name: "",
-      gender: "",
-      birthDate: "",
-      birthTime: "",
-      birthTimeUnknown: false,
-      birthCountryCode: "",
-      birthCityName: "",
-      email: "",
-      consent: false,
-      notificationConsent: true,
-      reportLanguage: defaultLang,
-    };
+  const [birthData, setBirthData] = useState<BirthPatternData>({
+    name: "",
+    gender: "",
+    birthDate: "",
+    birthTime: "",
+    birthTimeUnknown: false,
+    birthCountryCode: "",
+    birthCityName: "",
+    email: "",
+    consent: false,
+    notificationConsent: true,
+    reportLanguage: "",
   });
 
   // Derived State for Cities based on selected Country
@@ -100,7 +97,8 @@ export default function Survey() {
   const isBirthFormValid = birthData.name.trim() && birthData.gender && birthData.birthDate &&
     (birthData.birthTimeUnknown || birthData.birthTime) &&
     birthData.birthCountryCode &&
-    birthData.email.trim() && birthData.consent;
+    birthData.email.trim() && birthData.consent &&
+    birthData.reportLanguage;
 
   const handleOptionSelect = (value: string) => {
     if (question) {
@@ -584,9 +582,18 @@ export default function Survey() {
                       <select
                         value={birthData.reportLanguage}
                         onChange={(e) => handleBirthPatternChange("reportLanguage", e.target.value)}
-                        className="w-full bg-transparent border-0 border-b border-white/20 rounded-none px-0 py-6 text-xl text-white focus:outline-none focus:border-white transition-colors appearance-none cursor-pointer"
+                        className={`w-full bg-transparent border-0 border-b border-white/20 rounded-none px-0 py-6 text-xl focus:outline-none focus:border-white transition-colors appearance-none cursor-pointer ${birthData.reportLanguage ? 'text-white' : 'text-white/30'}`}
                       >
-                        {REPORT_LANGUAGES.map((lang) => (
+                        <option value="" disabled className="bg-[#182339] text-white/50">
+                          {t('birth.report_language.placeholder')}
+                        </option>
+                        {[...REPORT_LANGUAGES]
+                          .sort((a, b) => {
+                            if (a.code === language) return -1;
+                            if (b.code === language) return 1;
+                            return 0;
+                          })
+                          .map((lang) => (
                           <option key={lang.code} value={lang.code} className="bg-[#182339] text-white">
                             {lang.native} ({lang.name})
                           </option>

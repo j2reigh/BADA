@@ -1,4 +1,5 @@
-import { ArrowRight } from "lucide-react";
+import { useState } from "react";
+import { ArrowRight, ChevronDown } from "lucide-react";
 import { Link } from "wouter";
 import { useTranslation, type UILanguage } from "@/lib/simple-i18n";
 
@@ -18,11 +19,23 @@ function Header({ t }: { t: (key: string) => string }) {
   );
 }
 
-function FAQItem({ question, answer }: { question: string; answer: string }) {
+function FAQItem({ question, answer, footer }: { question: string; answer: string; footer?: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
   return (
-    <div className="py-10 border-b border-white/10">
-      <h2 className="text-xl md:text-2xl font-medium text-white mb-4">{question}</h2>
-      <div className="text-base text-white/60 leading-relaxed whitespace-pre-line">{answer}</div>
+    <div className="border-b border-white/10">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between py-6 text-left"
+      >
+        <h2 className="text-lg md:text-xl font-medium text-white pr-4">{question}</h2>
+        <ChevronDown className={`w-5 h-5 text-white/40 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="pb-6 text-base text-white/60 leading-relaxed whitespace-pre-line">
+          {answer}
+          {footer}
+        </div>
+      )}
     </div>
   );
 }
@@ -71,9 +84,24 @@ function Footer({ language, setLanguage }: { language: UILanguage; setLanguage: 
 export default function FAQ() {
   const { t, language, setLanguage } = useTranslation();
 
+  const findReportLabel = { en: "Find my report →", ko: "내 리포트 찾기 →", id: "Cari laporanku →" } as const;
+
   const questions = Array.from({ length: 9 }, (_, i) => ({
     question: t(`faq.q${i + 1}.q`),
     answer: t(`faq.q${i + 1}.a`),
+    footer: i === 7 ? (
+      <a
+        href="/#find-report"
+        onClick={(e) => {
+          e.preventDefault();
+          // Force full page navigation (not SPA routing)
+          window.location.assign(window.location.origin + "/#find-report");
+        }}
+        className="inline-block mt-3 text-sm text-white/70 hover:text-white transition-colors underline underline-offset-4"
+      >
+        {findReportLabel[language as keyof typeof findReportLabel] || findReportLabel.en}
+      </a>
+    ) : undefined,
   }));
 
   return (
@@ -112,7 +140,7 @@ export default function FAQ() {
 
         {/* Q&A Items */}
         {questions.map((item, i) => (
-          <FAQItem key={i} question={item.question} answer={item.answer} />
+          <FAQItem key={i} question={item.question} answer={item.answer} footer={item.footer} />
         ))}
 
         {/* Contact Section */}

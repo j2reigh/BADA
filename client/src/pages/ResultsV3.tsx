@@ -923,6 +923,40 @@ function ShareToast({
   );
 }
 
+// ─── Promo Toast ───
+
+function PromoToast({
+  visible,
+  language = "en",
+  onDismiss,
+}: {
+  visible: boolean;
+  language?: string;
+  onDismiss: () => void;
+}) {
+  const text: Record<string, string> = {
+    en: "$1.99 now. $2.9 later.",
+    ko: "지금 $1.99. 곧 $2.9.",
+    id: "$1.99 sekarang. $2.9 nanti.",
+  };
+
+  useEffect(() => {
+    if (!visible) return;
+    const timer = setTimeout(onDismiss, 8000);
+    return () => clearTimeout(timer);
+  }, [visible, onDismiss]);
+
+  if (!visible) return null;
+
+  return (
+    <div className="fixed bottom-20 left-0 right-0 z-40 flex justify-center px-4 animate-slide-up">
+      <div className="flex items-center gap-2.5 px-5 py-3 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-sm text-white/70">
+        <span>{text[language] || text.en}</span>
+      </div>
+    </div>
+  );
+}
+
 // ─── Sticky Unlock CTA (free users, hides on scroll down) ───
 
 function StickyUnlockCTA({
@@ -934,8 +968,8 @@ function StickyUnlockCTA({
   language?: string;
   onUnlock: () => void;
 }) {
-  const ctaText = { en: "Unlock full report", ko: "잠금 해제", id: "Buka laporan" };
-  const moreText = { en: "Full report inside", ko: "전체 리포트 보기", id: "Laporan lengkap di dalam" };
+  const ctaText = { en: "Get full report", ko: "전체 리포트 받기", id: "Dapatkan laporan lengkap" };
+  const moreText = { en: "Felt accurate?", ko: "공감되셨다면", id: "Terasa pas?" };
   const label = ctaText[language as keyof typeof ctaText] || ctaText.en;
   const more = moreText[language as keyof typeof moreText] || moreText.en;
 
@@ -975,19 +1009,42 @@ function LockCard({
   const [codeError, setCodeError] = useState("");
   const [isRedeeming, setIsRedeeming] = useState(false);
   const [openFaq, setOpenFaq] = useState<string | null>(null);
+  const lockCardRef = useRef<HTMLDivElement>(null);
+  const [showPromo, setShowPromo] = useState(false);
+  const promoShownRef = useRef(false);
+
+  useEffect(() => {
+    const el = lockCardRef.current;
+    if (!el || promoShownRef.current) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !promoShownRef.current) {
+          promoShownRef.current = true;
+          setShowPromo(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.3 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const translations = {
     en: {
       headline: "what you see ≠ what's there",
       line1: "If those cards felt accurate,",
       line2: "the rest explain why — and what to do about it.",
-      cta: "Unlock",
+      cta: "Get full report — $2.9",
       or: "or",
-      placeholder: "Enter code",
+      placeholder: "Gift code",
+      discountHint: "Discount code? Enter it on the payment page.",
       apply: "Apply",
+      moreFaq: "More FAQ",
       faq: [
-        { key: "q2", q: "How is this different from MBTI?", a: "MBTI gives you a type. BADA maps the patterns unique to you — why you burn out, how you make decisions, what you keep repeating. No two reports are the same." },
         { key: "q4", q: "What do I get for $2.9?", a: "The full report: why your patterns exist, what they cost you at work · relationships · money, how you recharge, your 10-year chapter, and one thing to change this week." },
+        { key: "q7", q: "I got a gift code. How do I use it?", a: "Enter it in the \"Gift code\" field above and tap Apply." },
+        { key: "q9", q: "How do I apply a discount code?", a: "Tap \"Get full report\" — enter your discount code on the Gumroad payment page." },
         { key: "q6", q: "Is my data safe?", a: "Your birth data is used only to generate your report. We don't sell or share it." },
         { key: "contact", q: "How do I reach you?", a: "Questions, feedback, or just want to say hi?" },
       ],
@@ -996,13 +1053,16 @@ function LockCard({
       headline: "보이는 나 ≠ 진짜 나",
       line1: "여기까지 공감되셨다면,",
       line2: "나머지 카드가 왜 그런지, 어떻게 바꿀 수 있는지 알려줍니다.",
-      cta: "잠금 해제",
+      cta: "전체 리포트 받기 — $2.9",
       or: "또는",
-      placeholder: "코드 입력",
+      placeholder: "기프트 코드",
+      discountHint: "할인코드는 결제 페이지에서 입력하세요.",
       apply: "적용",
+      moreFaq: "FAQ 더보기",
       faq: [
-        { key: "q2", q: "MBTI랑 뭐가 다른가요?", a: "MBTI는 유형을 줍니다. BADA는 당신만의 패턴을 매핑합니다 — 왜 번아웃이 오는지, 어떻게 결정하는지, 뭘 반복하는지. 같은 리포트는 없습니다." },
         { key: "q4", q: "$2.9으로 뭘 더 보나요?", a: "전체 리포트: 패턴이 왜 존재하는지, 직장·관계·돈에서 치르는 대가, 회복법, 10년 챕터, 이번 주 바꿀 수 있는 한 가지." },
+        { key: "q7", q: "기프트 코드는 어떻게 쓰나요?", a: "위 \"기프트 코드\" 입력란에 코드를 넣고 적용을 누르세요." },
+        { key: "q9", q: "할인 코드는 어떻게 적용하나요?", a: "\"전체 리포트 받기\"를 누른 뒤 Gumroad 결제 페이지에서 할인 코드를 입력하세요." },
         { key: "q6", q: "데이터는 안전한가요?", a: "생년월일은 리포트 생성에만 사용됩니다. 판매하거나 공유하지 않습니다." },
         { key: "contact", q: "어디로 연락하나요?", a: "질문, 피드백, 또는 그냥 인사하고 싶으신가요?" },
       ],
@@ -1011,13 +1071,16 @@ function LockCard({
       headline: "yang kamu lihat ≠ yang sebenarnya",
       line1: "Kalau kartu tadi terasa pas,",
       line2: "sisanya menjelaskan kenapa — dan apa yang bisa kamu ubah.",
-      cta: "Buka",
+      cta: "Dapatkan laporan lengkap — $2.9",
       or: "atau",
-      placeholder: "Masukkan kode",
+      placeholder: "Kode hadiah",
+      discountHint: "Kode diskon? Masukkan di halaman pembayaran.",
       apply: "Terapkan",
+      moreFaq: "FAQ lainnya",
       faq: [
-        { key: "q2", q: "Apa bedanya dengan MBTI?", a: "MBTI memberimu tipe. BADA memetakan pola unikmu — kenapa kamu burnout, bagaimana kamu mengambil keputusan, apa yang terus kamu ulangi. Tidak ada dua laporan yang sama." },
         { key: "q4", q: "Apa yang saya dapat dengan $2.9?", a: "Laporan lengkap: kenapa polamu ada, biayanya di kerja · hubungan · uang, cara recharge, chapter 10 tahunmu, dan satu hal yang bisa diubah minggu ini." },
+        { key: "q7", q: "Saya dapat kode hadiah. Bagaimana cara pakainya?", a: "Masukkan di kolom \"Kode hadiah\" di atas dan ketuk Terapkan." },
+        { key: "q9", q: "Bagaimana cara pakai kode diskon?", a: "Ketuk \"Dapatkan laporan lengkap\" — masukkan kode diskon di halaman pembayaran Gumroad." },
         { key: "q6", q: "Apakah data saya aman?", a: "Data kelahiranmu hanya digunakan untuk membuat laporanmu. Kami tidak menjual atau membagikannya." },
         { key: "contact", q: "Bagaimana cara menghubungi?", a: "Pertanyaan, masukan, atau sekadar ingin menyapa?" },
       ],
@@ -1053,6 +1116,8 @@ function LockCard({
   };
 
   return (
+    <div ref={lockCardRef}>
+    <PromoToast visible={showPromo} language={language} onDismiss={() => setShowPromo(false)} />
     <Card bg="bg-gradient-to-b from-[#182339] via-[#233F64] to-[#402525]">
       <div className="flex flex-col items-center text-center w-full max-w-sm">
         <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-5 flex-shrink-0">
@@ -1069,8 +1134,6 @@ function LockCard({
         <p className="text-sm text-white/70 font-light leading-relaxed mb-6">
           {t.line2}
         </p>
-
-        <p className="text-3xl text-white font-light mb-3">$2.9</p>
 
         <button
           onClick={() => window.open(checkoutUrl, "_blank", "noopener")}
@@ -1109,6 +1172,7 @@ function LockCard({
         {codeError && (
           <p className="text-xs text-red-400 mt-2">{codeError}</p>
         )}
+        <p className="text-xs text-white/30 mt-2">{t.discountHint}</p>
 
         {/* FAQ toggles */}
         <div className="w-full max-w-xs mt-6 space-y-0 border-t border-white/5">
@@ -1134,6 +1198,14 @@ function LockCard({
               )}
             </div>
           ))}
+          <a
+            href="/faq"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full py-2.5 text-xs text-white/20 hover:text-white/40 transition-colors text-center"
+          >
+            {t.moreFaq} →
+          </a>
         </div>
       </div>
 
@@ -1171,6 +1243,7 @@ function LockCard({
         </svg>
       </div>
     </Card>
+    </div>
   );
 }
 
