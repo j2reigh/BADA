@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Lock, ChevronDown, Share2 } from "lucide-react";
+import { Loader2, Lock, ChevronDown, Share2, Mail, X } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 
 // ─── Helpers ───
@@ -895,7 +895,7 @@ function ShareToast({
   // Auto-dismiss after 8s
   useEffect(() => {
     if (!visible) return;
-    const timer = setTimeout(onDismiss, 15000);
+    const timer = setTimeout(onDismiss, 8000);
     return () => clearTimeout(timer);
   }, [visible, onDismiss]);
 
@@ -950,8 +950,45 @@ function PromoToast({
 
   return (
     <div className="fixed bottom-20 left-0 right-0 z-40 flex justify-center px-4 animate-slide-up">
-      <div className="flex items-center gap-2.5 px-5 py-3 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-sm text-white/70">
+      <div className="flex items-center gap-2.5 pl-5 pr-3 py-3 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-sm text-white/70">
         <span>{text[language] || text.en}</span>
+        <button onClick={onDismiss} className="ml-1 text-white/30 hover:text-white/60 transition-colors"><X className="w-3.5 h-3.5" /></button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Email Sent Toast ───
+
+function EmailSentToast({
+  visible,
+  language = "en",
+  onDismiss,
+}: {
+  visible: boolean;
+  language?: string;
+  onDismiss: () => void;
+}) {
+  const text: Record<string, string> = {
+    en: "Report link has been sent to your email.",
+    ko: "리포트 링크가 이메일로 전송되었습니다.",
+    id: "Link laporan telah dikirim ke email Anda.",
+  };
+
+  useEffect(() => {
+    if (!visible) return;
+    const timer = setTimeout(onDismiss, 6000);
+    return () => clearTimeout(timer);
+  }, [visible, onDismiss]);
+
+  if (!visible) return null;
+
+  return (
+    <div className="fixed top-20 left-0 right-0 z-40 flex justify-center px-4 animate-slide-up">
+      <div className="flex items-center gap-2.5 pl-5 pr-3 py-3 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-sm text-white/70">
+        <Mail className="w-3.5 h-3.5 shrink-0" />
+        <span>{text[language] || text.en}</span>
+        <button onClick={onDismiss} className="ml-1 text-white/30 hover:text-white/60 transition-colors"><X className="w-3.5 h-3.5" /></button>
       </div>
     </div>
   );
@@ -1254,6 +1291,7 @@ export default function ResultsV3() {
   const [, setLocation] = useLocation();
   const containerRef = useRef<HTMLDivElement>(null);
   const [showCta, setShowCta] = useState(false);
+  const [showEmailToast, setShowEmailToast] = useState(false);
   const lastScrollY = useRef(0);
   const scrollTimer = useRef<ReturnType<typeof setTimeout>>();
 
@@ -1316,6 +1354,16 @@ export default function ResultsV3() {
     }, 3000);
     return () => clearInterval(timer);
   }, [reportId]);
+
+  // Fresh report: show email sent toast
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("new") !== "1") return;
+    window.history.replaceState({}, "", window.location.pathname);
+    // Delay slightly so the page renders first
+    const timer = setTimeout(() => setShowEmailToast(true), 1500);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Tab focus refetch: when free user returns to tab, check if payment went through
   useEffect(() => {
@@ -1532,6 +1580,13 @@ export default function ResultsV3() {
       >
         <Share2 className="w-4 h-4" />
       </button>
+
+      {/* Email sent toast — fresh report */}
+      <EmailSentToast
+        visible={showEmailToast}
+        language={report.language || "en"}
+        onDismiss={() => setShowEmailToast(false)}
+      />
 
       {/* Sticky unlock CTA — free users only, hides on scroll down */}
       {!isPaid && (

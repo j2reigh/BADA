@@ -213,7 +213,7 @@ export default function Survey() {
       if (response.ok) {
         const result = await response.json();
         console.log("Assessment submitted:", result);
-        pendingNavRef.current = `/results/${result.reportId}`;
+        pendingNavRef.current = `/results/${result.reportId}?new=1`;
         setIsApiComplete(true);
       } else {
         // Log full server error for debugging, but don't show to user
@@ -447,7 +447,12 @@ export default function Survey() {
                         {birthData.birthTimeUnknown ? (
                           <span className="text-white/50">{t('birth.time_unknown')}</span>
                         ) : birthData.birthTime ? (
-                          <span className="text-white font-mono">{birthData.birthTime}</span>
+                          <span className="text-white font-mono">{(() => {
+                            const [h, m] = birthData.birthTime.split(":").map(Number);
+                            const period = h >= 12 ? "PM" : "AM";
+                            const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+                            return `${h12}:${String(m).padStart(2, "0")} ${period}`;
+                          })()}</span>
                         ) : (
                           <span className="text-white/30">{t('birth.time.placeholder') || "Select time"}</span>
                         )}
