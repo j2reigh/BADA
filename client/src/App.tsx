@@ -20,6 +20,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
+      <Route path="/gift">{(_params: any) => <Landing showGiftModal={true} />}</Route>
       <Route path="/survey" component={Survey} />
       <Route path="/results/:reportId" component={ResultsV3} />
       <Route path="/debug-results" component={DebugResults} />

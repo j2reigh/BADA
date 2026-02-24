@@ -4,7 +4,9 @@ import { useState, useRef, useEffect } from "react";
 import { Link } from "wouter";
 import TypewriterText from "@/components/landing/TypewriterText";
 import EmbeddedDiagnosticCard from "@/components/landing/EmbeddedDiagnosticCard";
+import GiftCodeModal from "@/components/GiftCodeModal";
 import { useTranslation, type UILanguage } from "@/lib/simple-i18n";
+import LanguageDropdown from "@/components/LanguageDropdown";
 import {
   Carousel,
   CarouselContent,
@@ -16,17 +18,10 @@ import {
 
 type TranslateFn = (key: string, params?: Record<string, any>) => string;
 
-function Header({ t, language, setLanguage }: { t: TranslateFn; language: UILanguage; setLanguage: (lang: UILanguage) => void }) {
+function Header({ t, language, setLanguage, onOpenGift }: { t: TranslateFn; language: UILanguage; setLanguage: (lang: UILanguage) => void; onOpenGift?: () => void }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const languages: { code: UILanguage; label: string }[] = [
-    { code: 'en', label: 'EN' },
-    { code: 'ko', label: '한' },
-    { code: 'id', label: 'ID' },
-  ];
-
-  const findReportLabel = { en: "Find my report", ko: "내 리포트 찾기", id: "Cari laporanku" };
-  const findLabel = findReportLabel[language] || findReportLabel.en;
+  const findLabel = t('find.report.label');
 
   return (
     <>
@@ -75,25 +70,20 @@ function Header({ t, language, setLanguage }: { t: TranslateFn; language: UILang
               {findLabel}
             </a>
 
+            {onOpenGift && (
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  onOpenGift();
+                }}
+                className="text-lg text-white/80 hover:text-white transition-colors"
+              >
+                {t('gift.modal.title')}
+              </button>
+            )}
+
             {/* Language toggle */}
-            <div className="flex items-center gap-1 bg-white/5 rounded-full p-1 mt-4">
-              {languages.map((lang) => (
-                <button
-                  key={lang.code}
-                  onClick={() => {
-                    setLanguage(lang.code);
-                    setMenuOpen(false);
-                  }}
-                  className={`px-4 py-2 text-sm rounded-full transition-all ${
-                    language === lang.code
-                      ? 'bg-white text-[#182339] font-medium'
-                      : 'text-white/60 hover:text-white'
-                  }`}
-                >
-                  {lang.label}
-                </button>
-              ))}
-            </div>
+            <LanguageDropdown language={language} setLanguage={setLanguage} variant="mobile" />
           </div>
         </div>
       )}
@@ -716,7 +706,7 @@ function FinalCTA({ t }: { t: TranslateFn }) {
   );
 }
 
-function FindMyReport({ language }: { language: UILanguage }) {
+function FindMyReport({ t }: { t: TranslateFn }) {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent">("idle");
 
@@ -736,19 +726,12 @@ function FindMyReport({ language }: { language: UILanguage }) {
     }
   };
 
-  const labels = {
-    en: { title: "Already have a report?", desc: "Enter your email and we'll resend the link.", button: "Send link", sent: "Check your inbox!" },
-    ko: { title: "리포트를 잃어버리셨나요?", desc: "이메일을 입력하면 리포트 링크를 다시 보내드려요.", button: "링크 받기", sent: "메일함을 확인하세요!" },
-    id: { title: "Sudah punya laporan?", desc: "Masukkan email dan kami akan kirim ulang linknya.", button: "Kirim link", sent: "Cek inbox kamu!" },
-  };
-  const l = labels[language] || labels.en;
-
   return (
     <section id="find-report" className="relative z-10 py-12 px-6">
       <div className="max-w-md mx-auto text-center">
-        <p className="text-white/40 text-sm mb-2">{l.title}</p>
+        <p className="text-white/40 text-sm mb-2">{t('find.report.title')}</p>
         {status === "sent" ? (
-          <p className="text-[#6BCB77]/80 text-sm">{l.sent}</p>
+          <p className="text-[#6BCB77]/80 text-sm">{t('find.report.sent')}</p>
         ) : (
           <form onSubmit={handleSubmit} className="flex gap-2">
             <input
@@ -764,7 +747,7 @@ function FindMyReport({ language }: { language: UILanguage }) {
               disabled={status === "sending"}
               className="px-5 py-2.5 bg-white/10 border border-white/10 rounded-xl text-sm text-white/60 hover:bg-white/15 hover:text-white/80 disabled:opacity-40 transition-colors shrink-0"
             >
-              {l.button}
+              {t('find.report.button')}
             </button>
           </form>
         )}
@@ -774,46 +757,26 @@ function FindMyReport({ language }: { language: UILanguage }) {
 }
 
 function Footer({ language, setLanguage, t }: { language: UILanguage; setLanguage: (lang: UILanguage) => void; t: TranslateFn }) {
-  const languages: { code: UILanguage; label: string }[] = [
-    { code: 'en', label: 'EN' },
-    { code: 'ko', label: '한' },
-    { code: 'id', label: 'ID' },
-  ];
-
   return (
-    <footer className="relative z-10 border-t border-white/10 py-8 px-6">
-      <div className="max-w-[1400px] mx-auto flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <span className="text-white/40 text-sm">
+    <footer className="relative z-10 border-t border-white/10 py-6 px-6">
+      <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3 md:gap-4 flex-wrap justify-center">
+          <span className="text-white/40 text-xs md:text-sm whitespace-nowrap">
             BADA © {new Date().getFullYear()}
           </span>
-          <Link href="/faq" className="text-white/40 text-sm hover:text-white/70 transition-colors">
+          <Link href="/faq" className="text-white/40 text-xs md:text-sm hover:text-white/70 transition-colors whitespace-nowrap">
             {t('faq.title')}
           </Link>
-          <Link href="/privacy" className="text-white/40 text-sm hover:text-white/70 transition-colors">
-            Privacy
+          <Link href="/privacy" className="text-white/40 text-xs md:text-sm hover:text-white/70 transition-colors whitespace-nowrap">
+            {t('footer.privacy')}
           </Link>
-          <Link href="/terms" className="text-white/40 text-sm hover:text-white/70 transition-colors">
-            Terms
+          <Link href="/terms" className="text-white/40 text-xs md:text-sm hover:text-white/70 transition-colors whitespace-nowrap">
+            {t('footer.terms')}
           </Link>
         </div>
 
-        {/* Language Toggle - Right Side */}
-        <div className="flex items-center gap-1 bg-white/5 rounded-full p-1">
-          {languages.map((lang) => (
-            <button
-              key={lang.code}
-              onClick={() => setLanguage(lang.code)}
-              className={`px-3 py-1.5 text-sm rounded-full transition-all ${
-                language === lang.code
-                  ? 'bg-white text-[#182339] font-medium'
-                  : 'text-white/60 hover:text-white'
-              }`}
-            >
-              {lang.label}
-            </button>
-          ))}
-        </div>
+        {/* Language Dropdown - Right Side */}
+        <LanguageDropdown language={language} setLanguage={setLanguage} variant="footer" />
       </div>
     </footer>
   );
@@ -821,8 +784,17 @@ function Footer({ language, setLanguage, t }: { language: UILanguage; setLanguag
 
 // --- Main ---
 
-export default function Landing() {
+export default function Landing(props: { showGiftModal?: boolean; params?: any }) {
+  const showGiftModal = props.showGiftModal ?? false;
   const { t, language, setLanguage } = useTranslation();
+
+  // Gift modal: open via prop (/gift route) or ?gift=1 query param
+  const [giftModalOpen, setGiftModalOpen] = useState(() => {
+    if (showGiftModal) return true;
+    const params = new URLSearchParams(window.location.search);
+    return params.get("gift") === "1";
+  });
+
   return (
     <main className="relative w-full">
       {/* Gradient Background */}
@@ -848,7 +820,7 @@ export default function Landing() {
         }}
       />
 
-      <Header t={t} language={language} setLanguage={setLanguage} />
+      <Header t={t} language={language} setLanguage={setLanguage} onOpenGift={() => setGiftModalOpen(true)} />
 
       <div className="relative">
         <HeroSection t={t} />
@@ -859,9 +831,16 @@ export default function Landing() {
         <FinalCTA t={t} />
       </div>
 
-      <FindMyReport language={language} />
+      <FindMyReport t={t} />
       <Footer language={language} setLanguage={setLanguage} t={t} />
       <StickyProgressBar t={t} />
+
+      {/* Gift Code Modal */}
+      <GiftCodeModal
+        isOpen={giftModalOpen}
+        onClose={() => setGiftModalOpen(false)}
+        t={t}
+      />
     </main>
   );
 }

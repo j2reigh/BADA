@@ -3,6 +3,7 @@ import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Lock, ChevronDown, Share2, Mail, X } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
+import { useTranslation } from "@/lib/simple-i18n";
 
 // ─── Helpers ───
 
@@ -927,18 +928,12 @@ function ShareToast({
 
 function PromoToast({
   visible,
-  language = "en",
   onDismiss,
 }: {
   visible: boolean;
-  language?: string;
   onDismiss: () => void;
 }) {
-  const text: Record<string, string> = {
-    en: "$1.99 now. $2.9 later.",
-    ko: "지금 $1.99. 곧 $2.9.",
-    id: "$1.99 sekarang. $2.9 nanti.",
-  };
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (!visible) return;
@@ -951,7 +946,7 @@ function PromoToast({
   return (
     <div className="fixed bottom-20 left-0 right-0 z-40 flex justify-center px-4 animate-slide-up">
       <div className="flex items-center gap-2.5 pl-5 pr-3 py-3 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-sm text-white/70">
-        <span>{text[language] || text.en}</span>
+        <span>{t('results.promo')}</span>
         <button onClick={onDismiss} className="ml-1 text-white/30 hover:text-white/60 transition-colors"><X className="w-3.5 h-3.5" /></button>
       </div>
     </div>
@@ -962,18 +957,12 @@ function PromoToast({
 
 function EmailSentToast({
   visible,
-  language = "en",
   onDismiss,
 }: {
   visible: boolean;
-  language?: string;
   onDismiss: () => void;
 }) {
-  const text: Record<string, string> = {
-    en: "Report link has been sent to your email.",
-    ko: "리포트 링크가 이메일로 전송되었습니다.",
-    id: "Link laporan telah dikirim ke email Anda.",
-  };
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (!visible) return;
@@ -987,7 +976,7 @@ function EmailSentToast({
     <div className="fixed top-20 left-0 right-0 z-40 flex justify-center px-4 animate-slide-up">
       <div className="flex items-center gap-2.5 pl-5 pr-3 py-3 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-sm text-white/70">
         <Mail className="w-3.5 h-3.5 shrink-0" />
-        <span>{text[language] || text.en}</span>
+        <span>{t('results.email_toast')}</span>
         <button onClick={onDismiss} className="ml-1 text-white/30 hover:text-white/60 transition-colors"><X className="w-3.5 h-3.5" /></button>
       </div>
     </div>
@@ -998,17 +987,12 @@ function EmailSentToast({
 
 function StickyUnlockCTA({
   visible,
-  language = "en",
   onUnlock,
 }: {
   visible: boolean;
-  language?: string;
   onUnlock: () => void;
 }) {
-  const ctaText = { en: "Get full report", ko: "전체 리포트 받기", id: "Dapatkan laporan lengkap" };
-  const moreText = { en: "Felt accurate?", ko: "공감되셨다면", id: "Terasa pas?" };
-  const label = ctaText[language as keyof typeof ctaText] || ctaText.en;
-  const more = moreText[language as keyof typeof moreText] || moreText.en;
+  const { t } = useTranslation();
 
   return (
     <div
@@ -1017,12 +1001,12 @@ function StickyUnlockCTA({
       }`}
     >
       <div className="bg-[#182339]/90 backdrop-blur-md border-t border-white/10 px-4 py-3 flex items-center justify-between max-w-lg mx-auto gap-3">
-        <span className="text-white/40 text-sm font-light">{more}</span>
+        <span className="text-white/40 text-sm font-light">{t('results.cta.more')}</span>
         <button
           onClick={onUnlock}
           className="px-5 py-2.5 rounded-full bg-white text-[#182339] text-sm font-medium tracking-wide hover:bg-white/90 transition-colors shrink-0"
         >
-          {label}
+          {t('results.cta')}
         </button>
       </div>
     </div>
@@ -1035,13 +1019,12 @@ function LockCard({
   reportId,
   email,
   remainingCount,
-  language = "en",
 }: {
   reportId: string;
   email: string;
   remainingCount: number;
-  language?: string;
 }) {
+  const { t } = useTranslation();
   const [code, setCode] = useState("");
   const [codeError, setCodeError] = useState("");
   const [isRedeeming, setIsRedeeming] = useState(false);
@@ -1067,63 +1050,13 @@ function LockCard({
     return () => observer.disconnect();
   }, []);
 
-  const translations = {
-    en: {
-      headline: "what you see ≠ what's there",
-      line1: "If those cards felt accurate,",
-      line2: "the rest explain why — and what to do about it.",
-      cta: "Get full report — $2.9",
-      or: "or",
-      placeholder: "Gift code",
-      discountHint: "Discount code? Enter it on the payment page.",
-      apply: "Apply",
-      moreFaq: "More FAQ",
-      faq: [
-        { key: "q4", q: "What do I get for $2.9?", a: "The full report: why your patterns exist, what they cost you at work · relationships · money, how you recharge, your 10-year chapter, and one thing to change this week." },
-        { key: "q7", q: "I got a gift code. How do I use it?", a: "Enter it in the \"Gift code\" field above and tap Apply." },
-        { key: "q9", q: "How do I apply a discount code?", a: "Tap \"Get full report\" — enter your discount code on the Gumroad payment page." },
-        { key: "q6", q: "Is my data safe?", a: "Your birth data is used only to generate your report. We don't sell or share it." },
-        { key: "contact", q: "How do I reach you?", a: "Questions, feedback, or just want to say hi?" },
-      ],
-    },
-    ko: {
-      headline: "보이는 나 ≠ 진짜 나",
-      line1: "여기까지 공감되셨다면,",
-      line2: "나머지 카드가 왜 그런지, 어떻게 바꿀 수 있는지 알려줍니다.",
-      cta: "전체 리포트 받기 — $2.9",
-      or: "또는",
-      placeholder: "기프트 코드",
-      discountHint: "할인코드는 결제 페이지에서 입력하세요.",
-      apply: "적용",
-      moreFaq: "FAQ 더보기",
-      faq: [
-        { key: "q4", q: "$2.9으로 뭘 더 보나요?", a: "전체 리포트: 패턴이 왜 존재하는지, 직장·관계·돈에서 치르는 대가, 회복법, 10년 챕터, 이번 주 바꿀 수 있는 한 가지." },
-        { key: "q7", q: "기프트 코드는 어떻게 쓰나요?", a: "위 \"기프트 코드\" 입력란에 코드를 넣고 적용을 누르세요." },
-        { key: "q9", q: "할인 코드는 어떻게 적용하나요?", a: "\"전체 리포트 받기\"를 누른 뒤 Gumroad 결제 페이지에서 할인 코드를 입력하세요." },
-        { key: "q6", q: "데이터는 안전한가요?", a: "생년월일은 리포트 생성에만 사용됩니다. 판매하거나 공유하지 않습니다." },
-        { key: "contact", q: "어디로 연락하나요?", a: "질문, 피드백, 또는 그냥 인사하고 싶으신가요?" },
-      ],
-    },
-    id: {
-      headline: "yang kamu lihat ≠ yang sebenarnya",
-      line1: "Kalau kartu tadi terasa pas,",
-      line2: "sisanya menjelaskan kenapa — dan apa yang bisa kamu ubah.",
-      cta: "Dapatkan laporan lengkap — $2.9",
-      or: "atau",
-      placeholder: "Kode hadiah",
-      discountHint: "Kode diskon? Masukkan di halaman pembayaran.",
-      apply: "Terapkan",
-      moreFaq: "FAQ lainnya",
-      faq: [
-        { key: "q4", q: "Apa yang saya dapat dengan $2.9?", a: "Laporan lengkap: kenapa polamu ada, biayanya di kerja · hubungan · uang, cara recharge, chapter 10 tahunmu, dan satu hal yang bisa diubah minggu ini." },
-        { key: "q7", q: "Saya dapat kode hadiah. Bagaimana cara pakainya?", a: "Masukkan di kolom \"Kode hadiah\" di atas dan ketuk Terapkan." },
-        { key: "q9", q: "Bagaimana cara pakai kode diskon?", a: "Ketuk \"Dapatkan laporan lengkap\" — masukkan kode diskon di halaman pembayaran Gumroad." },
-        { key: "q6", q: "Apakah data saya aman?", a: "Data kelahiranmu hanya digunakan untuk membuat laporanmu. Kami tidak menjual atau membagikannya." },
-        { key: "contact", q: "Bagaimana cara menghubungi?", a: "Pertanyaan, masukan, atau sekadar ingin menyapa?" },
-      ],
-    },
-  };
-  const t = translations[language as keyof typeof translations] || translations.en;
+  const faqItems = [
+    { key: "q1", q: t('results.faq.q1.q'), a: t('results.faq.q1.a') },
+    { key: "q2", q: t('results.faq.q2.q'), a: t('results.faq.q2.a') },
+    { key: "q3", q: t('results.faq.q3.q'), a: t('results.faq.q3.a') },
+    { key: "q4", q: t('results.faq.q4.q'), a: t('results.faq.q4.a') },
+    { key: "q5", q: t('results.faq.q5.q'), a: t('results.faq.q5.a') },
+  ];
 
   const redirectUrl = `${window.location.origin}/results/${reportId}?paid=1`;
   const checkoutUrl = `https://gumroad.com/l/bada-full-report?wanted=true&report_id=${reportId}&email=${encodeURIComponent(email || "")}&redirect_url=${encodeURIComponent(redirectUrl)}`;
@@ -1143,10 +1076,10 @@ function LockCard({
       if (data.success) {
         queryClient.invalidateQueries({ queryKey: [`/api/results/${reportId}`] });
       } else {
-        setCodeError(data.message || "Invalid code");
+        setCodeError(data.message || t('results.paywall.error.invalid'));
       }
     } catch {
-      setCodeError("Network error");
+      setCodeError(t('results.paywall.error.network'));
     } finally {
       setIsRedeeming(false);
     }
@@ -1154,7 +1087,7 @@ function LockCard({
 
   return (
     <div ref={lockCardRef}>
-    <PromoToast visible={showPromo} language={language} onDismiss={() => setShowPromo(false)} />
+    <PromoToast visible={showPromo} onDismiss={() => setShowPromo(false)} />
     <Card bg="bg-gradient-to-b from-[#182339] via-[#233F64] to-[#402525]">
       <div className="flex flex-col items-center text-center w-full max-w-sm">
         <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-5 flex-shrink-0">
@@ -1162,27 +1095,27 @@ function LockCard({
         </div>
 
         <p className="text-lg text-white/60 font-light tracking-wide mb-5">
-          {t.headline}
+          {t('results.paywall.headline')}
         </p>
 
         <p className="text-sm text-white/70 font-light leading-relaxed mb-1">
-          {t.line1}
+          {t('results.paywall.line1')}
         </p>
         <p className="text-sm text-white/70 font-light leading-relaxed mb-6">
-          {t.line2}
+          {t('results.paywall.line2')}
         </p>
 
         <button
           onClick={() => window.open(checkoutUrl, "_blank", "noopener")}
           className="w-full max-w-xs py-3.5 rounded-full bg-white text-[#182339] text-sm font-medium tracking-wide hover:bg-white/90 transition-colors mb-3"
         >
-          {t.cta}
+          {t('results.paywall.cta')}
         </button>
 
         {/* Code input — always visible */}
         <div className="flex items-center gap-3 my-3 w-full max-w-xs">
           <div className="flex-1 h-px bg-white/10" />
-          <span className="text-xs text-white/40 uppercase tracking-wider" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{t.or}</span>
+          <span className="text-xs text-white/40 uppercase tracking-wider" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{t('results.paywall.or')}</span>
           <div className="flex-1 h-px bg-white/10" />
         </div>
         <div className="flex gap-2 w-full max-w-xs">
@@ -1193,7 +1126,7 @@ function LockCard({
               setCodeError("");
             }}
             onKeyDown={(e) => e.key === "Enter" && handleRedeem()}
-            placeholder={t.placeholder}
+            placeholder={t('results.paywall.placeholder')}
             maxLength={20}
             className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-center text-sm uppercase tracking-wider text-white/70 placeholder:text-white/30 focus:outline-none focus:border-white/30 transition-colors"
             style={{ fontFamily: "'JetBrains Mono', monospace" }}
@@ -1203,17 +1136,17 @@ function LockCard({
             disabled={!code.trim() || isRedeeming}
             className="px-5 py-3 bg-white/10 border border-white/10 rounded-xl text-sm text-white/70 hover:bg-white/15 disabled:opacity-30 transition-colors"
           >
-            {isRedeeming ? <Loader2 className="w-4 h-4 animate-spin" /> : t.apply}
+            {isRedeeming ? <Loader2 className="w-4 h-4 animate-spin" /> : t('results.paywall.apply')}
           </button>
         </div>
         {codeError && (
           <p className="text-xs text-red-400 mt-2">{codeError}</p>
         )}
-        <p className="text-xs text-white/30 mt-2">{t.discountHint}</p>
+        <p className="text-xs text-white/30 mt-2">{t('results.paywall.discount_hint')}</p>
 
         {/* FAQ toggles */}
         <div className="w-full max-w-xs mt-6 space-y-0 border-t border-white/5">
-          {t.faq.map((item) => (
+          {faqItems.map((item) => (
             <div key={item.key} className="border-b border-white/5">
               <button
                 onClick={() => setOpenFaq(openFaq === item.key ? null : item.key)}
@@ -1224,7 +1157,7 @@ function LockCard({
               </button>
               {openFaq === item.key && (
                 <div className="pb-2.5 text-xs text-white/40 text-left leading-relaxed whitespace-pre-line">
-                  {item.key === "contact" ? (
+                  {item.key === "q5" ? (
                     <div className="space-y-1">
                       <p>{item.a}</p>
                       <p>→ Instagram: <a href="https://www.instagram.com/badathebrand" target="_blank" rel="noopener noreferrer" className="text-[#879DC6] hover:text-[#879DC6]/70 transition-colors">@badathebrand</a></p>
@@ -1241,7 +1174,7 @@ function LockCard({
             rel="noopener noreferrer"
             className="block w-full py-2.5 text-xs text-white/20 hover:text-white/40 transition-colors text-center"
           >
-            {t.moreFaq} →
+            {t('results.paywall.more_faq')} →
           </a>
         </div>
       </div>
@@ -1584,7 +1517,6 @@ export default function ResultsV3() {
       {/* Email sent toast — fresh report */}
       <EmailSentToast
         visible={showEmailToast}
-        language={report.language || "en"}
         onDismiss={() => setShowEmailToast(false)}
       />
 
@@ -1592,7 +1524,6 @@ export default function ResultsV3() {
       {!isPaid && (
         <StickyUnlockCTA
           visible={showCta}
-          language={report.language || "en"}
           onUnlock={() => {
             const lock = document.getElementById("lock-card");
             lock?.scrollIntoView({ behavior: "smooth" });
@@ -1618,7 +1549,6 @@ export default function ResultsV3() {
               reportId={reportId || ""}
               email={report.email || ""}
               remainingCount={paidCards.length}
-              language={report.language || "en"}
             />
           </div>
         )}

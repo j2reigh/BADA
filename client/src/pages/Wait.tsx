@@ -5,6 +5,7 @@ import { Button } from "@/components/Button";
 import { motion } from "framer-motion";
 import { Mail, RefreshCw, Edit2, Check, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/lib/simple-i18n";
 
 interface WaitPageData {
   reportId: string;
@@ -17,6 +18,7 @@ export default function Wait() {
   const { reportId } = useParams<{ reportId: string }>();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
@@ -51,15 +53,15 @@ export default function Wait() {
     },
     onSuccess: () => {
       toast({
-        title: "Email sent!",
-        description: "Check your inbox for the verification link.",
+        title: t('toast.email_sent'),
+        description: t('toast.email_sent.desc'),
       });
       setResendCooldown(60);
     },
     onError: () => {
       toast({
-        title: "Failed to send email",
-        description: "Please try again.",
+        title: t('toast.email_failed'),
+        description: t('error.try_again'),
         variant: "destructive",
       });
     },
@@ -80,8 +82,8 @@ export default function Wait() {
     },
     onSuccess: (result) => {
       toast({
-        title: "Email updated!",
-        description: `Verification sent to ${result.email}`,
+        title: t('toast.email_updated'),
+        description: t('toast.email_updated.desc', { email: result.email }),
       });
       setIsEditingEmail(false);
       setNewEmail("");
@@ -89,7 +91,7 @@ export default function Wait() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Failed to update email",
+        title: t('toast.email_update_failed'),
         description: error.message,
         variant: "destructive",
       });
@@ -99,8 +101,8 @@ export default function Wait() {
   const handleUpdateEmail = () => {
     if (!newEmail.trim() || !newEmail.includes("@")) {
       toast({
-        title: "Invalid email",
-        description: "Please enter a valid email address.",
+        title: t('toast.invalid_email'),
+        description: t('toast.invalid_email.desc'),
         variant: "destructive",
       });
       return;
@@ -113,7 +115,7 @@ export default function Wait() {
       <div className="min-h-screen depth-gradient-bg flex items-center justify-center">
         <div className="text-center space-y-4">
           <Loader2 className="w-8 h-8 animate-spin text-white" />
-          <p className="text-white/60 text-sm">Loading your report...</p>
+          <p className="text-white/60 text-sm">{t('wait.loading')}</p>
         </div>
       </div>
     );
@@ -123,14 +125,14 @@ export default function Wait() {
     return (
       <div className="min-h-screen depth-gradient-bg flex flex-col items-center justify-center p-6">
         <div className="text-center space-y-6 bg-white/10 backdrop-blur-md border border-white/20 p-8 rounded-2xl">
-          <h1 className="text-xl font-semibold text-white">Report not found</h1>
-          <p className="text-white/60 text-sm">This report may have expired or doesn't exist.</p>
-          <button 
-            onClick={() => setLocation("/")} 
+          <h1 className="text-xl font-semibold text-white">{t('wait.not_found')}</h1>
+          <p className="text-white/60 text-sm">{t('wait.not_found.desc')}</p>
+          <button
+            onClick={() => setLocation("/")}
             className="px-6 py-3 bg-white text-black rounded-full font-semibold hover:scale-105 transition-transform"
             data-testid="button-go-home"
           >
-            Go Home
+            {t('wait.go_home')}
           </button>
         </div>
       </div>
@@ -140,8 +142,8 @@ export default function Wait() {
   return (
     <div className="min-h-screen depth-gradient-bg flex flex-col items-center justify-center p-6 relative overflow-hidden">
       {/* Dynamic Background Noise/Texture */}
-      <div 
-        className="fixed inset-0 pointer-events-none opacity-10 mix-blend-overlay" 
+      <div
+        className="fixed inset-0 pointer-events-none opacity-10 mix-blend-overlay"
         style={{
            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
         }}
@@ -160,7 +162,7 @@ export default function Wait() {
           <img src="/logo-badaone.svg" alt="bada.one" className="h-5" />
         </a>
       </header>
-      
+
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
@@ -168,7 +170,7 @@ export default function Wait() {
         className="w-full max-w-md z-10 pt-20"
       >
         <div className="bg-white/10 backdrop-blur-md border border-white/20 p-8 text-center space-y-6 rounded-2xl">
-          <motion.div 
+          <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.3, type: "spring" }}
@@ -176,15 +178,15 @@ export default function Wait() {
           >
             <Mail className="w-10 h-10 text-white" />
           </motion.div>
-          
+
           <div className="space-y-4">
             <h1 className="text-2xl font-semibold text-white">
-              Your Report is Ready!
+              {t('wait.ready.title')}
             </h1>
             <p className="text-white/70 text-sm">
-              We sent a verification link to:
+              {t('wait.subtitle')}
             </p>
-            
+
             {!isEditingEmail ? (
               <div className="bg-white/20 backdrop-blur-sm p-4 rounded-lg border border-white/10">
                 <p className="font-medium text-white text-sm break-all" data-testid="text-email">
@@ -197,7 +199,7 @@ export default function Wait() {
                   type="email"
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
-                  placeholder="Enter new email"
+                  placeholder={t('wait.edit.placeholder')}
                   className="w-full px-4 py-3 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg text-white placeholder:text-white/50 focus:border-white focus:outline-none transition-colors text-sm"
                   data-testid="input-new-email"
                 />
@@ -210,7 +212,7 @@ export default function Wait() {
                     className="flex-1 px-4 py-3 bg-white/10 border border-white/20 text-white/80 rounded-lg hover:bg-white/20 transition-colors text-sm"
                     data-testid="button-cancel-edit"
                   >
-                    Cancel
+                    {t('common.cancel')}
                   </button>
                   <button
                     onClick={handleUpdateEmail}
@@ -223,7 +225,7 @@ export default function Wait() {
                     ) : (
                       <>
                         <Check className="w-4 h-4" />
-                        Update
+                        {t('wait.edit.update')}
                       </>
                     )}
                   </button>
@@ -231,11 +233,11 @@ export default function Wait() {
               </div>
             )}
           </div>
-          
+
           <p className="text-xs text-white/60">
-            Click the link in the email to view your personalized BADA report.
+            {t('wait.ready.desc')}
           </p>
-          
+
           <div className="space-y-3 pt-4 border-t border-white/20">
             {!isEditingEmail && (
               <>
@@ -250,25 +252,25 @@ export default function Wait() {
                   ) : (
                     <RefreshCw className="w-4 h-4" />
                   )}
-                  {resendCooldown > 0 
-                    ? `Resend in ${resendCooldown}s` 
-                    : "Resend Verification Email"
+                  {resendCooldown > 0
+                    ? t('wait.resend.countdown', { seconds: resendCooldown })
+                    : t('wait.resend')
                   }
                 </button>
-                
+
                 <button
                   onClick={() => setIsEditingEmail(true)}
                   className="text-xs text-white/50 hover:text-white/80 transition-colors flex items-center justify-center gap-1 w-full py-2"
                   data-testid="button-wrong-email"
                 >
                   <Edit2 className="w-3 h-3" />
-                  Wrong email? Click to fix
+                  {t('wait.wrong_email.click')}
                 </button>
               </>
             )}
           </div>
         </div>
-        
+
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -276,7 +278,7 @@ export default function Wait() {
           className="text-center mt-6"
         >
           <p className="text-xs text-white/40">
-            Didn't receive the email? Check your spam folder.
+            {t('wait.spam')}
           </p>
         </motion.div>
       </motion.div>

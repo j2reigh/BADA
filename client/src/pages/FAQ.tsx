@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useTranslation, type UILanguage } from "@/lib/simple-i18n";
+import LanguageDropdown from "@/components/LanguageDropdown";
 
 function Header({ t }: { t: (key: string) => string }) {
   return (
@@ -11,7 +12,7 @@ function Header({ t }: { t: (key: string) => string }) {
           <img src="/logo-badaone.svg" alt="bada.one" className="h-5" />
         </a>
         <nav className="hidden md:flex items-center gap-8 mix-blend-difference text-white">
-          <Link href="/" className="text-sm hover:opacity-70 transition-opacity">Home</Link>
+          <Link href="/" className="text-sm hover:opacity-70 transition-opacity">{t('nav.home')}</Link>
           <Link href="/faq" className="text-sm hover:opacity-70 transition-opacity">{t('faq.title')}</Link>
         </nav>
       </div>
@@ -40,42 +41,22 @@ function FAQItem({ question, answer, footer }: { question: string; answer: strin
   );
 }
 
-function Footer({ language, setLanguage }: { language: UILanguage; setLanguage: (lang: UILanguage) => void }) {
-  const languages: { code: UILanguage; label: string }[] = [
-    { code: 'en', label: 'EN' },
-    { code: 'ko', label: '한' },
-    { code: 'id', label: 'ID' },
-  ];
-
+function Footer({ language, setLanguage, t }: { language: UILanguage; setLanguage: (lang: UILanguage) => void; t: (key: string) => string }) {
   return (
-    <footer className="relative z-10 border-t border-white/10 py-8 px-6">
-      <div className="max-w-[1400px] mx-auto flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <span className="text-white/40 text-sm">
+    <footer className="relative z-10 border-t border-white/10 py-6 px-6">
+      <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3 md:gap-4 flex-wrap justify-center">
+          <span className="text-white/40 text-xs md:text-sm whitespace-nowrap">
             bada.one © {new Date().getFullYear()}
           </span>
-          <Link href="/privacy" className="text-white/40 text-sm hover:text-white/70 transition-colors">
-            Privacy
+          <Link href="/privacy" className="text-white/40 text-xs md:text-sm hover:text-white/70 transition-colors whitespace-nowrap">
+            {t('footer.privacy')}
           </Link>
-          <Link href="/terms" className="text-white/40 text-sm hover:text-white/70 transition-colors">
-            Terms
+          <Link href="/terms" className="text-white/40 text-xs md:text-sm hover:text-white/70 transition-colors whitespace-nowrap">
+            {t('footer.terms')}
           </Link>
         </div>
-        <div className="flex items-center gap-1 bg-white/5 rounded-full p-1">
-          {languages.map((lang) => (
-            <button
-              key={lang.code}
-              onClick={() => setLanguage(lang.code)}
-              className={`px-3 py-1.5 text-sm rounded-full transition-all ${
-                language === lang.code
-                  ? 'bg-white text-[#182339] font-medium'
-                  : 'text-white/60 hover:text-white'
-              }`}
-            >
-              {lang.label}
-            </button>
-          ))}
-        </div>
+        <LanguageDropdown language={language} setLanguage={setLanguage} variant="footer" />
       </div>
     </footer>
   );
@@ -85,7 +66,6 @@ export default function FAQ() {
   const { t, language, setLanguage } = useTranslation();
 
   const [, setLocation] = useLocation();
-  const findReportLabel = { en: "Find my report →", ko: "내 리포트 찾기 →", id: "Cari laporanku →" } as const;
 
   const questions = Array.from({ length: 9 }, (_, i) => ({
     question: t(`faq.q${i + 1}.q`),
@@ -108,7 +88,7 @@ export default function FAQ() {
         }}
         className="inline-block mt-3 text-sm text-white/70 hover:text-white transition-colors underline underline-offset-4"
       >
-        {findReportLabel[language as keyof typeof findReportLabel] || findReportLabel.en}
+        {t('find.report.label')} →
       </a>
     ) : undefined,
   }));
@@ -194,7 +174,7 @@ export default function FAQ() {
         </div>
       </div>
 
-      <Footer language={language} setLanguage={setLanguage} />
+      <Footer language={language} setLanguage={setLanguage} t={t} />
     </main>
   );
 }

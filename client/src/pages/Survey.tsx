@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, CheckCircle2, MapPin, Calendar, Clock, Mail, Globe, ChevronDown, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { REPORT_LANGUAGES, useTranslation, type ReportLanguage } from "@/lib/simple-i18n";
+import LanguageDropdown from "@/components/LanguageDropdown";
 import { Country, City } from "country-state-city";
 import GeneratingScreen from "@/components/GeneratingScreen";
 import TimePickerModal from "@/components/TimePickerModal";
@@ -40,27 +41,40 @@ interface BirthPatternData {
 }
 
 export default function Survey() {
-  const { t, language } = useTranslation();
+  const { t, language, setLanguage } = useTranslation();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   // All Countries Data (Memoized)
   const allCountries = useMemo(() => Country.getAllCountries(), []);
 
-  // Check if coming from landing page with first answer
+  // Read giftCode from URL params (from /gift flow)
+  const giftCode = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("giftCode") || "";
+  }, []);
+
+  // Restore progress from sessionStorage on refresh, or start fresh
   const [currentStep, setCurrentStep] = useState(() => {
+    const savedStep = sessionStorage.getItem("bada_survey_step");
+    if (savedStep) return parseInt(savedStep, 10);
     const params = new URLSearchParams(window.location.search);
     const start = params.get("start");
     return start ? parseInt(start, 10) : 0;
   });
 
   const [answers, setAnswers] = useState<Record<string, string>>(() => {
-    // Load first answer from localStorage if available
+    // Restore from sessionStorage first (refresh case)
+    const savedAnswers = sessionStorage.getItem("bada_survey_answers");
+    if (savedAnswers) {
+      try { return JSON.parse(savedAnswers); } catch {}
+    }
+    // Load first answer from localStorage if available (landing → survey)
     const savedFirst = localStorage.getItem("bada_first_answer");
     if (savedFirst) {
       try {
         const parsed = JSON.parse(savedFirst);
-        localStorage.removeItem("bada_first_answer"); // Clean up
+        localStorage.removeItem("bada_first_answer");
         return parsed;
       } catch {
         return {};
@@ -82,6 +96,15 @@ export default function Survey() {
     notificationConsent: true,
     reportLanguage: "",
   });
+
+  // Persist progress to sessionStorage (survives refresh)
+  useEffect(() => {
+    sessionStorage.setItem("bada_survey_step", String(currentStep));
+  }, [currentStep]);
+
+  useEffect(() => {
+    sessionStorage.setItem("bada_survey_answers", JSON.stringify(answers));
+  }, [answers]);
 
   // Derived State for Cities based on selected Country
   const availableCities = useMemo(() => {
@@ -213,6 +236,28 @@ export default function Survey() {
       if (response.ok) {
         const result = await response.json();
         console.log("Assessment submitted:", result);
+
+        // Auto-redeem gift code if present
+        if (giftCode) {
+          try {
+            const redeemRes = await fetch("/api/codes/redeem", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ code: giftCode, reportId: result.reportId }),
+            });
+            const redeemData = await redeemRes.json();
+            if (redeemData.success) {
+              console.log("Gift code redeemed successfully:", giftCode);
+            } else {
+              console.error("Gift code redeem failed:", redeemData.error);
+            }
+          } catch (redeemErr) {
+            console.error("Gift code redeem error:", redeemErr);
+          }
+        }
+
+        sessionStorage.removeItem("bada_survey_step");
+        sessionStorage.removeItem("bada_survey_answers");
         pendingNavRef.current = `/results/${result.reportId}?new=1`;
         setIsApiComplete(true);
       } else {
@@ -296,18 +341,21 @@ export default function Survey() {
         </a>
       </header>
 
-      {/* Exit button moved to bottom left */}
-      <button
-        onClick={() => setLocation("/")}
-        className="fixed bottom-6 left-6 text-sm text-white/60 hover:text-white/100 transition-colors z-50 px-4 py-2 rounded-full bg-black/20 backdrop-blur-sm border border-white/10 hover:bg-black/30"
-      >
-        Exit
-      </button>
+      {/* Bottom bar — Exit + Language */}
+      <div className="fixed bottom-6 left-6 right-6 z-50 flex items-center justify-between">
+        <button
+          onClick={() => setLocation("/")}
+          className="text-sm text-white/60 hover:text-white/100 transition-colors px-4 py-2 rounded-full bg-black/20 backdrop-blur-sm border border-white/10 hover:bg-black/30"
+        >
+          {t('survey.exit')}
+        </button>
+        <LanguageDropdown language={language} setLanguage={setLanguage} variant="footer" />
+      </div>
 
       {/* Depth Indicator */}
       <div className="fixed top-8 right-8 z-50 text-right">
         <div className="text-xs font-mono uppercase tracking-widest mb-1" style={{ color: '#402525' }}>
-          Current Depth
+          {t('survey.depth')}
         </div>
         <motion.div
           key={currentStep}
@@ -339,9 +387,20 @@ export default function Survey() {
                 exit={{ opacity: 0, y: -40 }}
                 transition={{ duration: 0.6, ease: "easeOut" }}
               >
-                <span className="inline-block text-xs font-mono border border-white/20 text-white/60 px-3 py-1 mb-8 rounded-full">
-                  Q{currentStep + 1}
-                </span>
+                <div className="flex items-center gap-2 mb-8">
+                  {currentStep > 0 && (
+                    <button
+                      onClick={() => setCurrentStep((prev) => Math.max(prev - 1, 0))}
+                      className="inline-flex items-center justify-center w-7 h-7 rounded-full border border-white/20 text-white/40 hover:text-white/80 hover:border-white/40 transition-colors"
+                      aria-label={t('survey.back')}
+                    >
+                      <ChevronDown className="w-3.5 h-3.5 rotate-90" />
+                    </button>
+                  )}
+                  <span className="inline-block text-xs font-mono border border-white/20 text-white/60 px-3 py-1 rounded-full">
+                    Q{currentStep + 1}
+                  </span>
+                </div>
 
                 <h2 className="text-4xl md:text-6xl font-display font-medium text-white mb-16 leading-tight">
                   {t(`survey.q${currentStep + 1}.text`)}
@@ -375,7 +434,7 @@ export default function Survey() {
               >
                 <div className="mb-12">
                   <span className="text-xs font-mono text-white/40 uppercase tracking-widest mb-2 block">
-                    Final
+                    {t('survey.final')}
                   </span>
                   <h2 className="text-4xl md:text-5xl font-display text-white mb-4">
                     {t('birth.title')}
@@ -620,18 +679,14 @@ export default function Survey() {
                         className="w-4 h-4 accent-white mt-0.5"
                       />
                       <span>
-                        {language === 'ko' ? (
-                          <>
-                            <a href="/terms" target="_blank" className="underline hover:text-white transition-colors" onClick={(e) => e.stopPropagation()}>이용약관</a>과 <a href="/privacy" target="_blank" className="underline hover:text-white transition-colors" onClick={(e) => e.stopPropagation()}>개인정보 처리방침</a>에 동의합니다 *
-                          </>
-                        ) : language === 'id' ? (
-                          <>
-                            Saya setuju dengan <a href="/terms" target="_blank" className="underline hover:text-white transition-colors" onClick={(e) => e.stopPropagation()}>Syarat Layanan</a> dan <a href="/privacy" target="_blank" className="underline hover:text-white transition-colors" onClick={(e) => e.stopPropagation()}>Kebijakan Privasi</a> *
-                          </>
-                        ) : (
-                          <>
-                            I agree to the <a href="/terms" target="_blank" className="underline hover:text-white transition-colors" onClick={(e) => e.stopPropagation()}>Terms of Service</a> and <a href="/privacy" target="_blank" className="underline hover:text-white transition-colors" onClick={(e) => e.stopPropagation()}>Privacy Policy</a> *
-                          </>
+                        {t('birth.consent.full').split(/(\{\{terms\}\}|\{\{privacy\}\})/).map((part, i) =>
+                          part === '{{terms}}' ? (
+                            <a key={i} href="/terms" target="_blank" className="underline hover:text-white transition-colors" onClick={(e) => e.stopPropagation()}>{t('birth.consent.terms')}</a>
+                          ) : part === '{{privacy}}' ? (
+                            <a key={i} href="/privacy" target="_blank" className="underline hover:text-white transition-colors" onClick={(e) => e.stopPropagation()}>{t('birth.consent.privacy')}</a>
+                          ) : (
+                            <span key={i}>{part}</span>
+                          )
                         )}
                       </span>
                     </label>
