@@ -9,8 +9,13 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Supabase DB
+      - name: Ping Production DB
         env:
           DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
         run: |
-          psql "$DATABASE_URL" -c "SELECT 1;" && echo "Supabase is alive"
+          psql "$DATABASE_URL" -c "SELECT 1;" && echo "Production DB is alive"
+      - name: Ping Staging DB
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_STAGING_DATABASE_URL }}
+        run: |
+          psql "$DATABASE_URL" -c "SELECT 1;" && echo "Staging DB is alive"
