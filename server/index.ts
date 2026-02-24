@@ -27,7 +27,7 @@ import { serveStatic } from "./static";
     const message = err.message || "Internal Server Error";
 
     res.status(status).json({ message });
-    throw err;
+    console.error(err);
   });
 
   // Setup Vite or Static serving

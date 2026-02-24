@@ -13,9 +13,13 @@ app.set("trust proxy", 1);
 // SECURITY HEADERS (Helmet)
 // ==========================================
 app.use(helmet({
-  contentSecurityPolicy: false, // Vite dev + inline scripts compatibility
+  contentSecurityPolicy: false, // Disabled — Gumroad overlay requires inline scripts/iframes
   crossOriginResourcePolicy: { policy: "same-site" }, // allow subdomains (mobile compat)
+  hsts: { maxAge: 31536000, includeSubDomains: true }, // 1 year — site is HTTPS-only
 }));
+
+// CSRF: Not applicable — stateless JSON API with no cookie-based auth.
+// All mutations use POST with JSON body; Gumroad webhook verified by seller_id.
 
 // ==========================================
 // CORS
@@ -56,11 +60,31 @@ const strictLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Rate limit: unlock codes — 5 per 15 min
+const codeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { error: "Too many code attempts. Please wait before trying again." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Rate limit: resend report link — 3 per 15 min
+const resendLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 3,
+  message: { error: "Too many resend requests. Please wait before trying again." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Apply general rate limiting to all /api routes (except webhooks)
 app.use("/api", generalLimiter);
 
 // Apply strict rate limiting to heavy endpoints
 app.use("/api/assessment", strictLimiter); // Report generation
+app.use("/api/codes", codeLimiter); // Code validate/redeem
+app.use("/api/resend-report-link", resendLimiter); // Email resend
 
 // JSON Body Parser with raw body verification (for webhooks)
 declare module "http" {

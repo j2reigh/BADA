@@ -75,13 +75,13 @@ export async function registerRoutes(
     }),
 
     // Birth pattern
-    name: z.string().min(1),
+    name: z.string().min(1).max(100),
     gender: z.enum(["male", "female", "other"]),
     email: z.string().email(),
     marketingConsent: z.boolean().default(true),
 
-    birthDate: z.string(),
-    birthTime: z.string().optional(),
+    birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "birthDate must be YYYY-MM-DD"),
+    birthTime: z.string().regex(/^\d{2}:\d{2}$/, "birthTime must be HH:MM").optional(),
     birthTimeUnknown: z.boolean().default(false),
 
     birthCity: z.string(),
@@ -324,7 +324,7 @@ export async function registerRoutes(
       ]).then(
         (result) => {
           if (result.success) {
-            console.log(`[Assessment] Report link email sent to ${lead.email}`);
+            console.log(`[Assessment] Report link email sent successfully`);
           } else {
             console.error(`[Assessment] Report link email failed: ${result.error}`);
           }
@@ -492,36 +492,31 @@ export async function registerRoutes(
 
       res.json(responseData);
     } catch (err) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      console.error("Results fetch error:", errMsg);
-      console.error("Error stack:", err instanceof Error ? err.stack : "No stack trace");
-      res.status(500).json({
-        message: "Failed to get results",
-        errorType: err instanceof Error ? err.constructor.name : typeof err,
-        detail: errMsg,
-      });
+      console.error("Results fetch error:", err instanceof Error ? err.message : String(err));
+      res.status(500).json({ message: "Failed to get results" });
     }
   });
 
-  // Unlock report (test endpoint - to be replaced with Stripe webhook)
-  app.post("/api/results/:reportId/unlock", async (req, res) => {
-    try {
-      const { reportId } = req.params;
+  // Unlock report (dev-only test endpoint)
+  if (process.env.NODE_ENV === 'development') {
+    app.post("/api/results/:reportId/unlock", async (req, res) => {
+      try {
+        const { reportId } = req.params;
 
-      const sajuResult = await resolveReport(reportId);
-      if (!sajuResult) {
-        return res.status(404).json({ message: "Report not found" });
+        const sajuResult = await resolveReport(reportId);
+        if (!sajuResult) {
+          return res.status(404).json({ message: "Report not found" });
+        }
+
+        await storage.unlockReport(sajuResult.id);
+
+        res.json({ success: true, message: "Report unlocked" });
+      } catch (err) {
+        console.error("Unlock report error:", err);
+        res.status(500).json({ message: "Failed to unlock report" });
       }
-
-      // Update isPaid status (use resolved UUID)
-      await storage.unlockReport(sajuResult.id);
-
-      res.json({ success: true, message: "Report unlocked" });
-    } catch (err) {
-      console.error("Unlock report error:", err);
-      res.status(500).json({ message: "Failed to unlock report" });
-    }
-  });
+    });
+  }
 
   // Generate V3 Card Content (LLM-generated collision framing)
   app.get("/api/results/:reportId/v3-cards", async (req, res) => {
@@ -580,7 +575,7 @@ export async function registerRoutes(
       res.json(v3Cards);
     } catch (err) {
       console.error("V3 Cards generation error:", err);
-      res.status(500).json({ message: "Failed to generate V3 cards", error: String(err) });
+      res.status(500).json({ message: "Failed to generate V3 cards" });
     }
   });
 
@@ -620,7 +615,30 @@ export async function registerRoutes(
       res.json({ message: "Report repaired", repaired: Object.keys(patch) });
     } catch (err) {
       console.error("Repair error:", err);
-      res.status(500).json({ message: "Failed to repair report", error: String(err) });
+      res.status(500).json({ message: "Failed to repair report" });
+    }
+  });
+
+  // Validate unlock code (check only, no consumption)
+  app.post("/api/codes/validate", async (req, res) => {
+    try {
+      const { code } = req.body;
+      if (!code || typeof code !== "string") {
+        return res.status(400).json({ valid: false, error: "MISSING_FIELDS" });
+      }
+
+      const validCode = await storage.getValidCode(code);
+      if (!validCode) {
+        return res.json({ valid: false, error: "INVALID_CODE" });
+      }
+      if (validCode.isUsed && !validCode.isReusable) {
+        return res.json({ valid: false, error: "ALREADY_USED" });
+      }
+
+      return res.json({ valid: true });
+    } catch (err) {
+      console.error("[Code Validate] Error:", err);
+      res.status(500).json({ valid: false, error: "SERVER_ERROR" });
     }
   });
 
@@ -648,15 +666,21 @@ export async function registerRoutes(
       }
       const resolvedReportId = report.id;
 
-      console.log(`[Code Redeem] Attempting to redeem code: ${code} for report: ${resolvedReportId}`);
+      const maskedCode = code.slice(0, 3) + "***";
+      console.log(`[Code Redeem] Attempting to redeem code: ${maskedCode} for report: ${resolvedReportId}`);
 
       const result = await storage.redeemCode(code, resolvedReportId);
 
       if (result.success) {
-        console.log(`[Code Redeem] ✅ Successfully redeemed code: ${code}`);
+        console.log(JSON.stringify({
+          event: "code.redeemed",
+          code: maskedCode,
+          reportId: resolvedReportId,
+          ts: new Date().toISOString(),
+        }));
         return res.json({ success: true, message: "Report unlocked successfully" });
       } else {
-        console.log(`[Code Redeem] ❌ Failed to redeem code: ${code}, error: ${result.error}`);
+        console.log(`[Code Redeem] Failed: ${maskedCode}, error: ${result.error}`);
         return res.status(400).json({
           success: false,
           error: result.error,
@@ -676,7 +700,14 @@ export async function registerRoutes(
   // Gumroad Webhook Handler
   app.post("/api/webhooks/gumroad", async (req, res) => {
     try {
-      console.log("[Gumroad] Webhook received:", req.body);
+      // Seller ID verification — reject forged webhooks
+      const expectedSellerId = process.env.GUMROAD_SELLER_ID;
+      if (expectedSellerId && req.body.seller_id !== expectedSellerId) {
+        console.warn("[Gumroad] ⚠️ seller_id mismatch — rejecting webhook");
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      console.log("[Gumroad] Webhook received, sale_id:", req.body.sale_id);
 
       const {
         sale_id,
@@ -706,7 +737,8 @@ export async function registerRoutes(
         (req.body.custom_fields && req.body.custom_fields.report_id);
 
       if (!targetReportId) {
-        console.log(`[Gumroad] No report_id in webhook, trying email lookup for: ${email}`);
+        const maskedEmail = email ? email.replace(/(.{2}).+(@.+)/, '$1***$2') : 'none';
+        console.log(`[Gumroad] No report_id in webhook, trying email lookup for: ${maskedEmail}`);
         if (email) {
           const lead = await storage.getLeadByEmail(email);
           if (lead) {
@@ -715,7 +747,7 @@ export async function registerRoutes(
               // Sort by createdAt descending (newest first)
               reports.sort((a, b) => new Date(b.createdAt as any).getTime() - new Date(a.createdAt as any).getTime());
               targetReportId = reports[0].id;
-              console.log(`[Gumroad] Found most recent report ${targetReportId} for email ${email}`);
+              console.log(`[Gumroad] Found most recent report ${targetReportId} via email lookup`);
             }
           }
         }
@@ -725,7 +757,7 @@ export async function registerRoutes(
       if (targetReportId) {
         const exists = await resolveReport(targetReportId);
         if (!exists && email) {
-          console.log(`[Gumroad] report_id "${targetReportId}" not found, falling back to email lookup for: ${email}`);
+          console.log(`[Gumroad] report_id "${targetReportId}" not found, falling back to email lookup`);
           targetReportId = null;
           const lead = await storage.getLeadByEmail(email);
           if (lead) {
@@ -733,7 +765,7 @@ export async function registerRoutes(
             if (reports.length > 0) {
               reports.sort((a, b) => new Date(b.createdAt as any).getTime() - new Date(a.createdAt as any).getTime());
               targetReportId = reports[0].id;
-              console.log(`[Gumroad] Fallback: found report ${targetReportId} for email ${email}`);
+              console.log(`[Gumroad] Fallback: found report ${targetReportId} via email lookup`);
             }
           }
         }
@@ -761,8 +793,15 @@ export async function registerRoutes(
       // Unlock report (use resolved UUID, not slug)
       await storage.unlockReport(sajuResult.id);
 
-      console.log(`[Gumroad] ✅ Report ${sajuResult.id} (${targetReportId}) unlocked successfully`);
-      console.log(`[Gumroad] 💰 Sale ID: ${sale_id}, Price: ${price} ${currency}`);
+      console.log(JSON.stringify({
+        event: "payment.unlocked",
+        provider: "gumroad",
+        saleId: sale_id,
+        reportId: sajuResult.id,
+        price,
+        currency,
+        ts: new Date().toISOString(),
+      }));
 
       res.status(200).json({ success: true, message: "Report unlocked" });
     } catch (error) {
@@ -926,7 +965,7 @@ export async function registerRoutes(
       ).then(
         (result) => {
           if (result.success) {
-            console.log(`[Resend] ${sorted.length} report link(s) sent to ${email}`);
+            console.log(`[Resend] ${sorted.length} report link(s) sent successfully`);
           } else {
             console.error(`[Resend] Report links email failed: ${result.error}`);
           }

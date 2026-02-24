@@ -24,6 +24,14 @@ function getBaseUrl(): string {
   return 'http://localhost:5001';
 }
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 // Send email with report links (single or multiple)
 export async function sendReportLinksEmail(
   email: string,
@@ -74,7 +82,7 @@ function generateMultiReportHtml(links: Array<{ url: string; name?: string; date
                 <tr>
                   <td style="background-color: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 14px 16px;">
                     <p style="margin: 0 0 8px; font-size: 13px; color: rgba(255,255,255,0.4); font-family: 'JetBrains Mono', 'SF Mono', Monaco, monospace;">
-                      ${link.date} &nbsp;|&nbsp; ${link.name || 'Report'}
+                      ${escapeHtml(link.date)} &nbsp;|&nbsp; ${escapeHtml(link.name || 'Report')}
                     </p>
                     <a href="${link.url}" style="font-size: 13px; color: rgba(255,255,255,0.7); text-decoration: underline; text-underline-offset: 3px; word-break: break-all; font-family: 'JetBrains Mono', 'SF Mono', Monaco, monospace;">
                       ${link.url}

@@ -84,6 +84,6 @@ const AFFIRMATIONS = [
 
 export function generateSlug(uuid: string): string {
   const phrase = AFFIRMATIONS[Math.floor(Math.random() * AFFIRMATIONS.length)];
-  const suffix = uuid.replace(/-/g, "").slice(0, 4);
+  const suffix = uuid.replace(/-/g, "").slice(0, 8);
   return `${phrase}-${suffix}`;
 }
