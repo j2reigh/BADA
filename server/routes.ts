@@ -318,18 +318,15 @@ export async function registerRoutes(
       });
       console.log("[Assessment] Saju result saved:", sajuResult.id);
 
-      // Send report link email (non-blocking — don't wait for result)
-      sendReportLinksEmail(lead.email, [
+      // Send report link email (must await — Vercel Lambda terminates after response)
+      const emailResult = await sendReportLinksEmail(lead.email, [
         { id: sajuResult.slug || sajuResult.id, name: input.name, createdAt: new Date().toISOString() },
-      ]).then(
-        (result) => {
-          if (result.success) {
-            console.log(`[Assessment] Report link email sent successfully`);
-          } else {
-            console.error(`[Assessment] Report link email failed: ${result.error}`);
-          }
-        }
-      );
+      ]);
+      if (emailResult.success) {
+        console.log(`[Assessment] Report link email sent successfully`);
+      } else {
+        console.error(`[Assessment] Report link email failed: ${emailResult.error}`);
+      }
 
       console.log("[Assessment] Submission complete!");
       res.status(201).json({
@@ -955,22 +952,19 @@ export async function registerRoutes(
         (a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
       );
 
-      sendReportLinksEmail(
+      const emailResult = await sendReportLinksEmail(
         email,
         sorted.map((r) => ({
           id: r.slug || r.id,
           name: (r.userInput as any)?.name,
           createdAt: r.createdAt!.toString(),
         })),
-      ).then(
-        (result) => {
-          if (result.success) {
-            console.log(`[Resend] ${sorted.length} report link(s) sent successfully`);
-          } else {
-            console.error(`[Resend] Report links email failed: ${result.error}`);
-          }
-        }
       );
+      if (emailResult.success) {
+        console.log(`[Resend] ${sorted.length} report link(s) sent successfully`);
+      } else {
+        console.error(`[Resend] Report links email failed: ${emailResult.error}`);
+      }
 
       res.json({ success: true, message: genericMsg });
     } catch (err) {
