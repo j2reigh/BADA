@@ -1,23 +1,4 @@
-// Email service using Resend
-import { Resend } from 'resend';
-
-async function getCredentials(): Promise<{ apiKey: string; fromEmail: string }> {
-  if (process.env.RESEND_API_KEY) {
-    return {
-      apiKey: process.env.RESEND_API_KEY,
-      fromEmail: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'
-    };
-  }
-  throw new Error('RESEND_API_KEY not set.');
-}
-
-export async function getUncachableResendClient() {
-  const credentials = await getCredentials();
-  return {
-    client: new Resend(credentials.apiKey),
-    fromEmail: credentials.fromEmail
-  };
-}
+// Email service using Resend REST API (direct fetch — SDK had network issues on Vercel Lambda)
 
 function getBaseUrl(): string {
   if (process.env.APP_URL) return process.env.APP_URL;
@@ -37,33 +18,45 @@ export async function sendReportLinksEmail(
   email: string,
   reports: Array<{ id: string; name?: string; createdAt: string }>,
 ): Promise<{ success: boolean; error?: string }> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    return { success: false, error: 'RESEND_API_KEY not set' };
+  }
+
   try {
-    const { client } = await getUncachableResendClient();
     const baseUrl = getBaseUrl();
 
     const links = reports.map((r) => ({
       url: `${baseUrl}/results/${r.id}`,
       name: r.name,
-      date: new Date(r.createdAt).toISOString().slice(0, 10), // yyyy-mm-dd
+      date: new Date(r.createdAt).toISOString().slice(0, 10),
     }));
 
-    const result = await client.emails.send({
-      from: 'BADA <noreply@bada.one>',
-      to: email,
-      subject: reports.length === 1 ? 'Your BADA Report Link' : `Your ${reports.length} BADA Reports`,
-      html: generateMultiReportHtml(links),
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'BADA <noreply@bada.one>',
+        to: [email],
+        subject: reports.length === 1 ? 'Your BADA Report Link' : `Your ${reports.length} BADA Reports`,
+        html: generateMultiReportHtml(links),
+      }),
     });
 
-    console.log('[Email] Multi-report link email result:', result);
+    const data = await response.json();
 
-    if (result.error) {
-      console.error('[Email] Resend API error:', result.error);
-      return { success: false, error: result.error.message || 'Email sending failed' };
+    if (!response.ok) {
+      console.error(`[Email] Resend API ${response.status}:`, data);
+      return { success: false, error: data?.message || `HTTP ${response.status}` };
     }
 
+    console.log('[Email] Sent successfully, id:', data.id);
     return { success: true };
   } catch (error) {
-    console.error('[Email] Failed to send multi-report link email:', error);
+    console.error('[Email] fetch failed:', error instanceof Error ? error.message : error);
     return { success: false, error: String(error) };
   }
 }
