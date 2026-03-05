@@ -35,6 +35,7 @@ function Header({ t, language, setLanguage, onOpenGift }: { t: TranslateFn; lang
           <nav className="hidden md:flex items-center gap-8 mix-blend-difference text-white">
             <a href="#problem" className="text-sm hover:opacity-70 transition-opacity">{t('landing.nav.problem')}</a>
             <a href="#solution" className="text-sm hover:opacity-70 transition-opacity">{t('landing.nav.solution')}</a>
+            <Link href="/about" className="text-sm hover:opacity-70 transition-opacity">About</Link>
             <Link href="/faq" className="text-sm hover:opacity-70 transition-opacity">{t('faq.title')}</Link>
           </nav>
 
@@ -54,6 +55,20 @@ function Header({ t, language, setLanguage, onOpenGift }: { t: TranslateFn; lang
         <div className="fixed inset-0 z-[55] bg-[#182339]/95 backdrop-blur-md md:hidden">
           <div className="flex flex-col items-center justify-center h-full gap-8">
             {/* Nav links */}
+            <Link
+              href="/"
+              onClick={() => setMenuOpen(false)}
+              className="text-lg text-white/80 hover:text-white transition-colors"
+            >
+              {t('nav.home')}
+            </Link>
+            <Link
+              href="/about"
+              onClick={() => setMenuOpen(false)}
+              className="text-lg text-white/80 hover:text-white transition-colors"
+            >
+              About
+            </Link>
             <Link
               href="/faq"
               onClick={() => setMenuOpen(false)}
@@ -579,9 +594,8 @@ function SampleCardsSection({ t }: { t: TranslateFn }) {
             {Array.from({ length: count }).map((_, i) => (
               <button
                 key={i}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  i === current ? "bg-white/60 w-4" : "bg-white/20 w-1.5"
-                }`}
+                className={`h-1.5 rounded-full transition-all duration-300 ${i === current ? "bg-white/60 w-4" : "bg-white/20 w-1.5"
+                  }`}
                 onClick={() => api?.scrollTo(i)}
               />
             ))}
@@ -631,9 +645,8 @@ function VibeCheckSection({ t }: { t: TranslateFn }) {
             {instagramPosts.map((post, i) => (
               <motion.div
                 key={post.id}
-                className={`aspect-square bg-gradient-to-br from-[#ABBBD5]/20 to-[#233F64]/20 rounded-xl overflow-hidden border border-white/10 ${
-                  i === 1 || i === 3 ? "md:row-span-2 md:aspect-auto" : ""
-                }`}
+                className={`aspect-square bg-gradient-to-br from-[#ABBBD5]/20 to-[#233F64]/20 rounded-xl overflow-hidden border border-white/10 ${i === 1 || i === 3 ? "md:row-span-2 md:aspect-auto" : ""
+                  }`}
                 initial={{ opacity: 0, scale: 0.95 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 transition={{ delay: i * 0.1 }}
@@ -758,7 +771,7 @@ function FindMyReport({ t }: { t: TranslateFn }) {
 
 function Footer({ language, setLanguage, t }: { language: UILanguage; setLanguage: (lang: UILanguage) => void; t: TranslateFn }) {
   return (
-    <footer className="relative z-10 border-t border-white/10 py-6 px-6">
+    <footer className="relative z-[55] border-t border-white/10 py-6 px-6">
       <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3 md:gap-4 flex-wrap justify-center">
           <span className="text-white/40 text-xs md:text-sm whitespace-nowrap">
