@@ -12,11 +12,27 @@ import DebugResults from "@/pages/DebugResults";
 import ComingSoon from "@/pages/ComingSoon";
 import Wait from "@/pages/Wait";
 import VerificationFailed from "@/pages/VerificationFailed";
+import About from "@/pages/About";
 import FAQ from "@/pages/FAQ";
 import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
 
+import { useEffect } from "react";
+
 function Router() {
+  useEffect(() => {
+    (async () => {
+      const LocomotiveScroll = (await import('locomotive-scroll')).default;
+      const locomotiveScroll = new LocomotiveScroll({
+        lenisOptions: {
+          lerp: 0.1,
+          duration: 1.2,
+          smoothWheel: true,
+        }
+      });
+    })();
+  }, []);
+
   return (
     <Switch>
       <Route path="/" component={Landing} />
@@ -27,6 +43,7 @@ function Router() {
       <Route path="/wait/:reportId" component={Wait} />
       <Route path="/verification-failed" component={VerificationFailed} />
       <Route path="/coming-soon" component={ComingSoon} />
+      <Route path="/about" component={About} />
       <Route path="/faq" component={FAQ} />
       <Route path="/privacy" component={Privacy} />
       <Route path="/terms" component={Terms} />

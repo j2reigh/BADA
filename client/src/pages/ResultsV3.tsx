@@ -1451,13 +1451,13 @@ export default function ResultsV3() {
     },
     {
       key: "chapter",
-      render: () => v3.chapter ? (
+      render: () => v3.chapter?.currentText ? (
         <ChapterCard chapter={v3.chapter} />
       ) : null,
     },
     {
       key: "chapter-strategy",
-      render: () => v3.chapter ? (
+      render: () => v3.chapter?.currentText ? (
         <ChapterStrategyCard chapter={v3.chapter} />
       ) : null,
     },
