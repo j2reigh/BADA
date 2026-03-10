@@ -17,8 +17,11 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
         run: |
+          if [ -z "$DATABASE_URL" ]; then echo "::error::SUPABASE_DATABASE_URL secret is not set"; exit 1; fi
           psql "$DATABASE_URL" -c "SELECT 1;" && echo "Production DB is alive"
       - name: Ping Staging DB
+        if: ${{ secrets.SUPABASE_STAGING_DATABASE_URL != '' }}
+        continue-on-error: true
         env:
           DATABASE_URL: ${{ secrets.SUPABASE_STAGING_DATABASE_URL }}
         run: |
