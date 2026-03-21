@@ -17,22 +17,7 @@ import FAQ from "@/pages/FAQ";
 import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
 
-import { useEffect } from "react";
-
 function Router() {
-  useEffect(() => {
-    (async () => {
-      const LocomotiveScroll = (await import('locomotive-scroll')).default;
-      const locomotiveScroll = new LocomotiveScroll({
-        lenisOptions: {
-          lerp: 0.1,
-          duration: 1.2,
-          smoothWheel: true,
-        }
-      });
-    })();
-  }, []);
-
   return (
     <Switch>
       <Route path="/" component={Landing} />
